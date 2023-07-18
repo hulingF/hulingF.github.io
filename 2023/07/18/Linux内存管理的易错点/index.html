@@ -6,22 +6,25 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://hulingF.github.io">
-  <title>我的第一篇博客 | 大军的秘密花园</title>
+  <title>Linux内存管理的易错点 | 大军的秘密花园</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="开始旅程大军12string boy &#x3D; &quot;haohao&quot;;int age &#x3D; 23;   军军的前世今生—lalala    小牛12string girl &#x3D; &quot;xiaoling&quot;int age &#x3D; 22;   牛牛的再续前缘—lalala">
+  <meta name="description" content="Linux内存管理的易错点1.为什么现代处理器访问的地址是虚拟地址而不直接采用物理地址？处理器直接使用物理地址存在以下问题：  进程地址空间保护（isolation）和安全问题（security）。所有的用户进程都可以访问全部的物理内存，如果有恶意的程序，那么它可以修改其他程序的内存数据，这样便破坏了其他进程的内部数据。即使系统里所有的进程都不是恶意进程，但是进程A依然可能不小心修改了进程B的数据">
 <meta property="og:type" content="article">
-<meta property="og:title" content="我的第一篇博客">
-<meta property="og:url" content="https://hulingf.github.io/2023/05/29/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/index.html">
+<meta property="og:title" content="Linux内存管理的易错点">
+<meta property="og:url" content="https://hulingf.github.io/2023/07/18/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
-<meta property="og:description" content="开始旅程大军12string boy &#x3D; &quot;haohao&quot;;int age &#x3D; 23;   军军的前世今生—lalala    小牛12string girl &#x3D; &quot;xiaoling&quot;int age &#x3D; 22;   牛牛的再续前缘—lalala">
+<meta property="og:description" content="Linux内存管理的易错点1.为什么现代处理器访问的地址是虚拟地址而不直接采用物理地址？处理器直接使用物理地址存在以下问题：  进程地址空间保护（isolation）和安全问题（security）。所有的用户进程都可以访问全部的物理内存，如果有恶意的程序，那么它可以修改其他程序的内存数据，这样便破坏了其他进程的内部数据。即使系统里所有的进程都不是恶意进程，但是进程A依然可能不小心修改了进程B的数据">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://hulingf.github.io/imgs/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/image-20230529223942515.png">
-<meta property="og:image" content="https://hulingf.github.io/imgs/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20230529223634.jpg">
-<meta property="article:published_time" content="2023-05-29T14:38:55.257Z">
-<meta property="article:modified_time" content="2023-05-29T14:51:32.258Z">
+<meta property="og:image" content="https://hulingf.github.io/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718165224957.png">
+<meta property="og:image" content="https://hulingf.github.io/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718170502598.png">
+<meta property="og:image" content="https://hulingf.github.io/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718170719552.png">
+<meta property="og:image" content="https://hulingf.github.io/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718170749227.png">
+<meta property="og:image" content="https://hulingf.github.io/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718194842963.png">
+<meta property="article:published_time" content="2023-07-18T14:30:27.614Z">
+<meta property="article:modified_time" content="2023-07-18T11:49:24.674Z">
 <meta property="article:author" content="hulingF">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://hulingf.github.io/imgs/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/image-20230529223942515.png">
+<meta name="twitter:image" content="https://hulingf.github.io/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718165224957.png">
   
   
     <link rel="icon" href="/favicon.png">
@@ -154,40 +157,52 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-我的第一篇博客" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-Linux内存管理的易错点" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      我的第一篇博客
+      Linux内存管理的易错点
     </h1>
   
 
         
-        <a href="/2023/05/29/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" class="archive-article-date">
-  	<time datetime="2023-05-29T14:38:55.257Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-05-29</time>
+        <a href="/2023/07/18/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/" class="archive-article-date">
+  	<time datetime="2023-07-18T14:30:27.614Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-07-18</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="开始旅程"><a href="#开始旅程" class="headerlink" title="开始旅程"></a>开始旅程</h1><h2 id="大军"><a href="#大军" class="headerlink" title="大军"></a>大军</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">string boy = <span class="string">&quot;haohao&quot;</span>;</span><br><span class="line"><span class="type">int</span> age = <span class="number">23</span>;</span><br></pre></td></tr></table></figure>
+        <h1 id="Linux内存管理的易错点"><a href="#Linux内存管理的易错点" class="headerlink" title="Linux内存管理的易错点"></a>Linux内存管理的易错点</h1><h3 id="1-为什么现代处理器访问的地址是虚拟地址而不直接采用物理地址？"><a href="#1-为什么现代处理器访问的地址是虚拟地址而不直接采用物理地址？" class="headerlink" title="1.为什么现代处理器访问的地址是虚拟地址而不直接采用物理地址？"></a>1.为什么现代处理器访问的地址是虚拟地址而不直接采用物理地址？</h3><p>处理器直接使用物理地址存在以下问题：</p>
+<ul>
+<li>进程地址空间保护（isolation）和安全问题（security）。所有的用户进程都可以访问全部的物理内存，如果有恶意的程序，那么它可以修改其他程序的内存数据，这样便破坏了其他进程的内部数据。即使系统里所有的进程都不是恶意进程，但是进程A依然可能不小心修改了进程B的数据，从而导致进程B运行崩溃。</li>
+<li>内存使用效率低。如果即将要运行的进程所需要的内存空间不足，就需要选择一个进程进行整体换出，这种机制导致有大量的数据需要换出和换入，效率非常低下，通常换出是把数据写入到交换分区，导致大量的磁盘IO。</li>
+<li>程序运行地址重定位问题。进程在每次换出换入时运行的地址都是不固定的，这给程序的编写带来一定的麻烦，因为访问数据和指令跳转时的目标地址通常是固定的，这就需要重定位技术了。</li>
+</ul>
+<p><code>总之，进程地址空间是对内存的一个重要的抽象，让内存虚拟化得到了实现，它和进程的CPU虚拟化，以及文件对存储地址空间的抽象，这三个是操作系统中三大抽象，组成了操作系统的三个元素。</code></p>
+<p>进程地址空间的概念引入了虚拟内存，而这个思想可以解决刚才提到的三个问题。</p>
+<ul>
+<li>隔离性和安全性。虚拟内存机制可以提供这样的隔离性，因为每个进程感觉全部拥有了整个地址空间，它可以随意访问整个地址空间，然后由处理器来转换到实际的物理地址，所以，进程A没法访问到进程B的物理内存，也就没办法做到破坏了。</li>
+<li>效率。后来出现的分页机制可以解决动态分区法出现的碎片化和效率的问题。</li>
+<li>重定位问题。进程换入换出时访问的地址变成相同的虚拟地址。它不用关心物理地址。这个虚拟地址我们称为链接地址。</li>
+</ul>
+<h3 id="2-MMU查询页表的目的是找到虚拟地址对应的物理地址，页表项中有指向下一级页表基地址的指针，那它指向的是下一级页表基地址的物理地址还是虚拟地址呢？"><a href="#2-MMU查询页表的目的是找到虚拟地址对应的物理地址，页表项中有指向下一级页表基地址的指针，那它指向的是下一级页表基地址的物理地址还是虚拟地址呢？" class="headerlink" title="2.MMU查询页表的目的是找到虚拟地址对应的物理地址，页表项中有指向下一级页表基地址的指针，那它指向的是下一级页表基地址的物理地址还是虚拟地址呢？"></a>2.MMU查询页表的目的是找到虚拟地址对应的物理地址，页表项中有指向下一级页表基地址的指针，那它指向的是下一级页表基地址的物理地址还是虚拟地址呢？</h3><p><img src="/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718165224957.png" alt="image-20230718165224957"></p>
+<p>答案是物理地址，因为MMU地址管理单元本身就是用来完成虚拟地址转换为物理地址的工作的，如果页表项中存放的是虚拟地址，为了找到下一级页表的物理地址，MMU必须再次进行地址转换…由此无限循环，因此只能是物理地址。</p>
+<h3 id="3-MMU硬件单元可以遍历页表，Linux内核也提供了软件遍历页表的函数如walk-pgd-等，站在软件的视角，Linux内核中的pgd-t、pud-t、pmd-t和pte-t数据结构-其实都是u64类型-并没有存储一个指向下一级页表的指针，它是如何遍历的呢？"><a href="#3-MMU硬件单元可以遍历页表，Linux内核也提供了软件遍历页表的函数如walk-pgd-等，站在软件的视角，Linux内核中的pgd-t、pud-t、pmd-t和pte-t数据结构-其实都是u64类型-并没有存储一个指向下一级页表的指针，它是如何遍历的呢？" class="headerlink" title="3.MMU硬件单元可以遍历页表，Linux内核也提供了软件遍历页表的函数如walk_pgd()等，站在软件的视角，Linux内核中的pgd_t、pud_t、pmd_t和pte_t数据结构(其实都是u64类型)并没有存储一个指向下一级页表的指针，它是如何遍历的呢？"></a>3.MMU硬件单元可以遍历页表，Linux内核也提供了软件遍历页表的函数如walk_pgd()等，站在软件的视角，Linux内核中的pgd_t、pud_t、pmd_t和pte_t数据结构(其实都是u64类型)并没有存储一个指向下一级页表的指针，它是如何遍历的呢？</h3><p>这个问题的本质是软件的方式如何找到下一级页表基地址的虚拟地址(因为页表项中存放的是物理地址)，此时需要我们明白一个知识点：<code>Linux内核线性区中，虚拟地址和物理地址可以很方便的互相转换！</code></p>
+<p><img src="/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718170502598.png" alt="image-20230718170502598"></p>
+<img src="/C:/Users/34404/blog/source/imgs/Linux内存管理的易错点/image-20230718170719552.png" alt="image-20230718170719552" style="zoom:150%;" />
 
-<blockquote>
-<p>军军的前世今生—lalala</p>
+<p><img src="/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718170749227.png" alt="image-20230718170749227"></p>
+<h3 id="4-为什么内核在初始化的时候需要把整个物理内存都线性映射到内核空间呢"><a href="#4-为什么内核在初始化的时候需要把整个物理内存都线性映射到内核空间呢" class="headerlink" title="4.为什么内核在初始化的时候需要把整个物理内存都线性映射到内核空间呢?"></a>4.为什么内核在初始化的时候需要把整个物理内存都线性映射到内核空间呢?</h3><blockquote>
+<p>本质上来说，软件来填充页表，而MMU硬件单元只是根据页表的页表项内容，来完成虚拟地址到物理地址的映射。所以，程序猿让MMU映射哪里，它就映射哪里，MMU不会自作聪明自动给你建立映射的。多级页表的按需映射，是页表的基本功能，只是用来节省页表占用内存空间，而内核的线性映射和这个多级页表的按需映射，其实是两回事。内核空间是所有进程共享的一个空间。CPU虚拟化也就是进程的抽象，内存虚拟化也就是地址空间的抽象，在这两个概念下，进程感觉它拥有了全部的地址空间，包括用户空间和内核空间，用户空间是它独有的，而内核空间是所有进程共享的。</p>
 </blockquote>
-<hr>
-<p><img src="/../../../../../../imgs/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/image-20230529223942515.png" alt="image-20230529223942515"></p>
-<h2 id="小牛"><a href="#小牛" class="headerlink" title="小牛"></a>小牛</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">string girl = <span class="string">&quot;xiaoling&quot;</span></span><br><span class="line"><span class="type">int</span> age = <span class="number">22</span>;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>牛牛的再续前缘—lalala</p>
-</blockquote>
-<hr>
-<p><img src="/../../../../../../imgs/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20230529223634.jpg" alt="微信图片_20230529223634"></p>
+<p>当进程陷入到内核空间时，它访问的地址同样是虚拟地址，只不过是它访问了内核地址空间。但是，有一点不一样的是，进程在用户空间访问虚拟地址，如果这个虚拟地址没有映射物理内存时，处理器会触发缺页异常，然后陷入到内核态的缺页异常中来修复这个映射。但是如果在内核态访问一个没有映射的内核地址空间，那么内核陷入崩溃状态，这就是我们常常看的oops错误。这是因为运行在内核空间的程序需要稳定性和安全性。假设内核空间的虚拟地址没有预先映射，内核运行在内核空间里也常常需要访问物理内存，那么内核就会常常处于缺页异常中，若缺页异常无法修复错误的话，那么整个系统就挂掉了。所以，为了操作系统的安全性和稳健性，对内核空间虚拟地址是不做缺页异常处理的，在内核空间里访问一个空指针常常会引发系统崩溃。所以，通常做法是：在内核初始化时，把全部物理内存都线性映射到内核地址空间，这样预先映射有不少好处，比如可以减少在内核空间崩溃的几率。第二，也能提高系统性能，因为在内核空间也是常常会分配内存，比如伙伴系统，slab机制分配内存，这些分配的内存，不需要重新来建立虚拟地址到物理地址的映射了，因为系统初始化时，已经预先映射好了。</p>
+<p>ARM64 Linux内核空间布局图（基于Linux5.0）：</p>
+<p><img src="/C:/Users/34404/blog/source/imgs/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/image-20230718194842963.png" alt="image-20230718194842963"></p>
 
       
 
@@ -277,7 +292,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=https://hulingf.github.io/2023/05/29/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=https://hulingf.github.io/2023/07/18/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -291,18 +306,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2023/06/14/Git%E5%8E%9F%E7%90%86%E5%AE%9E%E8%B7%B5/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          Git原理实践
-        
-      </div>
-    </a>
   
-  
-    <a href="/2023/05/29/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Hello World</div>
+    <a href="/2023/07/18/Linux%E7%9A%84ELF%E6%96%87%E4%BB%B6%E8%A3%85%E8%BD%BD%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Linux的ELF文件装载内存布局</div>
       <i class="icon-circle-right"></i>
     </a>
   
