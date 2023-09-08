@@ -28,8 +28,10 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/1175569-20190812152429877-1186007641.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/1175569-20190812153556863-1457941235.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/1175569-20190812155232177-2078942240.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/image-20230907145610146.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/image-20230907153413797.png">
 <meta property="article:published_time" content="2023-08-02T11:15:00.927Z">
-<meta property="article:modified_time" content="2023-08-17T07:20:20.765Z">
+<meta property="article:modified_time" content="2023-09-07T07:45:45.005Z">
 <meta property="article:author" content="hulingF">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/OOP_WrapperClass.png">
@@ -76,7 +78,7 @@
 			</ul>
 		</nav>
 		<nav>
-			总文章数 14
+			总文章数 15
 		</nav>
 		<nav class="header-smart-menu">
     		
@@ -583,30 +585,56 @@
 </tbody></table>
 <h2 id="11-Java-中的字符编码"><a href="#11-Java-中的字符编码" class="headerlink" title="11.Java 中的字符编码"></a>11.Java 中的字符编码</h2><p>参考文章：<a target="_blank" rel="noopener" href="https://www.liaoxuefeng.com/wiki/1252599548343744/1260469698963456">廖雪峰-字符串和编码</a></p>
 <p>参考文章：<a target="_blank" rel="noopener" href="http://www.ruanyifeng.com/blog/2007/10/ascii_unicode_and_utf-8.html">字符编码笔记</a></p>
-<p>在早期的计算机系统中，为了给字符编码，美国国家标准学会（American National Standard Institute：ANSI）制定了一套英文字母、数字和常用符号的编码，它占用一个字节，编码范围从<code>0</code>到<code>127</code>，最高位始终为<code>0</code>，称为<code>ASCII</code>编码。例如，字符<code>&#39;A&#39;</code>的编码是<code>0x41</code>，字符<code>&#39;1&#39;</code>的编码是<code>0x31</code>。</p>
+<h3 id="ASCII码"><a href="#ASCII码" class="headerlink" title="ASCII码"></a>ASCII码</h3><p>在早期的计算机系统中，为了给字符编码，美国国家标准学会（American National Standard Institute：ANSI）制定了一套英文字母、数字和常用符号的编码，它占用一个字节，编码范围从<code>0</code>到<code>127</code>，最高位始终为<code>0</code>，称为<code>ASCII</code>编码。例如，字符<code>&#39;A&#39;</code>的编码是<code>0x41</code>，字符<code>&#39;1&#39;</code>的编码是<code>0x31</code>。</p>
 <p>如果要把汉字也纳入计算机编码，很显然一个字节是不够的。<code>GB2312</code>标准使用两个字节表示一个汉字，其中第一个字节的最高位始终为<code>1</code>，以便和<code>ASCII</code>编码区分开。例如，汉字<code>&#39;中&#39;</code>的<code>GB2312</code>编码是<code>0xd6d0</code>。类似的，日文有<code>Shift_JIS</code>编码，韩文有<code>EUC-KR</code>编码，这些编码因为标准不统一，同时使用，就会产生冲突。</p>
 <p>为了统一全球所有语言的编码，全球统一码联盟发布了<code>Unicode</code>编码，它把世界上主要语言都纳入同一个编码，这样，中文、日文、韩文和其他语言就不会冲突。</p>
-<p><code>Unicode</code>编码需要两个或者更多字节表示，我们可以比较中英文字符在<code>ASCII</code>、<code>GB2312</code>和<code>Unicode</code>的编码：</p>
-<p>英文字符<code>&#39;A&#39;</code>的<code>ASCII</code>编码和<code>Unicode</code>编码：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">         ┌────┐</span><br><span class="line">ASCII:   │ 41 │</span><br><span class="line">         └────┘</span><br><span class="line">         ┌────┬────┐</span><br><span class="line">Unicode: │ 00 │ 41 │</span><br><span class="line">         └────┴────┘</span><br></pre></td></tr></table></figure>
-
-<p>英文字符的<code>Unicode</code>编码就是简单地在前面添加一个<code>00</code>字节。</p>
-<p>中文字符<code>&#39;中&#39;</code>的<code>GB2312</code>编码和<code>Unicode</code>编码：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">         ┌────┬────┐</span><br><span class="line">GB2312:  │ d6 │ d0 │</span><br><span class="line">         └────┴────┘</span><br><span class="line">         ┌────┬────┐</span><br><span class="line">Unicode: │ 4e │ 2d │</span><br><span class="line">         └────┴────┘</span><br></pre></td></tr></table></figure>
-
-<p>那我们经常使用的<code>UTF-8</code>又是什么编码呢？因为英文字符的<code>Unicode</code>编码高字节总是<code>00</code>，包含大量英文的文本会浪费空间，所以，出现了<code>UTF-8</code>编码，它是一种变长编码，用来把固定长度的<code>Unicode</code>编码变成1～4字节的变长编码。通过<code>UTF-8</code>编码，英文字符<code>&#39;A&#39;</code>的<code>UTF-8</code>编码变为<code>0x41</code>，正好和<code>ASCII</code>码一致，而中文<code>&#39;中&#39;</code>的<code>UTF-8</code>编码为3字节<code>0xe4b8ad</code>。</p>
-<p><code>UTF-8</code>编码的另一个好处是容错能力强。如果传输过程中某些字符出错，不会影响后续字符，因为<code>UTF-8</code>编码依靠高字节位来确定一个字符究竟是几个字节，它经常用来作为传输编码。</p>
-<p>在Java中，<code>char</code>类型实际上就是两个字节的<code>Unicode</code>编码。如果我们要手动把字符串转换成其他编码，可以这样做：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">byte[] b1 = &quot;Hello&quot;.getBytes(); // 按系统默认编码转换，不推荐</span><br><span class="line">byte[] b2 = &quot;Hello&quot;.getBytes(&quot;UTF-8&quot;); // 按UTF-8编码转换</span><br><span class="line">byte[] b2 = &quot;Hello&quot;.getBytes(&quot;GBK&quot;); // 按GBK编码转换</span><br><span class="line">byte[] b3 = &quot;Hello&quot;.getBytes(StandardCharsets.UTF_8); // 按UTF-8编码转换</span><br></pre></td></tr></table></figure>
-
+<h3 id="Unicode方案"><a href="#Unicode方案" class="headerlink" title="Unicode方案"></a>Unicode方案</h3><p><code>Unicode</code>没有规定字符对应的二进制码具体如何存储。以汉字“汉”为例，它的<code>Unicode码位</code>是<code>0x6c49</code>，对应的二进制数是 110110001001001，二进制数有15位，这也就说明了它至少需要<code>2</code>个字节来表示。可以想象，在 Unicode 字典中往后的字符可能就需要3个字节或者4个字节，甚至更多字节来表示了。</p>
 <blockquote>
-<p>注意：转换编码后，就不再是<code>char</code>类型，而是<code>byte</code>类型表示的数组。</p>
+<p>这就导致了一些问题，计算机怎么知道你这个2个字节表示的是一个字符，而不是分别表示两个字符呢？这里我们可能会想到，那就取个最大的，假如Unicode中最大的字符用4字节就可以表示了，那么我们就将所有的字符都用4个字节来表示，不够的就往前面补0。这样确实可以解决编码问题，但是却造成了空间的极大浪费，如果是一个英文文档，那文件大小就大出了3倍，这显然是无法接受的。</p>
 </blockquote>
-<p>如果要把已知编码的<code>byte[]</code>转换为<code>String</code>，可以这样做：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">byte[] b = ...</span><br><span class="line">String s1 = new String(b, &quot;GBK&quot;); // 按GBK转换</span><br><span class="line">String s2 = new String(b, StandardCharsets.UTF_8); // 按UTF-8转换</span><br></pre></td></tr></table></figure>
-
-<p>始终牢记：Java的<code>String</code>和<code>char</code>在内存中总是以Unicode编码表示。</p>
-<h3 id="延伸阅读"><a href="#延伸阅读" class="headerlink" title="延伸阅读"></a>延伸阅读</h3><p>对于不同版本的JDK，<code>String</code>类在内存中有不同的优化方式。具体来说，早期JDK版本的<code>String</code>总是以<code>char[]</code>存储，它的定义如下：</p>
+<p>它们造成的结果是：</p>
+<ol>
+<li>出现了Unicode的多种存储方式，也就是说有许多种不同的二进制格式可以用来表示 Unicode；</li>
+<li>Unicode在很长一段时间内无法推广，直到互联网的出现。</li>
+</ol>
+<p>于是，为了较好的解决Unicode的编码问题，<code>UTF-8</code>和<code>UTF-16</code>两种当前比较流行的编码方式诞生了。当然还有一个<code>UTF-32</code>的编码方式，也就是上述那种定长编码，字符统一使用4个字节，虽然看似方便，但是却不如另外两种编码方式使用广泛。</p>
+<h3 id="UTF-8"><a href="#UTF-8" class="headerlink" title="UTF-8"></a>UTF-8</h3><p>UTF-8是一个非常惊艳的编码方式，漂亮的实现了&#x3D;&#x3D;对ASCII码的向后兼容&#x3D;&#x3D;，以保证Unicode可以被大众接受。<strong>这里的关系是，UTF-8是Unicode的实现方式之一。</strong></p>
+<p>UTF-8是目前互联网上使用最广泛的一种Unicode编码方式，它的最大特点就是可变长。它可以使用1 - 4个字节表示一个字符，根据字符的不同变换长度。编码规则如下：</p>
+<ol>
+<li>对于<code>单个字节</code>的字符，<code>第一位设为0</code>，后面的7位对应这个字符的<code>Unicode码位</code>。因此，对于英文中的0-127号字符，与ASCII码完全相同。这意味着ASCII码那个年代的文档用UTF-8编码打开完全没有问题。</li>
+<li>对于需要使用<code>N个字节</code>来表示的字符（N&gt;1），第一个字节的前N位都设为1，第N+1位设为0，剩余的N-1个字节的前两位都设位10，剩下的二进制位则使用这个字符的Unicode码位来填充。</li>
+</ol>
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/image-20230907145610146.png" alt="image-20230907145610146"></p>
+<p>根据上面编码规则对照表，进行<code>UTF-8编码和解码</code>就简单多了。下面以汉字“汉”为利，具体说明如何进行UTF-8编码和解码。</p>
+<p>“汉”的<code>Unicode码位</code>是<code>0x6c49</code>（110 1100 0100 1001），通过上面的对照表可以发现，0x6c49位于第三行的范围，那么得出其格式为<code>1110xxxx 10xxxxxx 10xxxxxx</code>。接着，从“汉”的二进制数最后一位开始，从后向前依次填充对应格式中的x，多出的x用0补上。这样，就得到了“汉”的UTF-8编码为11100110 10110001 10001001，转换成十六进制就是<code>0xE6B789</code>。</p>
+<p>解码的过程也十分简单：如果一个字节的第一位是0 ，则说明这个字节对应一个字符；如果一个字节的第一位1，那么连续有多少个1，就表示该字符占用多少个字节。</p>
+<h3 id="Big-x2F-Little-endian"><a href="#Big-x2F-Little-endian" class="headerlink" title="Big&#x2F;Little endian"></a>Big&#x2F;Little endian</h3><p>以汉字严为例，Unicode码位是4E25，需要用两个字节存储，一个字节是4E，另一个字节是25。存储的时候，4E在前，25在后，这就是Big endian方式；25在前，4E在后，这是Little endian方式。第一个字节在前，就是”大头方式”（Big endian），第二个字节在前就是”小头方式”（Little endian）。</p>
+<p>那么很自然的，就会出现一个问题：计算机怎么知道某一个文件到底采用哪一种方式编码？</p>
+<p>&#x3D;&#x3D;Unicode规范定义，每一个文件的最前面分别加入一个表示编码顺序的字符，这个字符的名字叫做”零宽度非换行空格”（zero width no-break space），用FEFF表示。这正好是两个字节，而且FF比FE大1。&#x3D;&#x3D;如果一个文本文件的头两个字节是<code>FE FF</code>，就表示该文件采用<code>大头</code>方式；如果头两个字节是<code>FF FE</code>，就表示该文件采用<code>小头</code>方式。</p>
+<h3 id="UTF-16"><a href="#UTF-16" class="headerlink" title="UTF-16"></a>UTF-16</h3><p>Unicode的编码空间从<code>U+0000</code>到<code>+10FFFF</code>，共有1,112,064个码位（<code>code point</code>）可用来映射字符。Unicode的编码空间可以划分为17个平面（plane），每个平面包含2^16^（65,536）个码位。17个平面的码位可表示为从<code>U+xx0000</code>到<code>U+xxFFFF</code>，其中xx表示十六进制值从00<del>16</del>到10<del>16</del>，共计17个平面。第一个平面称为<strong>基本多语言平面</strong>（Basic Multilingual Plane, <strong>BMP</strong>），或称第零平面（Plane 0），其他平面称为<strong>辅助平面</strong>（Supplementary Planes）。基本多语言平面内，从<code>U+D800</code>到<code>U+DFFF</code>之间的码位区段是永久保留不映射到Unicode字符。&#x3D;&#x3D;UTF-16就利用保留下来的0xD800-0xDFFF区段的码位来对辅助平面的字符的码位进行编码。&#x3D;&#x3D;</p>
+<h4 id="从U-0000至U-D7FF以及从U-E000至U-FFFF的码位"><a href="#从U-0000至U-D7FF以及从U-E000至U-FFFF的码位" class="headerlink" title="从U+0000至U+D7FF以及从U+E000至U+FFFF的码位"></a>从U+0000至U+D7FF以及从U+E000至U+FFFF的码位</h4><p>第一个Unicode平面（码位从U+0000至U+FFFF）包含了最常用的字符。该平面被称为基本多语言平面，缩写为<em>BMP</em>（Basic Multilingual Plane）。UTF-16编码这个范围内的码位为16比特长的单个码元，数值等价于对应的码位。</p>
+<h4 id="从U-10000到U-10FFFF的码位"><a href="#从U-10000到U-10FFFF的码位" class="headerlink" title="从U+10000到U+10FFFF的码位"></a>从U+10000到U+10FFFF的码位</h4><p>辅助平面（Supplementary Planes）中的码位，在UTF-16中被编码为<strong>一对</strong>16比特长的码元（即32位元，4字节），称作<em>代理对</em>（Surrogate Pair），具体方法是：</p>
+<ol>
+<li>码位减去 <code>0x10000</code>，得到的值的范围为20比特长的 <code>0...0xFFFFF</code>。</li>
+<li>高位的10比特的值（值的范围为 <code>0...0x3FF</code>）被加上 <code>0xD800</code> 得到第一个码元或称作高位代理（high surrogate），值的范围是 <code>0xD800...0xDBFF</code>。由于高位代理比低位代理的值要小，所以为了避免混淆使用，Unicode标准现在称高位代理为<strong>前导代理</strong>（lead surrogates）。</li>
+<li>低位的10比特的值（值的范围也是 <code>0...0x3FF</code>）被加上 <code>0xDC00</code> 得到第二个码元或称作低位代理（low surrogate），现在值的范围是 <code>0xDC00...0xDFFF</code>。由于低位代理比高位代理的值要大，所以为了避免混淆使用，Unicode标准现在称低位代理为<strong>后尾代理</strong>（trail surrogates）。</li>
+</ol>
+<p>上述算法可理解为：辅助平面中的码位从U+10000到U+10FFFF，共计FFFFF个，即2^20^&#x3D;1,048,576个，需要20位来表示。如果用两个16位长的整数组成的序列来表示，第一个整数（称为前导代理）要容纳上述20位的前10位，第二个整数（称为后尾代理）容纳上述20位的后10位。还要能根据16位整数的值直接判明属于前导整数代理的值的范围（2^10^&#x3D;1024)，还是后尾整数代理的值的范围（也是2^10^&#x3D;1024）。因此，需要在基本多语言平面中保留不对应于Unicode字符的2048个码位，就足以容纳前导代理与后尾代理所需要的编码空间。这对于基本多语言平面总计65536个码位来说，仅占3.125%。</p>
+<p>由于前导代理、后尾代理、BMP中的有效字符的码位，三者互不重叠，搜索是简单的：一个字符编码的一部分不可能与另一个字符编码的不同部分相重叠。这意味着UTF-16是自同步（self-synchronizing）的：可以通过仅检查一个码元来判定给定字符的下一个字符的起始码元。<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/UTF-8">UTF-8</a>也有类似优点，但许多早期的编码模式就不是这样，必须从头开始分析文本才能确定不同字符的码元的边界。</p>
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/image-20230907153413797.png" alt="image-20230907153413797"></p>
+<h3 id="ISO-8859-1-x2F-Latin-1"><a href="#ISO-8859-1-x2F-Latin-1" class="headerlink" title="ISO-8859-1&#x2F;Latin-1"></a>ISO-8859-1&#x2F;Latin-1</h3><p>ISO8859-1，通常叫做Latin-1。Latin-1包括了书写所有西方欧洲语言不可缺少的附加字符。</p>
+<p>ISO-8859-1编码是<code>单字节编码</code>，<code>向下兼容ASCII</code>，其编码范围是<code>0x00-0xFF</code>，&#x3D;&#x3D;0x00-0x7F之间完全和ASCII一致，0x80-0x9F之间是控制字符，0xA0-0xFF之间是文字符号。&#x3D;&#x3D;</p>
+<p>ISO-8859-1收录的字符除ASCII收录的字符外，还包括西欧语言、希腊语、泰语、阿拉伯语、希伯来语对应的文字符号。欧元符号出现的比较晚，没有被收录在ISO-8859-1当中。</p>
+<p>因为ISO-8859-1编码范围使用了单字节内的所有空间，在支持ISO-8859-1的系统中传输和存储其他任何编码的字节流都不会被抛弃。换言之，把其他任何编码的字节流当作ISO-8859-1编码看待都没有问题。这是个很重要的特性，MySQL数据库默认编码是Latin1就是利用了这个特性。ASCII编码是一个7位的容器，ISO-8859-1编码是一个8位的容器。</p>
+<p>ISO-8859-1的<code>较低部分</code>（从1到127之间的代码）是最初的7比特ASCII。</p>
+<p>ISO-8859-1的<code>较高部分</code>（从160到255之间的代码）全都有实体名称。</p>
+<h3 id="延伸阅读"><a href="#延伸阅读" class="headerlink" title="延伸阅读"></a>延伸阅读</h3><p>char数据类型是一个采用UTF-16编码表示Unicode码位的码元。</p>
+<blockquote>
+<p>码位：码位（code point）是指与一个编码表中的某个字符对应的代码值。在Unicode标准中，码位采用十六进制书写，并加上前缀U+，例如U+0041就是字母A的码位。</p>
+<p>Unicode的码位可以分成17个代码级别（code plane）。第一个代码级别称为基本的多语言级别（简称BMP），码位从U+0000到U+FFFF，其中包括了经典的Unicode代码；其余的16个附加级别，码位从U+10000到U+FFFFF，其中包括了一些辅助字符。</p>
+<p>码元：在BMP中，每个字符用16位表示，称为码元（code unit）。辅助字符采用一对连续的码元进行编码。</p>
+</blockquote>
+<p>对于不同版本的JDK，<code>String</code>类在内存中有不同的优化方式。具体来说，早期JDK版本的<code>String</code>总是以<code>char[]</code>存储，它的定义如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public final class String &#123;</span><br><span class="line">    private final char[] value;</span><br><span class="line">    private final int offset;</span><br><span class="line">    private final int count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>而较新的JDK版本的<code>String</code>则以<code>byte[]</code>存储：如果<code>String</code>仅包含ASCII字符，则每个<code>byte</code>存储一个字符，否则，每两个<code>byte</code>存储一个字符，这样做的目的是为了节省内存，因为大量的长度较短的<code>String</code>通常仅包含ASCII字符：</p>
