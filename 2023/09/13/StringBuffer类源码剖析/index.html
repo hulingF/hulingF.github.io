@@ -6,17 +6,26 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://hulingF.github.io">
-  <title>Archives | 大军的秘密花园</title>
+  <title>StringBuffer类源码剖析 | 大军的秘密花园</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="计算机学子的求学&#x2F;求职小圈子">
-<meta property="og:type" content="website">
-<meta property="og:title" content="大军的秘密花园">
-<meta property="og:url" content="https://hulingf.github.io/archives/page/2/index.html">
+  <meta name="description" content="StringBuffer类源码剖析一、StringBuffer类的简介StringBuffer是线程安全、可变的字符序列。StringBuffer类似于String，但可以被修改。在任何时间点，它都包含一些特定的字符序列，但序列的长度和内容可以通过某些方法调用来更改。StringBuffer可由多个线程安全使用，必要时同步(synchronized)这些方法，以便任何StringBuffer实例上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="StringBuffer类源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
-<meta property="og:description" content="计算机学子的求学&#x2F;求职小圈子">
+<meta property="og:description" content="StringBuffer类源码剖析一、StringBuffer类的简介StringBuffer是线程安全、可变的字符序列。StringBuffer类似于String，但可以被修改。在任何时间点，它都包含一些特定的字符序列，但序列的长度和内容可以通过某些方法调用来更改。StringBuffer可由多个线程安全使用，必要时同步(synchronized)这些方法，以便任何StringBuffer实例上">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913152857119.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153134690.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153215277.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153239043.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153258980.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153525634.png">
+<meta property="article:published_time" content="2023-09-13T07:28:55.267Z">
+<meta property="article:modified_time" content="2023-09-13T07:53:42.059Z">
 <meta property="article:author" content="hulingF">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913152857119.png">
   
   
     <link rel="icon" href="/favicon.png">
@@ -149,295 +158,203 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-StringBuffer类源码剖析" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      StringBuffer类源码剖析
+    </h1>
+  
+
+        
+        <a href="/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2023-09-13T07:28:55.267Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-09-13</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="StringBuffer类源码剖析"><a href="#StringBuffer类源码剖析" class="headerlink" title="StringBuffer类源码剖析"></a>StringBuffer类源码剖析</h1><h2 id="一、StringBuffer类的简介"><a href="#一、StringBuffer类的简介" class="headerlink" title="一、StringBuffer类的简介"></a>一、StringBuffer类的简介</h2><p><code>StringBuffer</code>是<code>线程安全</code>、<code>可变</code>的字符序列。StringBuffer类似于String，但可以被修改。在任何时间点，它都包含一些特定的字符序列，但序列的长度和内容可以通过某些方法调用来更改。StringBuffer可由多个线程安全使用，必要时同步(<code>synchronized</code>)这些方法，以便<code>任何StringBuffer实例</code>上的所有操作都表现得好像它们以某种<code>串行顺序</code>发生，这与所涉及的每个线程进行的方法调用的顺序一致。</p>
+<blockquote>
+<p>注意：每当发生涉及源序列的操作（例如从源序列append或insert）时，此类仅在执行操作的字符串缓冲区上同步，而不在源上同步。请注意，虽然StringBuffer设计为可以安全地从多个线程并发使用，但如果构造函数或追加或插入操作传递了跨线程共享的源序列，则调用代码必须确保操作在操作期间具有一致且不变的源序列视图。这可以通过<code>在操作调用期间保持锁</code>、<code>使用不可变的源序列</code>或<code>不跨线程共享源序列</code>来满足。</p>
+</blockquote>
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913152857119.png" alt="image-20230913152857119"></p>
+<h2 id="二、StringBuffer类的构造方法"><a href="#二、StringBuffer类的构造方法" class="headerlink" title="二、StringBuffer类的构造方法"></a>二、StringBuffer类的构造方法</h2><p>StringBuffer类的构造方法与StringBuilder类的构造方法如出一辙，就不过多解释了。</p>
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153134690.png" alt="image-20230913153134690"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(<span class="number">16</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153215277.png" alt="image-20230913153215277"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">(<span class="type">int</span> capacity)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(capacity);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153239043.png" alt="image-20230913153239043"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">(String str)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(str.length() + <span class="number">16</span>);</span><br><span class="line">        append(str);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153258980.png" alt="image-20230913153258980"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">(CharSequence seq)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>(seq.length() + <span class="number">16</span>);</span><br><span class="line">        append(seq);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、StringBuffer类的方法"><a href="#三、StringBuffer类的方法" class="headerlink" title="三、StringBuffer类的方法"></a>三、StringBuffer类的方法</h2><p>与构造函数类似，StringBuffer的所有方法基本都是通过调用父类的相应方法实现的，多出的仅仅是 <code>synchrinized</code>修饰符，重点功能实现在于父类<code>AbstractStringBuilder</code>，参考之前的<a href="https://hulingf.github.io/2023/09/09/AbstractStringBuilder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><strong>AbstractStringBuilder类源码剖析</strong></a>。不过需要注意一点，StringBuffer类引入了一个新字段<code>toStringCache</code>，顾名思义该字段就是<code>toString</code>方法的缓存，一旦StringBuffer被修改了，该字段也就失效了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A cache of the last value returned by toString. Cleared</span></span><br><span class="line"><span class="comment"> * whenever the StringBuffer is modified.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> String toStringCache;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153525634.png" alt="image-20230913153525634"></p>
+<h2 id="四、StringBuffer类的toString方法"><a href="#四、StringBuffer类的toString方法" class="headerlink" title="四、StringBuffer类的toString方法"></a>四、StringBuffer类的toString方法</h2><p><code>toString</code>方法会检查上一次调用<code>toString</code>的缓存字段是否失效，如果已经失效则重新创建一个字符串（<code>深拷贝</code>），并且<code>toStringCache</code>字段指向该字符串；否则直接返回<code>toStringCache</code>的一个副本(<code>浅拷贝</code>)。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (toStringCache == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="type">return</span> <span class="variable">toStringCache</span> <span class="operator">=</span></span><br><span class="line">                    isLatin1() ? StringLatin1.newString(value, <span class="number">0</span>, count)</span><br><span class="line">                               : StringUTF16.newString(value, <span class="number">0</span>, count);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">String</span>(toStringCache);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>之所以说<code>深拷贝</code>还是<code>浅拷贝</code>是有依据的，前者会拷贝底层的字节数组，后者只是引用的指向！</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// StringLatin1.newString，深拷贝</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title function_">newString</span><span class="params">(<span class="type">byte</span>[] val, <span class="type">int</span> index, <span class="type">int</span> len)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">String</span>(Arrays.copyOfRange(val, index, index + len),</span><br><span class="line">                          LATIN1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="type">byte</span>[] copyOfRange(<span class="type">byte</span>[] original, <span class="type">int</span> from, <span class="type">int</span> to) &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">newLength</span> <span class="operator">=</span> to - from;</span><br><span class="line">        <span class="keyword">if</span> (newLength &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(from + <span class="string">&quot; &gt; &quot;</span> + to);</span><br><span class="line">        <span class="type">byte</span>[] copy = <span class="keyword">new</span> <span class="title class_">byte</span>[newLength];</span><br><span class="line">        System.arraycopy(original, from, copy, <span class="number">0</span>,</span><br><span class="line">                         Math.min(original.length - from, newLength));</span><br><span class="line">        <span class="keyword">return</span> copy;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">arraycopy</span><span class="params">(Object src,  <span class="type">int</span>  srcPos,</span></span><br><span class="line"><span class="params">                                        Object dest, <span class="type">int</span> destPos,</span></span><br><span class="line"><span class="params">                                        <span class="type">int</span> length)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// String的构造方法，浅拷贝</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">String</span><span class="params">(String original)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.value = original.value;</span><br><span class="line">        <span class="built_in">this</span>.coder = original.coder;</span><br><span class="line">        <span class="built_in">this</span>.hash = original.hash;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、StringBuffer类的序列化-x2F-反序列化"><a href="#五、StringBuffer类的序列化-x2F-反序列化" class="headerlink" title="五、StringBuffer类的序列化&#x2F;反序列化"></a>五、StringBuffer类的序列化&#x2F;反序列化</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">writeObject</span><span class="params">(java.io.ObjectOutputStream s)</span></span><br><span class="line">        <span class="keyword">throws</span> java.io.IOException &#123;</span><br><span class="line">        java.io.ObjectOutputStream.<span class="type">PutField</span> <span class="variable">fields</span> <span class="operator">=</span> s.putFields();</span><br><span class="line">        <span class="type">char</span>[] val = <span class="keyword">new</span> <span class="title class_">char</span>[capacity()];</span><br><span class="line">        <span class="keyword">if</span> (isLatin1()) &#123;</span><br><span class="line">            StringLatin1.getChars(value, <span class="number">0</span>, count, val, <span class="number">0</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            StringUTF16.getChars(value, <span class="number">0</span>, count, val, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        fields.put(<span class="string">&quot;value&quot;</span>, val);</span><br><span class="line">        fields.put(<span class="string">&quot;count&quot;</span>, count);</span><br><span class="line">        fields.put(<span class="string">&quot;shared&quot;</span>, <span class="literal">false</span>);</span><br><span class="line">        s.writeFields();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">readObject</span><span class="params">(java.io.ObjectInputStream s)</span></span><br><span class="line">        <span class="keyword">throws</span> java.io.IOException, ClassNotFoundException &#123;</span><br><span class="line">        java.io.ObjectInputStream.<span class="type">GetField</span> <span class="variable">fields</span> <span class="operator">=</span> s.readFields();</span><br><span class="line">        <span class="type">char</span>[] val = (<span class="type">char</span>[])fields.get(<span class="string">&quot;value&quot;</span>, <span class="literal">null</span>);</span><br><span class="line">        initBytes(val, <span class="number">0</span>, val.length);</span><br><span class="line">        count = fields.get(<span class="string">&quot;count&quot;</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果-祝你好运<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    <div class="reward-box-item">
+                      <img class="reward-img" src="/assets/img/alipay.jpg">
+                      <span class="reward-type">支付宝</span>
+                    </div>
+                    
+                    
+                    <div class="reward-box-item">
+                      <img class="reward-img" src="/assets/img/weixin.jpg">
+                      <span class="reward-type">微信</span>
+                    </div>
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2023" class="archive-year">2023</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/08/04/Java%E5%9F%BA%E7%A1%80(%E4%B8%89)/" class="archive-article-date">
-  	<time datetime="2023-08-04T02:14:16.973Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-08-04</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/08/04/Java%E5%9F%BA%E7%A1%80(%E4%B8%89)/">Java基础-面向对象</a>
-    </h1>
-  
+      
 
-        <div class="article-info info-on-right">
-          
-          
+      
 
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/08/02/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/" class="archive-article-date">
-  	<time datetime="2023-08-02T11:15:00.927Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-08-02</time>
-</a>
+<nav id="article-nav">
+  
+    <a href="/2023/09/14/Boolean%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          Boolean类源码剖析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2023/09/13/StringBuilder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">StringBuilder类源码剖析</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/08/02/Java%E5%9F%BA%E7%A1%80(%E4%BA%8C)/">Java基础-实用类</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/08/02/Java%E5%9F%BA%E7%A1%80(%E4%B8%80)/" class="archive-article-date">
-  	<time datetime="2023-08-02T07:16:40.388Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-08-02</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/08/02/Java%E5%9F%BA%E7%A1%80(%E4%B8%80)/">Java基础-入门</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/07/31/eBPF%E7%A8%8B%E5%BA%8F%E5%88%9D%E4%BD%BF%E7%94%A8%E4%BD%93%E9%AA%8C/" class="archive-article-date">
-  	<time datetime="2023-07-31T12:12:10.442Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-07-31</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/07/31/eBPF%E7%A8%8B%E5%BA%8F%E5%88%9D%E4%BD%BF%E7%94%A8%E4%BD%93%E9%AA%8C/">eBPF程序初使用体验</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/07/18/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/" class="archive-article-date">
-  	<time datetime="2023-07-18T14:30:27.614Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-07-18</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/07/18/Linux%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9A%84%E6%98%93%E9%94%99%E7%82%B9/">Linux内存管理的易错点</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/07/18/Linux%E7%9A%84ELF%E6%96%87%E4%BB%B6%E8%A3%85%E8%BD%BD%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80/" class="archive-article-date">
-  	<time datetime="2023-07-18T14:30:27.611Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-07-18</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/07/18/Linux%E7%9A%84ELF%E6%96%87%E4%BB%B6%E8%A3%85%E8%BD%BD%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80/">Linux的ELF文件装载内存布局</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/06/14/%E6%96%87%E7%AB%A0%E8%BF%81%E7%A7%BB/" class="archive-article-date">
-  	<time datetime="2023-06-14T13:59:21.965Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-06-14</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/06/14/%E6%96%87%E7%AB%A0%E8%BF%81%E7%A7%BB/">文章迁移注意事项</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/06/14/Git%E5%8E%9F%E7%90%86%E5%AE%9E%E8%B7%B5/" class="archive-article-date">
-  	<time datetime="2023-06-14T12:57:02.042Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-06-14</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/06/14/Git%E5%8E%9F%E7%90%86%E5%AE%9E%E8%B7%B5/">Git原理实践</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/05/29/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" class="archive-article-date">
-  	<time datetime="2023-05-29T14:38:55.257Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-05-29</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/05/29/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2023/05/29/hello-world/" class="archive-article-date">
-  	<time datetime="2023-05-29T13:50:45.266Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-05-29</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2023/05/29/hello-world/">Hello World</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
-
-    
-    <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/archives/">&amp;laquo; Prev</a><a class="page-number" href="/archives/">1</a><span class="page-number current">2</span>
-    </nav>
   
 
 
@@ -463,8 +380,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
