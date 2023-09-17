@@ -60,7 +60,7 @@
 			</ul>
 		</nav>
 		<nav>
-			总文章数 20
+			总文章数 21
 		</nav>
 		<nav class="header-smart-menu">
     		
@@ -150,6 +150,720 @@
           </div>
           <div id="js-content" class="content-ll">
             
+  
+    <article id="post-Java基础(四)" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2023/08/04/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/">Java基础-集合</a>
+    </h1>
+  
+
+        
+        <a href="/2023/08/04/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/" class="archive-article-date">
+  	<time datetime="2023-08-04T05:19:02.525Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-08-04</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="Java基础-集合"><a href="#Java基础-集合" class="headerlink" title="Java基础-集合"></a>Java基础-集合</h1><h2 id="1-Java-数据结构"><a href="#1-Java-数据结构" class="headerlink" title="1.Java 数据结构"></a>1.Java 数据结构</h2><table>
+<thead>
+<tr>
+<th align="left">序号</th>
+<th align="left">类描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left">Vector 该类和ArrayList非常相似，但是该类是同步的，可以用在多线程的情况，该类允许设置默认的增长长度，默认扩容方式为原来的2倍。</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left">Stack 是Vector的一个子类，它实现了一个标准的后进先出的栈。</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left">Dictionary 类是一个抽象类，用来存储键&#x2F;值对，作用和Map类相似。</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left">Hashtable 是 Dictionary(字典) 类的子类，位于 java.util 包中。</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left">Properties 继承于 Hashtable，表示一个持久的属性集，属性列表中每个键及其对应值都是一个字符串。</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td align="left">BitSet 类创建一种特殊类型的数组来保存位值。BitSet中数组大小会随需要增加。</td>
+</tr>
+</tbody></table>
+<p>以上这些类是传统遗留的，在 Java2 中引入了一种新的框架-集合框架(Collection)，我们后面再讨论。</p>
+<h3 id="枚举（Enumeration）"><a href="#枚举（Enumeration）" class="headerlink" title="枚举（Enumeration）"></a>枚举（Enumeration）</h3><p>枚举（Enumeration）接口虽然它本身不属于数据结构,但它在其他数据结构的范畴里应用很广。 枚举（The Enumeration）接口定义了一种从数据结构中取回连续元素的方式。</p>
+<p>Enumeration 接口中定义了一些方法，通过这些方法可以枚举（一次获得一个）对象集合中的元素。</p>
+<p>这种传统接口已被<code>迭代器</code>取代，虽然 Enumeration 还未被遗弃，但在现代代码中已经被很少使用了。尽管如此，它还是使用在诸如 Vector 和 Properties 这些传统类所定义的方法中，除此之外，还用在一些 API 类，并且在应用程序中也广泛被使用。 下表总结了一些 Enumeration 声明的方法：</p>
+<table>
+<thead>
+<tr>
+<th align="left"><strong>序号</strong></th>
+<th align="center"><strong>方法描述</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="center"><strong>boolean hasMoreElements( )</strong>  测试此枚举是否包含更多的元素。</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="center"><strong>Object nextElement( )</strong> 如果此枚举对象至少还有一个可提供的元素，则返回此枚举的下一个元素。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.Vector;</span><br><span class="line"><span class="keyword">import</span> java.util.Enumeration;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EnumerationTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String args[])</span> &#123;</span><br><span class="line">        Enumeration&lt;String&gt; days;</span><br><span class="line">        Vector&lt;String&gt; dayNames = <span class="keyword">new</span> <span class="title class_">Vector</span>&lt;String&gt;();</span><br><span class="line">        dayNames.add(<span class="string">&quot;Sunday&quot;</span>);</span><br><span class="line">        dayNames.add(<span class="string">&quot;Monday&quot;</span>);</span><br><span class="line">        dayNames.add(<span class="string">&quot;Tuesday&quot;</span>);</span><br><span class="line">        dayNames.add(<span class="string">&quot;Wednesday&quot;</span>);</span><br><span class="line">        dayNames.add(<span class="string">&quot;Thursday&quot;</span>);</span><br><span class="line">        dayNames.add(<span class="string">&quot;Friday&quot;</span>);</span><br><span class="line">        dayNames.add(<span class="string">&quot;Saturday&quot;</span>);</span><br><span class="line">        days = dayNames.elements();</span><br><span class="line">        <span class="keyword">while</span> (days.hasMoreElements())&#123;</span><br><span class="line">            System.out.println(days.nextElement());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804145227483.png" alt="image-20230804145227483"></p>
+<h3 id="位集合（BitSet）"><a href="#位集合（BitSet）" class="headerlink" title="位集合（BitSet）"></a>位集合（BitSet）</h3><p>位集合类实现了一组可以单独设置和清除的位或标志。该类在处理一组布尔值的时候非常有用，你只需要给每个值赋值一”位”，然后对位进行适当的设置或清除，就可以对布尔值进行操作了。</p>
+<p>一个Bitset类创建一种特殊类型的数组来保存位值。BitSet中数组大小会随需要增加。这和位向量（vector of bits）比较类似。这是一个传统的类，但它在Java 2中被完全重新设计。</p>
+<table>
+<thead>
+<tr>
+<th align="left">序号</th>
+<th align="left">方法描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left">void and(BitSet set) 对此目标位 set 和参数位 set 执行逻辑与操作。</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left">void andNot(BitSet set) 清除此 BitSet 中所有的位，其相应的位在指定的 BitSet 中已设置。</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left">int cardinality( ) 返回此 BitSet 中设置为 true 的位数。</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left">void clear( ) 将此 BitSet 中的所有位设置为 false。</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left">void clear(int index) 将索引指定处的位设置为 false。</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td align="left">void clear(int startIndex, int endIndex) 将指定的 startIndex（包括）到指定的 toIndex（不包括）范围内的位设置为 false。</td>
+</tr>
+<tr>
+<td align="left">7</td>
+<td align="left">Object clone( ) 复制此 BitSet，生成一个与之相等的新 BitSet。</td>
+</tr>
+<tr>
+<td align="left">8</td>
+<td align="left">boolean equals(Object bitSet) 将此对象与指定的对象进行比较。</td>
+</tr>
+<tr>
+<td align="left">9</td>
+<td align="left">void flip(int index) 将指定索引处的位设置为其当前值的补码。</td>
+</tr>
+<tr>
+<td align="left">10</td>
+<td align="left">void flip(int startIndex, int endIndex) 将指定的 fromIndex（包括）到指定的 toIndex（不包括）范围内的每个位设置为其当前值的补码。</td>
+</tr>
+<tr>
+<td align="left">11</td>
+<td align="left">boolean get(int index) 返回指定索引处的位值。</td>
+</tr>
+<tr>
+<td align="left">12</td>
+<td align="left">BitSet get(int startIndex, int endIndex) 返回一个新的 BitSet，它由此 BitSet 中从 fromIndex（包括）到 toIndex（不包括）范围内的位组成。</td>
+</tr>
+<tr>
+<td align="left">13</td>
+<td align="left">int hashCode( ) 返回此位 set 的哈希码值。</td>
+</tr>
+<tr>
+<td align="left">14</td>
+<td align="left">boolean intersects(BitSet bitSet) 如果指定的 BitSet 中有设置为 true 的位，并且在此 BitSet 中也将其设置为 true，则返回 true。</td>
+</tr>
+<tr>
+<td align="left">15</td>
+<td align="left">boolean isEmpty( ) 如果此 BitSet 中没有包含任何设置为 true 的位，则返回 true。</td>
+</tr>
+<tr>
+<td align="left">16</td>
+<td align="left">int length( ) 返回此 BitSet 的”逻辑大小”：BitSet 中最高设置位的索引加 1。</td>
+</tr>
+<tr>
+<td align="left">17</td>
+<td align="left">int nextClearBit(int startIndex) 返回第一个设置为 false 的位的索引，这发生在指定的起始索引或之后的索引上。</td>
+</tr>
+<tr>
+<td align="left">18</td>
+<td align="left">int nextSetBit(int startIndex) 返回第一个设置为 true 的位的索引，这发生在指定的起始索引或之后的索引上。</td>
+</tr>
+<tr>
+<td align="left">19</td>
+<td align="left">void or(BitSet bitSet) 对此位 set 和位 set 参数执行逻辑或操作。</td>
+</tr>
+<tr>
+<td align="left">20</td>
+<td align="left">void set(int index) 将指定索引处的位设置为 true。</td>
+</tr>
+<tr>
+<td align="left">21</td>
+<td align="left">void set(int index, boolean v)  将指定索引处的位设置为指定的值。</td>
+</tr>
+<tr>
+<td align="left">22</td>
+<td align="left">void set(int startIndex, int endIndex) 将指定的 fromIndex（包括）到指定的 toIndex（不包括）范围内的位设置为 true。</td>
+</tr>
+<tr>
+<td align="left">23</td>
+<td align="left">void set(int startIndex, int endIndex, boolean v) 将指定的 fromIndex（包括）到指定的 toIndex（不包括）范围内的位设置为指定的值。</td>
+</tr>
+<tr>
+<td align="left">24</td>
+<td align="left">int size( ) 返回此 BitSet 表示位值时实际使用空间的位数。</td>
+</tr>
+<tr>
+<td align="left">25</td>
+<td align="left">String toString( ) 返回此位 set 的字符串表示形式。</td>
+</tr>
+<tr>
+<td align="left">26</td>
+<td align="left">void xor(BitSet bitSet) 对此位 set 和位 set 参数执行逻辑异或操作。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.BitSet;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BitSetTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String args[])</span> &#123;</span><br><span class="line">        <span class="type">BitSet</span> <span class="variable">bits1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BitSet</span>(<span class="number">16</span>);</span><br><span class="line">        <span class="type">BitSet</span> <span class="variable">bits2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BitSet</span>(<span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// set some bits</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="type">int</span> i=<span class="number">0</span>; i&lt;<span class="number">16</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>((i%<span class="number">2</span>) == <span class="number">0</span>) bits1.set(i);</span><br><span class="line">            <span class="keyword">if</span>((i%<span class="number">5</span>) != <span class="number">0</span>) bits2.set(i);</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(<span class="string">&quot;Initial pattern in bits1: &quot;</span>);</span><br><span class="line">        System.out.println(bits1);</span><br><span class="line">        System.out.println(<span class="string">&quot;\nInitial pattern in bits2: &quot;</span>);</span><br><span class="line">        System.out.println(bits2);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// AND bits</span></span><br><span class="line">        bits2.and(bits1);</span><br><span class="line">        System.out.println(<span class="string">&quot;\nbits2 AND bits1: &quot;</span>);</span><br><span class="line">        System.out.println(bits2);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// OR bits</span></span><br><span class="line">        bits2.or(bits1);</span><br><span class="line">        System.out.println(<span class="string">&quot;\nbits2 OR bits1: &quot;</span>);</span><br><span class="line">        System.out.println(bits2);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// XOR bits</span></span><br><span class="line">        bits2.xor(bits1);</span><br><span class="line">        System.out.println(<span class="string">&quot;\nbits2 XOR bits1: &quot;</span>);</span><br><span class="line">        System.out.println(bits2);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804145614093.png" alt="image-20230804145614093"></p>
+<h3 id="向量（Vector）"><a href="#向量（Vector）" class="headerlink" title="向量（Vector）"></a>向量（Vector）</h3><p>向量（Vector）类和传统数组非常相似，但是 Vector 的大小能根据需要动态的变化。Vector 类实现了一个动态数组。和 ArrayList 很相似，但是两者是不同的：</p>
+<ul>
+<li>Vector 是同步访问的。</li>
+<li>Vector 包含了许多传统的方法，这些方法不属于集合框架。</li>
+</ul>
+<p>Vector 主要用在事先不知道数组的大小，或者只是需要一个可以改变大小的数组的情况。</p>
+<table>
+<thead>
+<tr>
+<th align="left">序号</th>
+<th align="left">方法描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left">void add(int index, Object element)   在此向量的指定位置插入指定的元素。</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left">boolean add(Object o)   将指定元素添加到此向量的末尾。</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left">boolean addAll(Collection c)  将指定 Collection 中的所有元素添加到此向量的末尾，按照指定 collection 的迭代器所返回的顺序添加这些元素。</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left">boolean addAll(int index, Collection c)  在指定位置将指定 Collection 中的所有元素插入到此向量中。</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left">void addElement(Object obj)   将指定的组件添加到此向量的末尾，将其大小增加 1。</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td align="left">int capacity()  返回此向量的当前容量。</td>
+</tr>
+<tr>
+<td align="left">7</td>
+<td align="left">void clear()  从此向量中移除所有元素。</td>
+</tr>
+<tr>
+<td align="left">8</td>
+<td align="left">Object clone()  返回向量的一个副本。</td>
+</tr>
+<tr>
+<td align="left">9</td>
+<td align="left">boolean contains(Object elem)  如果此向量包含指定的元素，则返回 true。</td>
+</tr>
+<tr>
+<td align="left">10</td>
+<td align="left">boolean containsAll(Collection c)  如果此向量包含指定 Collection 中的所有元素，则返回 true。</td>
+</tr>
+<tr>
+<td align="left">11</td>
+<td align="left">void copyInto(Object[] anArray)   将此向量的组件复制到指定的数组中。</td>
+</tr>
+<tr>
+<td align="left">12</td>
+<td align="left">Object elementAt(int index)  返回指定索引处的组件。</td>
+</tr>
+<tr>
+<td align="left">13</td>
+<td align="left">Enumeration elements()  返回此向量的组件的枚举。</td>
+</tr>
+<tr>
+<td align="left">14</td>
+<td align="left">void ensureCapacity(int minCapacity)  增加此向量的容量（如有必要），以确保其至少能够保存最小容量参数指定的组件数。</td>
+</tr>
+<tr>
+<td align="left">15</td>
+<td align="left">boolean equals(Object o)  比较指定对象与此向量的相等性。</td>
+</tr>
+<tr>
+<td align="left">16</td>
+<td align="left">Object firstElement()  返回此向量的第一个组件（位于索引 0) 处的项）。</td>
+</tr>
+<tr>
+<td align="left">17</td>
+<td align="left">Object get(int index)  返回向量中指定位置的元素。</td>
+</tr>
+<tr>
+<td align="left">18</td>
+<td align="left">int hashCode()  返回此向量的哈希码值。</td>
+</tr>
+<tr>
+<td align="left">19</td>
+<td align="left">int indexOf(Object elem)   返回此向量中第一次出现的指定元素的索引，如果此向量不包含该元素，则返回 -1。</td>
+</tr>
+<tr>
+<td align="left">20</td>
+<td align="left">int indexOf(Object elem, int index)   返回此向量中第一次出现的指定元素的索引，从 index 处正向搜索，如果未找到该元素，则返回 -1。</td>
+</tr>
+<tr>
+<td align="left">21</td>
+<td align="left">void insertElementAt(Object obj, int index)  将指定对象作为此向量中的组件插入到指定的 index 处。</td>
+</tr>
+<tr>
+<td align="left">22</td>
+<td align="left">boolean isEmpty()  测试此向量是否不包含组件。</td>
+</tr>
+<tr>
+<td align="left">23</td>
+<td align="left">Object lastElement()  返回此向量的最后一个组件。</td>
+</tr>
+<tr>
+<td align="left">24</td>
+<td align="left">int lastIndexOf(Object elem)   返回此向量中最后一次出现的指定元素的索引；如果此向量不包含该元素，则返回 -1。</td>
+</tr>
+<tr>
+<td align="left">25</td>
+<td align="left">int lastIndexOf(Object elem, int index)  返回此向量中最后一次出现的指定元素的索引，从 index 处逆向搜索，如果未找到该元素，则返回 -1。</td>
+</tr>
+<tr>
+<td align="left">26</td>
+<td align="left">Object remove(int index)   移除此向量中指定位置的元素。</td>
+</tr>
+<tr>
+<td align="left">27</td>
+<td align="left">boolean remove(Object o)  移除此向量中指定元素的第一个匹配项，如果向量不包含该元素，则元素保持不变。</td>
+</tr>
+<tr>
+<td align="left">28</td>
+<td align="left">boolean removeAll(Collection c)  从此向量中移除包含在指定 Collection 中的所有元素。</td>
+</tr>
+<tr>
+<td align="left">29</td>
+<td align="left">void removeAllElements()  从此向量中移除全部组件，并将其大小设置为零。</td>
+</tr>
+<tr>
+<td align="left">30</td>
+<td align="left">boolean removeElement(Object obj)  从此向量中移除变量的第一个（索引最小的）匹配项。</td>
+</tr>
+<tr>
+<td align="left">31</td>
+<td align="left">void removeElementAt(int index)  删除指定索引处的组件。</td>
+</tr>
+<tr>
+<td align="left">32</td>
+<td align="left">protected void removeRange(int fromIndex, int toIndex) 从此 List 中移除其索引位于 fromIndex（包括）与 toIndex（不包括）之间的所有元素。</td>
+</tr>
+<tr>
+<td align="left">33</td>
+<td align="left">boolean retainAll(Collection c)  在此向量中仅保留包含在指定 Collection 中的元素。</td>
+</tr>
+<tr>
+<td align="left">34</td>
+<td align="left">Object set(int index, Object element)  用指定的元素替换此向量中指定位置处的元素。</td>
+</tr>
+<tr>
+<td align="left">35</td>
+<td align="left">void setElementAt(Object obj, int index)  将此向量指定 index 处的组件设置为指定的对象。</td>
+</tr>
+<tr>
+<td align="left">36</td>
+<td align="left">void setSize(int newSize)   设置此向量的大小。</td>
+</tr>
+<tr>
+<td align="left">37</td>
+<td align="left">int size()   返回此向量中的组件数。</td>
+</tr>
+<tr>
+<td align="left">38</td>
+<td align="left">List subList(int fromIndex, int toIndex)  返回此 List 的部分视图，元素范围为从 fromIndex（包括）到 toIndex（不包括）。</td>
+</tr>
+<tr>
+<td align="left">39</td>
+<td align="left">Object[] toArray()  返回一个数组，包含此向量中以恰当顺序存放的所有元素。</td>
+</tr>
+<tr>
+<td align="left">40</td>
+<td align="left">Object[] toArray(Object[] a)  返回一个数组，包含此向量中以恰当顺序存放的所有元素；返回数组的运行时类型为指定数组的类型。</td>
+</tr>
+<tr>
+<td align="left">41</td>
+<td align="left">String toString()  返回此向量的字符串表示形式，其中包含每个元素的 String 表示形式。</td>
+</tr>
+<tr>
+<td align="left">42</td>
+<td align="left">void trimToSize()   对此向量的容量进行微调，使其等于向量的当前大小。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">VectorTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String args[])</span> &#123;</span><br><span class="line">        <span class="comment">// initial size is 3, increment is 2</span></span><br><span class="line">        <span class="type">Vector</span> <span class="variable">v</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Vector</span>(<span class="number">3</span>, <span class="number">2</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;Initial size: &quot;</span> + v.size());</span><br><span class="line">        System.out.println(<span class="string">&quot;Initial capacity: &quot;</span> +</span><br><span class="line">                v.capacity());</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">1</span>));</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">2</span>));</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">3</span>));</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">4</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;Capacity after four additions: &quot;</span> +</span><br><span class="line">                v.capacity());</span><br><span class="line"></span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Double</span>(<span class="number">5.45</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;Current capacity: &quot;</span> +</span><br><span class="line">                v.capacity());</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Double</span>(<span class="number">6.08</span>));</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">7</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;Current capacity: &quot;</span> +</span><br><span class="line">                v.capacity());</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Float</span>(<span class="number">9.4</span>));</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">10</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;Current capacity: &quot;</span> +</span><br><span class="line">                v.capacity());</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">11</span>));</span><br><span class="line">        v.addElement(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">12</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;First element: &quot;</span> +</span><br><span class="line">                (Integer)v.firstElement());</span><br><span class="line">        System.out.println(<span class="string">&quot;Last element: &quot;</span> +</span><br><span class="line">                (Integer)v.lastElement());</span><br><span class="line">        <span class="keyword">if</span>(v.contains(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">3</span>)))</span><br><span class="line">            System.out.println(<span class="string">&quot;Vector contains 3.&quot;</span>);</span><br><span class="line">        <span class="comment">// enumerate the elements in the vector.</span></span><br><span class="line">        <span class="type">Enumeration</span> <span class="variable">vEnum</span> <span class="operator">=</span> v.elements();</span><br><span class="line">        System.out.println(<span class="string">&quot;\nElements in vector:&quot;</span>);</span><br><span class="line">        <span class="keyword">while</span>(vEnum.hasMoreElements())</span><br><span class="line">            System.out.print(vEnum.nextElement() + <span class="string">&quot; &quot;</span>);</span><br><span class="line">        System.out.println();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804145950441.png" alt="image-20230804145950441"></p>
+<h3 id="栈（Stack）"><a href="#栈（Stack）" class="headerlink" title="栈（Stack）"></a>栈（Stack）</h3><p>栈是 Vector 的一个子类，它实现了一个标准的后进先出的栈。</p>
+<p>栈只定义了默认构造函数，用来创建一个空栈。 栈除了包括由 Vector 定义的所有方法，也定义了自己的一些方法。</p>
+<table>
+<thead>
+<tr>
+<th align="left">序号</th>
+<th align="left">方法描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left">boolean empty()  测试堆栈是否为空。</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left">Object peek( ) 查看堆栈顶部的对象，但不从堆栈中移除它。</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left">Object pop( ) 移除堆栈顶部的对象，并作为此函数的值返回该对象。</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left">Object push(Object element) 把项压入堆栈顶部。</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left">int search(Object element) 返回对象在堆栈中的位置，以 1 为基数。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StackTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">showpush</span><span class="params">(Stack&lt;Integer&gt; st, <span class="type">int</span> a)</span> &#123;</span><br><span class="line">        st.push(<span class="keyword">new</span> <span class="title class_">Integer</span>(a));</span><br><span class="line">        System.out.println(<span class="string">&quot;push(&quot;</span> + a + <span class="string">&quot;)&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;stack: &quot;</span> + st);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">showpop</span><span class="params">(Stack&lt;Integer&gt; st)</span> &#123;</span><br><span class="line">        System.out.print(<span class="string">&quot;pop -&gt; &quot;</span>);</span><br><span class="line">        <span class="type">Integer</span> <span class="variable">a</span> <span class="operator">=</span> (Integer) st.pop();</span><br><span class="line">        System.out.println(a);</span><br><span class="line">        System.out.println(<span class="string">&quot;stack: &quot;</span> + st);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String args[])</span> &#123;</span><br><span class="line">        Stack&lt;Integer&gt; st = <span class="keyword">new</span> <span class="title class_">Stack</span>&lt;Integer&gt;();</span><br><span class="line">        System.out.println(<span class="string">&quot;stack: &quot;</span> + st);</span><br><span class="line">        showpush(st, <span class="number">42</span>);</span><br><span class="line">        showpush(st, <span class="number">66</span>);</span><br><span class="line">        showpush(st, <span class="number">99</span>);</span><br><span class="line">        showpop(st);</span><br><span class="line">        showpop(st);</span><br><span class="line">        showpop(st);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            showpop(st);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (EmptyStackException e) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;empty stack&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804150210386.png" alt="image-20230804150210386"></p>
+<h3 id="字典（Dictionary）"><a href="#字典（Dictionary）" class="headerlink" title="字典（Dictionary）"></a>字典（Dictionary）</h3><p>字典（Dictionary） 类是一个抽象类，它定义了键映射到值的数据结构。当你想要通过特定的键而不是整数索引来访问数据的时候，这时候应该使用Dictionary。由于 Dictionary 类是抽象类，所以它只提供了键映射到值的数据结构，而没有提供特定的实现。</p>
+<table>
+<thead>
+<tr>
+<th><strong>序号</strong></th>
+<th><strong>方法描述</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>Enumeration elements( )</strong> 返回此 dictionary 中值的枚举。</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Object get(Object key)</strong> 返回此 dictionary 中该键所映射到的值。</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>boolean isEmpty( )</strong> 测试此 dictionary 是否不存在从键到值的映射。</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Enumeration keys( )</strong> 返回此 dictionary 中的键的枚举。</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Object put(Object key, Object value)</strong> 将指定 key 映射到此 dictionary 中指定 value。</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Object remove(Object key)</strong> 从此 dictionary 中移除 key （及其相应的 value）。</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>int size( )</strong> 返回此 dictionary 中条目（不同键）的数量。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Dictionary类已经过时了。在实际开发中，你可以实现Map接口来获取键&#x2F;值的存储功能。</p>
+</blockquote>
+<h3 id="哈希表（Hashtable）"><a href="#哈希表（Hashtable）" class="headerlink" title="哈希表（Hashtable）"></a>哈希表（Hashtable）</h3><p>Hashtable 是原始的 java.util 的一部分， 是一个 Dictionary 具体的实现 。然而，Java2 重构的 Hashtable 实现了 Map 接口，因此，Hashtable 现在集成到了集合框架中。它和 HashMap 类很相似，但是它支持同步。</p>
+<p>像 HashMap一样，Hashtable 在哈希表中存储键&#x2F;值对。当使用一个哈希表，要指定用作键的对象，以及要链接到该键的值。然后，该键经过哈希处理，所得到的散列码被用作存储在该表中值的索引。</p>
+<table>
+<thead>
+<tr>
+<th align="left"><strong>序号</strong></th>
+<th align="left"><strong>方法描述</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left"><strong>void clear( )</strong>  将此哈希表清空，使其不包含任何键。</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left"><strong>Object clone( )</strong> 创建此哈希表的浅表副本。</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left"><strong>boolean contains(Object value)</strong>  测试此映射表中是否存在与指定值关联的键。</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left"><strong>boolean containsKey(Object key)</strong> 测试指定对象是否为此哈希表中的键。</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left"><strong>boolean containsValue(Object value)</strong> 如果此 Hashtable 将一个或多个键映射到此值，则返回 true。</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td align="left"><strong>Enumeration elements( )</strong> 返回此哈希表中的值的枚举。</td>
+</tr>
+<tr>
+<td align="left">7</td>
+<td align="left"><strong>Object get(Object key)</strong>  返回指定键所映射到的值，如果此映射不包含此键的映射，则返回 null. 更确切地讲，如果此映射包含满足 (key.equals(k)) 的从键 k 到值 v 的映射，则此方法返回 v；否则，返回 null。</td>
+</tr>
+<tr>
+<td align="left">8</td>
+<td align="left"><strong>boolean isEmpty( )</strong> 测试此哈希表是否没有键映射到值。</td>
+</tr>
+<tr>
+<td align="left">9</td>
+<td align="left"><strong>Enumeration keys( )</strong>  返回此哈希表中的键的枚举。</td>
+</tr>
+<tr>
+<td align="left">10</td>
+<td align="left"><strong>Object put(Object key, Object value)</strong> 将指定 key 映射到此哈希表中的指定 value。</td>
+</tr>
+<tr>
+<td align="left">11</td>
+<td align="left"><strong>void rehash( )</strong> 增加此哈希表的容量并在内部对其进行重组，以便更有效地容纳和访问其元素。</td>
+</tr>
+<tr>
+<td align="left">12</td>
+<td align="left"><strong>Object remove(Object key)</strong> 从哈希表中移除该键及其相应的值。</td>
+</tr>
+<tr>
+<td align="left">13</td>
+<td align="left"><strong>int size( )</strong>  返回此哈希表中的键的数量。</td>
+</tr>
+<tr>
+<td align="left">14</td>
+<td align="left"><strong>String toString( )</strong> 返回此 Hashtable 对象的字符串表示形式，其形式为 ASCII 字符 “, “ （逗号加空格）分隔开的、括在括号中的一组条目。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HashTableTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String args[])</span> &#123;</span><br><span class="line">        <span class="comment">// Create a hash map</span></span><br><span class="line">        <span class="type">Hashtable</span> <span class="variable">balance</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Hashtable</span>();</span><br><span class="line">        Enumeration names;</span><br><span class="line">        String str;</span><br><span class="line">        <span class="type">double</span> bal;</span><br><span class="line"></span><br><span class="line">        balance.put(<span class="string">&quot;Zara&quot;</span>, <span class="keyword">new</span> <span class="title class_">Double</span>(<span class="number">3434.34</span>));</span><br><span class="line">        balance.put(<span class="string">&quot;Mahnaz&quot;</span>, <span class="keyword">new</span> <span class="title class_">Double</span>(<span class="number">123.22</span>));</span><br><span class="line">        balance.put(<span class="string">&quot;Ayan&quot;</span>, <span class="keyword">new</span> <span class="title class_">Double</span>(<span class="number">1378.00</span>));</span><br><span class="line">        balance.put(<span class="string">&quot;Daisy&quot;</span>, <span class="keyword">new</span> <span class="title class_">Double</span>(<span class="number">99.22</span>));</span><br><span class="line">        balance.put(<span class="string">&quot;Qadir&quot;</span>, <span class="keyword">new</span> <span class="title class_">Double</span>(-<span class="number">19.08</span>));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Show all balances in hash table.</span></span><br><span class="line">        names = balance.keys();</span><br><span class="line">        <span class="keyword">while</span>(names.hasMoreElements()) &#123;</span><br><span class="line">            str = (String) names.nextElement();</span><br><span class="line">            System.out.println(str + <span class="string">&quot;: &quot;</span> +</span><br><span class="line">                    balance.get(str));</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println();</span><br><span class="line">        <span class="comment">// Deposit 1,000 into Zara&#x27;s account</span></span><br><span class="line">        bal = ((Double)balance.get(<span class="string">&quot;Zara&quot;</span>)).doubleValue();</span><br><span class="line">        balance.put(<span class="string">&quot;Zara&quot;</span>, <span class="keyword">new</span> <span class="title class_">Double</span>(bal+<span class="number">1000</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;Zara&#x27;s new balance: &quot;</span> +</span><br><span class="line">                balance.get(<span class="string">&quot;Zara&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804150736258.png" alt="image-20230804150736258"></p>
+<h3 id="属性（Properties）"><a href="#属性（Properties）" class="headerlink" title="属性（Properties）"></a>属性（Properties）</h3><p>Properties 继承于 Hashtable。Properties 类表示了一个持久的属性集，属性列表中每个键及其对应值都是一个字符串。Properties 类被许多 Java 类使用。例如，在获取环境变量时它就作为 System.getProperties() 方法的返回值。</p>
+<p>由于 Properties 继承自 Hashtable 类，因此具有 Hashtable 的所有功能，同时还提供了一些特殊的方法来读取和写入属性文件。Properties 类常用于存储程序的配置信息，例如数据库连接信息、日志输出配置、应用程序设置等。使用 Properties 类，可以将这些信息存储在一个文本文件中，并在程序中读取这些信息。</p>
+<table>
+<thead>
+<tr>
+<th align="left"><strong>序号</strong></th>
+<th align="left"><strong>方法描述</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left"><strong>String getProperty(String key)</strong>  用指定的键在此属性列表中搜索属性。</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left"><strong>String getProperty(String key, String defaultProperty)</strong> 用指定的键在属性列表中搜索属性。</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left"><strong>void list(PrintStream streamOut)</strong>  将属性列表输出到指定的输出流。</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left"><strong>void list(PrintWriter streamOut)</strong> 将属性列表输出到指定的输出流。</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left"><strong>void load(InputStream streamIn) throws IOException</strong>  从输入流中读取属性列表（键和元素对）。</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td align="left"><strong>Enumeration propertyNames( )</strong> 按简单的面向行的格式从输入字符流中读取属性列表（键和元素对）。</td>
+</tr>
+<tr>
+<td align="left">7</td>
+<td align="left"><strong>Object setProperty(String key, String value)</strong>  调用 Hashtable 的方法 put。</td>
+</tr>
+<tr>
+<td align="left">8</td>
+<td align="left"><strong>void store(OutputStream streamOut, String description)</strong>  以适合使用 load(InputStream)方法加载到 Properties 表中的格式，将此 Properties 表中的属性列表（键和元素对）写入输出流。</td>
+</tr>
+</tbody></table>
+<p>Properties 类提供了多种读取和写入属性文件的方法。其中最常用的方法是 load() 和 store() 方法。load() 方法可以从文件中读取属性，而 store() 方法可以将属性写入文件。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"><span class="keyword">import</span> java.util.Properties;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PropertiesTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">Properties</span> <span class="variable">prop</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 读取属性文件</span></span><br><span class="line">            prop.load(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(<span class="string">&quot;D:\\Learning\\JavaLearn\\Java-First\\chapter2\\src\\config.properties&quot;</span>));</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 获取属性值</span></span><br><span class="line">            <span class="type">String</span> <span class="variable">username</span> <span class="operator">=</span> prop.getProperty(<span class="string">&quot;username&quot;</span>);</span><br><span class="line">            <span class="type">String</span> <span class="variable">password</span> <span class="operator">=</span> prop.getProperty(<span class="string">&quot;password&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 输出属性值</span></span><br><span class="line">            System.out.println(<span class="string">&quot;username: &quot;</span> + username);</span><br><span class="line">            System.out.println(<span class="string">&quot;password: &quot;</span> + password);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 修改属性值</span></span><br><span class="line">            prop.setProperty(<span class="string">&quot;username&quot;</span>, <span class="string">&quot;newUsername&quot;</span>);</span><br><span class="line">            prop.setProperty(<span class="string">&quot;password&quot;</span>, <span class="string">&quot;newPassword&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 保存属性到文件</span></span><br><span class="line">            prop.store(<span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(<span class="string">&quot;D:\\Learning\\JavaLearn\\Java-First\\chapter2\\src\\config.properties&quot;</span>), <span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804152649523.png" alt="image-20230804152649523"></p>
+<h2 id="2-Java-集合框架"><a href="#2-Java-集合框架" class="headerlink" title="2.Java 集合框架"></a>2.Java 集合框架</h2><p>早在 Java2 中之前，Java 就提供了特设类。比如：Dictionary, Vector, Stack, 和 Properties 这些类用来存储和操作对象组。虽然这些类都非常有用，但是它们缺少一个核心的，统一的主题。由于这个原因，使用 Vector 类的方式和使用 Properties 类的方式有着很大不同。</p>
+<p>集合框架被设计成要满足以下几个目标。</p>
+<ul>
+<li>该框架必须是高性能的。基本集合（动态数组，链表，树，哈希表）的实现也必须是高效的。</li>
+<li>该框架允许不同类型的集合，以类似的方式工作，具有高度的互操作性。</li>
+<li>对一个集合的扩展和适应必须是简单的。</li>
+</ul>
+<p>为此，整个集合框架就围绕一组标准接口而设计。你可以直接使用这些接口的标准实现，诸如： <strong>LinkedList</strong>, <strong>HashSet</strong>, 和 <strong>TreeSet</strong> 等,除此之外你也可以通过这些接口实现自己的集合。</p>
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/2243690-9cd9c896e0d512ed.gif" alt="img"></p>
+<p>从上面的集合框架图可以看到，Java 集合框架主要包括两种类型的容器，一种是集合（Collection），存储一个元素集合，另一种是图（Map），存储键&#x2F;值对映射。Collection 接口又有 3 种子类型，List、Set 和 Queue，再下面是一些抽象类，最后是具体实现类，常用的有 ArrayList、LinkedList、HashSet、LinkedHashSet、HashMap、LinkedHashMap 等等。</p>
+<p>集合框架是一个用来代表和操纵集合的统一架构。所有的集合框架都包含如下内容：</p>
+<ul>
+<li><strong>接口：</strong>是代表集合的抽象数据类型。例如 Collection、List、Set、Map 等。之所以定义多个接口，是为了以不同的方式操作集合对象</li>
+<li><strong>实现：</strong>是集合接口的具体实现。从本质上讲，它们是可重复使用的数据结构，例如：ArrayList、LinkedList、HashSet、HashMap。</li>
+<li><strong>算法：</strong>是实现集合接口的对象里的方法执行的一些有用的计算，例如：搜索和排序，这些算法实现了多态，那是因为相同的方法可以在相似的接口上有着不同的实现。</li>
+</ul>
+<p>除了集合，该框架也定义了几个 Map 接口和类。Map 里存储的是键&#x2F;值对。尽管 Map 不是集合，但是它们完全整合在集合中。</p>
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/java-coll-2020-11-16.png" alt="img"></p>
+<p>一般遍历数组都是采用for循环或者增强for，这两个方法也可以用在集合框架，但是还有一种方法是采用迭代器遍历集合框架，它是一个对象，实现了Iterator 接口或 ListIterator接口。迭代器，使你能够通过循环来得到或删除集合的元素。ListIterator 继承了 Iterator，以允许双向遍历列表和修改元素。</p>
+<p><strong>遍历 ArrayList</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Test</span>&#123;</span><br><span class="line"> <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">     List&lt;String&gt; list=<span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;();</span><br><span class="line">     list.add(<span class="string">&quot;Hello&quot;</span>);</span><br><span class="line">     list.add(<span class="string">&quot;World&quot;</span>);</span><br><span class="line">     list.add(<span class="string">&quot;HAHAHAHA&quot;</span>);</span><br><span class="line">     <span class="comment">//第一种遍历方法使用 For-Each 遍历 List</span></span><br><span class="line">     <span class="keyword">for</span> (String str : list) &#123;            <span class="comment">//也可以改写 for(int i=0;i&lt;list.size();i++) 这种形式</span></span><br><span class="line">        System.out.println(str);</span><br><span class="line">     &#125;</span><br><span class="line"> </span><br><span class="line">     <span class="comment">//第二种遍历，把链表变为数组相关的内容进行遍历</span></span><br><span class="line">     String[] strArray=<span class="keyword">new</span> <span class="title class_">String</span>[list.size()];</span><br><span class="line">     list.toArray(strArray);</span><br><span class="line">     <span class="keyword">for</span>(<span class="type">int</span> i=<span class="number">0</span>;i&lt;strArray.length;i++) <span class="comment">//这里也可以改写为  for(String str:strArray) 这种形式</span></span><br><span class="line">     &#123;</span><br><span class="line">        System.out.println(strArray[i]);</span><br><span class="line">     &#125;</span><br><span class="line">     </span><br><span class="line">    <span class="comment">//第三种遍历 使用迭代器进行相关遍历</span></span><br><span class="line">     </span><br><span class="line">     Iterator&lt;String&gt; ite=list.iterator();</span><br><span class="line">     <span class="keyword">while</span>(ite.hasNext())<span class="comment">//判断下一个元素之后有值</span></span><br><span class="line">     &#123;</span><br><span class="line">         System.out.println(ite.next());</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>遍历 Map</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Test</span>&#123;</span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">      Map&lt;String, String&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;String, String&gt;();</span><br><span class="line">      map.put(<span class="string">&quot;1&quot;</span>, <span class="string">&quot;value1&quot;</span>);</span><br><span class="line">      map.put(<span class="string">&quot;2&quot;</span>, <span class="string">&quot;value2&quot;</span>);</span><br><span class="line">      map.put(<span class="string">&quot;3&quot;</span>, <span class="string">&quot;value3&quot;</span>);</span><br><span class="line">      </span><br><span class="line">      <span class="comment">//第一种：普遍使用，二次取值</span></span><br><span class="line">      System.out.println(<span class="string">&quot;通过Map.keySet遍历key和value：&quot;</span>);</span><br><span class="line">      <span class="keyword">for</span> (String key : map.keySet()) &#123;</span><br><span class="line">       System.out.println(<span class="string">&quot;key= &quot;</span>+ key + <span class="string">&quot; and value= &quot;</span> + map.get(key));</span><br><span class="line">      &#125;</span><br><span class="line">      </span><br><span class="line">      <span class="comment">//第二种</span></span><br><span class="line">      System.out.println(<span class="string">&quot;通过Map.entrySet使用iterator遍历key和value：&quot;</span>);</span><br><span class="line">      Iterator&lt;Map.Entry&lt;String, String&gt;&gt; it = map.entrySet().iterator();</span><br><span class="line">      <span class="keyword">while</span> (it.hasNext()) &#123;</span><br><span class="line">       Map.Entry&lt;String, String&gt; entry = it.next();</span><br><span class="line">       System.out.println(<span class="string">&quot;key= &quot;</span> + entry.getKey() + <span class="string">&quot; and value= &quot;</span> + entry.getValue());</span><br><span class="line">      &#125;</span><br><span class="line">      </span><br><span class="line">      <span class="comment">//第三种：推荐，尤其是容量大时</span></span><br><span class="line">      System.out.println(<span class="string">&quot;通过Map.entrySet遍历key和value&quot;</span>);</span><br><span class="line">      <span class="keyword">for</span> (Map.Entry&lt;String, String&gt; entry : map.entrySet()) &#123;</span><br><span class="line">       System.out.println(<span class="string">&quot;key= &quot;</span> + entry.getKey() + <span class="string">&quot; and value= &quot;</span> + entry.getValue());</span><br><span class="line">      &#125;</span><br><span class="line">    </span><br><span class="line">      <span class="comment">//第四种</span></span><br><span class="line">      System.out.println(<span class="string">&quot;通过Map.values()遍历所有的value，但不能遍历key&quot;</span>);</span><br><span class="line">      <span class="keyword">for</span> (String v : map.values()) &#123;</span><br><span class="line">       System.out.println(<span class="string">&quot;value= &quot;</span> + v);</span><br><span class="line">      &#125;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-Java-迭代器"><a href="#3-Java-迭代器" class="headerlink" title="3.Java 迭代器"></a>3.Java 迭代器</h2><p>Java迭代器（Iterator）是 Java 集合框架中的一种机制，是一种用于遍历集合（如列表、集合和映射等）的接口。它提供了一种统一的方式来访问集合中的元素，而不需要了解底层集合的具体实现细节。</p>
+<p>Java Iterator（迭代器）不是一个集合，它是一种用于访问集合的方法，可用于迭代 ArrayList 和 HashSet 等集合。Iterator 是 Java 迭代器最简单的实现，ListIterator 是 Collection API 中的接口， 它扩展了 Iterator 接口。</p>
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/ListIterator-Class-Diagram.jpg" alt="img"></p>
+<p>迭代器接口定义了几个方法，最常用的是以下三个：</p>
+<ul>
+<li><strong>next()</strong> - 返回迭代器的下一个元素，并将迭代器的指针移到下一个位置。</li>
+<li><strong>hasNext()</strong> - 用于判断集合中是否还有下一个元素可以访问。</li>
+<li><strong>remove()</strong> - 从集合中删除迭代器最后访问的元素（可选操作）。</li>
+</ul>
+<blockquote>
+<p>注意：使用迭代器遍历集合时，如果在遍历过程中对集合进行了修改（例如添加或删除元素），可能会导致 <code>ConcurrentModificationException</code> 异常，为了避免这个问题，可以使用迭代器自身的 <strong>remove()</strong> 方法进行删除操作。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 引入 ArrayList 和 Iterator 类</span></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">IteratorTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        ArrayList&lt;Integer&gt; numbers = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Integer&gt;();</span><br><span class="line">        numbers.add(<span class="number">12</span>);</span><br><span class="line">        numbers.add(<span class="number">8</span>);</span><br><span class="line">        numbers.add(<span class="number">2</span>);</span><br><span class="line">        numbers.add(<span class="number">23</span>);</span><br><span class="line">        Iterator&lt;Integer&gt; it = numbers.iterator();</span><br><span class="line">        <span class="keyword">while</span>(it.hasNext()) &#123;</span><br><span class="line">            <span class="type">Integer</span> <span class="variable">i</span> <span class="operator">=</span> it.next();</span><br><span class="line">            <span class="keyword">if</span>(i &lt; <span class="number">10</span>) &#123;</span><br><span class="line">                it.remove();  <span class="comment">// 删除小于 10 的元素</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(numbers);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804163553828.png" alt="image-20230804163553828"></p>
+<p><strong>注意：</strong>Java Iterator 是一种&#x3D;&#x3D;单向遍历机制&#x3D;&#x3D;，即只能从前往后遍历集合中的元素，不能往回遍历。同时，在使用迭代器遍历集合时，不能直接修改集合中的元素，而是需要使用迭代器的 &#x3D;&#x3D;remove()&#x3D;&#x3D; 方法来删除当前元素。</p>
+<h2 id="4-Java-泛型"><a href="#4-Java-泛型" class="headerlink" title="4.Java 泛型"></a>4.Java 泛型</h2><p>Java 泛型（generics）是 JDK 5 中引入的一个新特性, 泛型提供了编译时类型安全检测机制，该机制允许程序员在编译时检测到非法的类型。&#x3D;&#x3D;泛型的本质是参数化类型，也就是说所操作的数据类型被指定为一个参数。&#x3D;&#x3D;</p>
+<h3 id="泛型方法"><a href="#泛型方法" class="headerlink" title="泛型方法"></a>泛型方法</h3><p>你可以写一个泛型方法，该方法在调用时可以接收不同类型的参数。根据传递给泛型方法的参数类型，编译器适当地处理每一个方法调用。下面是定义泛型方法的规则：</p>
+<ul>
+<li>所有泛型方法声明都有一个类型参数声明部分（由尖括号分隔），该类型参数声明部分在方法返回类型之前（在下面例子中的 **<E>**）。</li>
+<li>每一个类型参数声明部分包含一个或多个类型参数，参数间用逗号隔开。一个泛型参数，也被称为一个类型变量，是用于指定一个泛型类型名称的标识符。</li>
+<li>类型参数能被用来声明返回值类型，并且能作为泛型方法得到的实际参数类型的占位符。</li>
+<li>泛型方法体的声明和其他方法一样。注意类型参数只能代表<code>引用型类型</code>，不能是原始类型（像 <strong>int、double、char</strong> 等）。</li>
+</ul>
+<p><strong>Java 中泛型标记符：</strong></p>
+<ul>
+<li><strong>E</strong> - Element (在集合中使用，因为集合中存放的是元素)</li>
+<li><strong>T</strong> - Type（Java 类）</li>
+<li><strong>K</strong> - Key（键）</li>
+<li><strong>V</strong> - Value（值）</li>
+<li><strong>N</strong> - Number（数值类型）</li>
+<li><strong>？</strong> - 表示不确定的 java 类型</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GenericMethodTest</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment">// 泛型方法 printArray                         </span></span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">static</span> &lt; E &gt; <span class="keyword">void</span> <span class="title function_">printArray</span><span class="params">( E[] inputArray )</span></span><br><span class="line">   &#123;</span><br><span class="line">      <span class="comment">// 输出数组元素            </span></span><br><span class="line">         <span class="keyword">for</span> ( E element : inputArray )&#123;        </span><br><span class="line">            System.out.printf( <span class="string">&quot;%s &quot;</span>, element );</span><br><span class="line">         &#125;</span><br><span class="line">         System.out.println();</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">( String args[] )</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 创建不同类型数组： Integer, Double 和 Character</span></span><br><span class="line">        Integer[] intArray = &#123; <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span> &#125;;</span><br><span class="line">        Double[] doubleArray = &#123; <span class="number">1.1</span>, <span class="number">2.2</span>, <span class="number">3.3</span>, <span class="number">4.4</span> &#125;;</span><br><span class="line">        Character[] charArray = &#123; <span class="string">&#x27;H&#x27;</span>, <span class="string">&#x27;E&#x27;</span>, <span class="string">&#x27;L&#x27;</span>, <span class="string">&#x27;L&#x27;</span>, <span class="string">&#x27;O&#x27;</span> &#125;;</span><br><span class="line"> </span><br><span class="line">        System.out.println( <span class="string">&quot;整型数组元素为:&quot;</span> );</span><br><span class="line">        printArray( intArray  ); <span class="comment">// 传递一个整型数组</span></span><br><span class="line"> </span><br><span class="line">        System.out.println( <span class="string">&quot;\n双精度型数组元素为:&quot;</span> );</span><br><span class="line">        printArray( doubleArray ); <span class="comment">// 传递一个双精度型数组</span></span><br><span class="line"> </span><br><span class="line">        System.out.println( <span class="string">&quot;\n字符型数组元素为:&quot;</span> );</span><br><span class="line">        printArray( charArray ); <span class="comment">// 传递一个字符型数组</span></span><br><span class="line">    &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804172259123.png" alt="image-20230804172259123"></p>
+<p>可能有时候，你会想<code>限制</code>那些被允许传递到一个类型参数的<code>类型种类范围</code>。例如，一个操作数字的方法可能只希望接受Number或者Number子类的实例。这就是<code>有界类型参数</code>的目的。</p>
+<p>&#x3D;&#x3D;要声明一个有界的类型参数，首先列出类型参数的名称，后跟extends关键字，最后紧跟它的上界。&#x3D;&#x3D;</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MaximumTest</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 比较三个值并返回最大值</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T <span class="keyword">extends</span> <span class="title class_">Comparable</span>&lt;T&gt;&gt; T <span class="title function_">maximum</span><span class="params">(T x, T y, T z)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">T</span> <span class="variable">max</span> <span class="operator">=</span> x; <span class="comment">// 假设x是初始最大值</span></span><br><span class="line">        <span class="keyword">if</span> ( y.compareTo( max ) &gt; <span class="number">0</span> )&#123;</span><br><span class="line">            max = y; <span class="comment">//y 更大</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> ( z.compareTo( max ) &gt; <span class="number">0</span> )&#123;</span><br><span class="line">            max = z; <span class="comment">// 现在 z 更大</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> max; <span class="comment">// 返回最大对象</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">( String args[] )</span></span><br><span class="line">    &#123;</span><br><span class="line">        System.out.printf( <span class="string">&quot;%d, %d 和 %d 中最大的数为 %d\n\n&quot;</span>,</span><br><span class="line">                <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, maximum( <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span> ) );</span><br><span class="line"></span><br><span class="line">        System.out.printf( <span class="string">&quot;%.1f, %.1f 和 %.1f 中最大的数为 %.1f\n\n&quot;</span>,</span><br><span class="line">                <span class="number">6.6</span>, <span class="number">8.8</span>, <span class="number">7.7</span>, maximum( <span class="number">6.6</span>, <span class="number">8.8</span>, <span class="number">7.7</span> ) );</span><br><span class="line"></span><br><span class="line">        System.out.printf( <span class="string">&quot;%s, %s 和 %s 中最大的数为 %s\n&quot;</span>,<span class="string">&quot;pear&quot;</span>,</span><br><span class="line">                <span class="string">&quot;apple&quot;</span>, <span class="string">&quot;orange&quot;</span>, maximum( <span class="string">&quot;pear&quot;</span>, <span class="string">&quot;apple&quot;</span>, <span class="string">&quot;orange&quot;</span> ) );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804172602541.png" alt="image-20230804172602541"></p>
+<h3 id="泛型类"><a href="#泛型类" class="headerlink" title="泛型类"></a>泛型类</h3><p>泛型类的声明和非泛型类的声明类似，除了在类名后面添加了类型参数声明部分。</p>
+<p>和泛型方法一样，泛型类的类型参数声明部分也包含一个或多个类型参数，参数间用逗号隔开。一个泛型参数，也被称为一个类型变量，是用于指定一个泛型类型名称的标识符。因为他们接受一个或多个参数，这些类被称为参数化的类或参数化的类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Box</span>&lt;T&gt; &#123;</span><br><span class="line">   </span><br><span class="line">  <span class="keyword">private</span> T t;</span><br><span class="line"> </span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">(T t)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.t = t;</span><br><span class="line">  &#125;</span><br><span class="line"> </span><br><span class="line">  <span class="keyword">public</span> T <span class="title function_">get</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> t;</span><br><span class="line">  &#125;</span><br><span class="line"> </span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">    Box&lt;Integer&gt; integerBox = <span class="keyword">new</span> <span class="title class_">Box</span>&lt;Integer&gt;();</span><br><span class="line">    Box&lt;String&gt; stringBox = <span class="keyword">new</span> <span class="title class_">Box</span>&lt;String&gt;();</span><br><span class="line"> </span><br><span class="line">    integerBox.add(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">10</span>));</span><br><span class="line">    stringBox.add(<span class="keyword">new</span> <span class="title class_">String</span>(<span class="string">&quot;菜鸟教程&quot;</span>));</span><br><span class="line"> </span><br><span class="line">    System.out.printf(<span class="string">&quot;整型值为 :%d\n\n&quot;</span>, integerBox.get());</span><br><span class="line">    System.out.printf(<span class="string">&quot;字符串为 :%s\n&quot;</span>, stringBox.get());</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804172733258.png" alt="image-20230804172733258"></p>
+<h3 id="类型通配符"><a href="#类型通配符" class="headerlink" title="类型通配符"></a>类型通配符</h3><p>(1) 类型通配符一般是使用 <strong>?</strong> 代替具体的类型参数。例如 <strong>List&lt;?&gt;</strong> 在逻辑上是 <strong>List&lt;String&gt;,List&lt;Integer&gt;</strong> 等所有 <strong>List&lt;具体类型实参&gt;</strong> 的父类。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GenericTest</span> &#123;</span><br><span class="line">     </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        List&lt;String&gt; name = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;();</span><br><span class="line">        List&lt;Integer&gt; age = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Integer&gt;();</span><br><span class="line">        List&lt;Number&gt; number = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Number&gt;();</span><br><span class="line">        </span><br><span class="line">        name.add(<span class="string">&quot;icon&quot;</span>);</span><br><span class="line">        age.add(<span class="number">18</span>);</span><br><span class="line">        number.add(<span class="number">314</span>);</span><br><span class="line"> </span><br><span class="line">        getData(name);</span><br><span class="line">        getData(age);</span><br><span class="line">        getData(number);</span><br><span class="line">       </span><br><span class="line">   &#125;</span><br><span class="line"> </span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">getData</span><span class="params">(List&lt;?&gt; data)</span> &#123;</span><br><span class="line">      System.out.println(<span class="string">&quot;data :&quot;</span> + data.get(<span class="number">0</span>));</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804172926147.png" alt="image-20230804172926147"></p>
+<p><strong>解析：</strong> 因为 <strong>getData()</strong> 方法的参数是 <strong>List&lt;?&gt;</strong> 类型的，所以 <strong>name，age，number</strong> 都可以作为这个方法的实参，这就是通配符的作用。</p>
+<p>(2) 类型通配符上限通过形如  <strong>List&lt;? extends Number&gt;</strong> 来定义，如此定义就是通配符泛型值接受Number及其下层子类类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GenericTest</span> &#123;</span><br><span class="line">     </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        List&lt;String&gt; name = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;();</span><br><span class="line">        List&lt;Integer&gt; age = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Integer&gt;();</span><br><span class="line">        List&lt;Number&gt; number = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Number&gt;();</span><br><span class="line">        </span><br><span class="line">        name.add(<span class="string">&quot;icon&quot;</span>);</span><br><span class="line">        age.add(<span class="number">18</span>);</span><br><span class="line">        number.add(<span class="number">314</span>);</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//getUperNumber(name);//1</span></span><br><span class="line">        getUperNumber(age);<span class="comment">//2</span></span><br><span class="line">        getUperNumber(number);<span class="comment">//3</span></span><br><span class="line">       </span><br><span class="line">   &#125;</span><br><span class="line"> </span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">getData</span><span class="params">(List&lt;?&gt; data)</span> &#123;</span><br><span class="line">      System.out.println(<span class="string">&quot;data :&quot;</span> + data.get(<span class="number">0</span>));</span><br><span class="line">   &#125;</span><br><span class="line">   </span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">getUperNumber</span><span class="params">(List&lt;? extends Number&gt; data)</span> &#123;</span><br><span class="line">          System.out.println(<span class="string">&quot;data :&quot;</span> + data.get(<span class="number">0</span>));</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804173054017.png" alt="image-20230804173054017"></p>
+<p><strong>解析：</strong> 在 <strong>&#x2F;&#x2F;1</strong> 处会出现错误，因为 <strong>getUperNumber()</strong> 方法中的参数已经限定了参数泛型上限为 <strong>Number</strong>，所以泛型为 <strong>String</strong> 是不在这个范围之内，所以会报错。</p>
+<p>(3) 类型通配符下限通过形如 <strong>List&lt;? super Number&gt;</strong> 来定义，表示类型只能接受 <strong>Number</strong> 及其上层父类类型，如 <strong>Object</strong> 类型的实例。</p>
+<h2 id="5-Java-序列化"><a href="#5-Java-序列化" class="headerlink" title="5.Java 序列化"></a>5.Java 序列化</h2><p>Java 提供了一种对象序列化的机制，该机制中，一个对象可以被表示为一个字节序列，该字节序列包括该对象的数据、有关对象的类型的信息和存储在对象中数据的类型。将序列化对象写入文件之后，可以从文件中读取出来，并且对它进行反序列化，也就是说，对象的类型信息、对象的数据，还有对象中的数据类型可以用来在内存中新建对象。</p>
+<p>整个过程都是 Java 虚拟机（JVM）独立的，也就是说，在一个平台上序列化的对象可以在另一个完全不同的平台上反序列化该对象。</p>
+<p>类 <code>ObjectInputStream</code> 和 <code>ObjectOutputStream</code> 是高层次的数据流，它们包含<code>反序列化</code>和<code>序列化</code>对象的方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Employee</span> <span class="keyword">implements</span> <span class="title class_">java</span>.io.Serializable</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> String name;</span><br><span class="line">    <span class="keyword">public</span> String address;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">transient</span> <span class="type">int</span> SSN;</span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> number;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">mailCheck</span><span class="params">()</span></span><br><span class="line">    &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Mailing a check to &quot;</span> + name</span><br><span class="line">                + <span class="string">&quot; &quot;</span> + address);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>请注意，一个类的对象要想序列化成功，必须满足两个条件：</p>
+<ol>
+<li><p>该类必须实现 <code>java.io.Serializable</code> 接口。</p>
+</li>
+<li><p>该类的所有属性必须是可序列化的。如果有一个属性不是可序列化的，则该属性必须注明是短暂的。</p>
+</li>
+</ol>
+<h3 id="序列化对象"><a href="#序列化对象" class="headerlink" title="序列化对象"></a>序列化对象</h3><blockquote>
+<p><strong>注意：</strong> 当序列化一个对象到文件时， 按照 Java 的标准约定是给文件一个 .ser 扩展名。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SerializeTest</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String [] args)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">Employee</span> <span class="variable">e</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Employee</span>();</span><br><span class="line">        e.name = <span class="string">&quot;Reyan Ali&quot;</span>;</span><br><span class="line">        e.address = <span class="string">&quot;Phokka Kuan, Ambehta Peer&quot;</span>;</span><br><span class="line">        e.SSN = <span class="number">112233</span>;</span><br><span class="line">        e.number = <span class="number">100</span>;</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">FileOutputStream</span> <span class="variable">fileOut</span> <span class="operator">=</span></span><br><span class="line">                    <span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(<span class="string">&quot;employee.ser&quot;</span>);</span><br><span class="line">            <span class="type">ObjectOutputStream</span> <span class="variable">out</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectOutputStream</span>(fileOut);</span><br><span class="line">            out.writeObject(e);</span><br><span class="line">            out.close();</span><br><span class="line">            fileOut.close();</span><br><span class="line">            System.out.printf(<span class="string">&quot;Serialized data is saved in employee.ser&quot;</span>);</span><br><span class="line">        &#125;<span class="keyword">catch</span>(IOException i)</span><br><span class="line">        &#123;</span><br><span class="line">            i.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="反序列化对象"><a href="#反序列化对象" class="headerlink" title="反序列化对象"></a>反序列化对象</h3><p>下面的 <code>DeserializeTest</code> 程序实例了反序列化，<code>employee.ser</code> 存储了 Employee 对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DeserializeTest</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String [] args)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">Employee</span> <span class="variable">e</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">FileInputStream</span> <span class="variable">fileIn</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(<span class="string">&quot;employee.ser&quot;</span>);</span><br><span class="line">            <span class="type">ObjectInputStream</span> <span class="variable">in</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectInputStream</span>(fileIn);</span><br><span class="line">            e = (Employee) in.readObject();</span><br><span class="line">            in.close();</span><br><span class="line">            fileIn.close();</span><br><span class="line">        &#125;<span class="keyword">catch</span>(IOException i)</span><br><span class="line">        &#123;</span><br><span class="line">            i.printStackTrace();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;<span class="keyword">catch</span>(ClassNotFoundException c)</span><br><span class="line">        &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;Employee class not found&quot;</span>);</span><br><span class="line">            c.printStackTrace();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(<span class="string">&quot;Deserialized Employee...&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;Name: &quot;</span> + e.name);</span><br><span class="line">        System.out.println(<span class="string">&quot;Address: &quot;</span> + e.address);</span><br><span class="line">        System.out.println(<span class="string">&quot;SSN: &quot;</span> + e.SSN);</span><br><span class="line">        System.out.println(<span class="string">&quot;Number: &quot;</span> + e.number);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/image-20230804194856822.png" alt="image-20230804194856822"></p>
+<ul>
+<li>readObject() 方法中的 try&#x2F;catch 代码块尝试捕获 <code>ClassNotFoundException</code> 异常。对于 JVM 可以反序列化对象，它必须是能够找到<code>字节码的类</code>。如果 JVM 在反序列化对象的过程中找不到该类，则抛出一个 ClassNotFoundException 异常。</li>
+<li>当对象被序列化时，属性 SSN 的值为 112233，但是因为该属性是 <code>transient</code> 的，该值没有被发送到输出流。所以反序列化后 Employee 对象的 SSN 属性为 0。</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2023/08/04/Java%E5%9F%BA%E7%A1%80(%E5%9B%9B)/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
   
     <article id="post-Java基础(三)" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
@@ -2276,84 +2990,9 @@
 
 
   
-    <article id="post-hello-world" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2023/05/29/hello-world/">Hello World</a>
-    </h1>
-  
-
-        
-        <a href="/2023/05/29/hello-world/" class="archive-article-date">
-  	<time datetime="2023-05-29T13:50:45.266Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-05-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2023/05/29/hello-world/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+      <a class="extend prev" rel="prev" href="/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/">Next &amp;raquo;</a>
     </nav>
   
 
