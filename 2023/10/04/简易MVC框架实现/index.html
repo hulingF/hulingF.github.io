@@ -9,16 +9,18 @@
     <meta name="description" content="简易MVC框架实现一、MVC框架的初衷通过结合Servlet和JSP的MVC模式，我们可以发挥二者各自的优点：  Servlet实现业务逻辑； JSP实现展示逻辑。  但是，直接把MVC搭在Servlet和JSP之上还是不太好，原因如下：  Servlet提供的接口仍然偏底层，需要实现Servlet调用相关接口； JSP对页面开发不友好，更好的替代品是模板引擎； 业务逻辑最好由纯粹的Java类实现">
 <meta property="og:type" content="article">
 <meta property="og:title" content="简易MVC框架实现">
-<meta property="og:url" content="https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:url" content="https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
 <meta property="og:description" content="简易MVC框架实现一、MVC框架的初衷通过结合Servlet和JSP的MVC模式，我们可以发挥二者各自的优点：  Servlet实现业务逻辑； JSP实现展示逻辑。  但是，直接把MVC搭在Servlet和JSP之上还是不太好，原因如下：  Servlet提供的接口仍然偏底层，需要实现Servlet调用相关接口； JSP对页面开发不友好，更好的替代品是模板引擎； 业务逻辑最好由纯粹的Java类实现">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/image-20231003200314085.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/image-20231003200425071.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/image-20231003200521806.png">
-<meta property="article:published_time" content="2023-10-01T04:41:35.591Z">
-<meta property="article:modified_time" content="2023-10-03T12:06:56.410Z">
+<meta property="article:published_time" content="2023-10-04T15:29:53.000Z">
+<meta property="article:modified_time" content="2023-10-03T13:56:17.495Z">
 <meta property="article:author" content="hulingF">
+<meta property="article:tag" content="MVC">
+<meta property="article:tag" content="框架实现">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://hulingf.github.io/imgs/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/image-20231003200314085.png">
     
@@ -85,10 +87,8 @@
     <span id="actions">
       <ul>
         
-        <li><a class="icon" aria-label="Previous post" href="/2023/10/03/Servlet%E7%94%B1%E6%9D%A5%E4%B8%8E%E5%85%A5%E9%97%A8/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
-        
-        <li><a class="icon" aria-label="Next post" href="/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Next post" href="/2023/10/03/Servlet%E8%BF%9B%E9%98%B6%E5%BC%80%E5%8F%91/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -101,17 +101,17 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&text=简易MVC框架实现"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&is_video=false&description=简易MVC框架实现"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=简易MVC框架实现&body=Check out this article: https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&name=简易MVC框架实现&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&t=简易MVC框架实现"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&text=简易MVC框架实现"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&is_video=false&description=简易MVC框架实现"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=简易MVC框架实现&body=Check out this article: https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&name=简易MVC框架实现&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&t=简易MVC框架实现"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -143,7 +143,7 @@
       
     <div class="postdate">
       
-        <time datetime="2023-10-01T04:41:35.591Z" class="dt-published" itemprop="datePublished">2023-10-01</time>
+        <time datetime="2023-10-04T15:29:53.000Z" class="dt-published" itemprop="datePublished">2023-10-04</time>
         
       
     </div>
@@ -152,6 +152,11 @@
       
 
       
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/MVC/" rel="tag">MVC</a>, <a class="p-category" href="/tags/%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/" rel="tag">框架实现</a>
+    </div>
+
 
     </div>
   </header>
@@ -275,17 +280,17 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&text=简易MVC框架实现"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&is_video=false&description=简易MVC框架实现"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=简易MVC框架实现&body=Check out this article: https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&name=简易MVC框架实现&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&t=简易MVC框架实现"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&text=简易MVC框架实现"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&is_video=false&description=简易MVC框架实现"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=简易MVC框架实现&body=Check out this article: https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&title=简易MVC框架实现"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&name=简易MVC框架实现&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/&t=简易MVC框架实现"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
