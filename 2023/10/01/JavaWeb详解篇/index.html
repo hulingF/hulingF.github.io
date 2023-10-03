@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="TCP多线程服务器在Web应用中，浏览器请求一个URL，服务器就把生成的HTML网页发送给浏览器，而浏览器和服务器之间的传输协议是HTTP，所以：  HTML是一种用来定义网页的文本，会HTML，就可以编写网页； HTTP是在网络上传输HTML的协议，用于浏览器和服务器的通信。  HTTP协议是一个基于TCP协议之上的请求-响应协议，它非常简单，通常浏览器获取的第一个资源是HTML网页，在网页中，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCP多线程服务器">
+<meta property="og:url" content="https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="TCP多线程服务器在Web应用中，浏览器请求一个URL，服务器就把生成的HTML网页发送给浏览器，而浏览器和服务器之间的传输协议是HTTP，所以：  HTML是一种用来定义网页的文本，会HTML，就可以编写网页； HTTP是在网络上传输HTML的协议，用于浏览器和服务器的通信。  HTTP协议是一个基于TCP协议之上的请求-响应协议，它非常简单，通常浏览器获取的第一个资源是HTML网页，在网页中，">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-10-01T04:41:31.703Z">
+<meta property="article:modified_time" content="2023-10-03T08:12:33.666Z">
+<meta property="article:author" content="hulingF">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>TCP多线程服务器</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/10/01/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/09/27/Java%E9%9B%86%E5%90%88%E4%B9%8BLinkedList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&text=TCP多线程服务器"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&is_video=false&description=TCP多线程服务器"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=TCP多线程服务器&body=Check out this article: https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&name=TCP多线程服务器&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&t=TCP多线程服务器"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#TCP%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">TCP多线程服务器</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        TCP多线程服务器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-10-01T04:41:31.703Z" class="dt-published" itemprop="datePublished">2023-10-01</time>
+        
+      
+    </div>
+
+
+      
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="TCP多线程服务器"><a href="#TCP多线程服务器" class="headerlink" title="TCP多线程服务器"></a>TCP多线程服务器</h1><p>在Web应用中，浏览器请求一个URL，服务器就把生成的HTML网页发送给浏览器，而浏览器和服务器之间的传输协议是HTTP，所以：</p>
+<ul>
+<li>HTML是一种用来定义网页的文本，会HTML，就可以编写网页；</li>
+<li>HTTP是在网络上传输HTML的协议，用于浏览器和服务器的通信。</li>
+</ul>
+<p>HTTP协议是一个基于TCP协议之上的请求-响应协议，它非常简单，通常浏览器获取的第一个资源是HTML网页，在网页中，如果嵌入了JavaScript、CSS、图片、视频等其他资源，浏览器会根据资源的URL再次向服务器请求对应的资源。一个HTTP Server本质上是一个TCP服务器，我们先用TCP编程的多线程实现服务器端框架。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ServerDemo</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="comment">// 指定监听端口</span></span><br><span class="line">        <span class="type">ServerSocket</span> <span class="variable">ss</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServerSocket</span>(<span class="number">8080</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;server is running...&quot;</span>);</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="type">Socket</span> <span class="variable">sock</span> <span class="operator">=</span> ss.accept();</span><br><span class="line">            System.out.println(<span class="string">&quot;connected from &quot;</span> + sock.getRemoteSocketAddress());</span><br><span class="line">            <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Handler</span>(sock);</span><br><span class="line">            t.start();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Handler</span> <span class="keyword">extends</span> <span class="title class_">Thread</span> &#123;</span><br><span class="line">    Socket sock;</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Handler</span><span class="params">(Socket sock)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.sock = sock;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">InputStream</span> <span class="variable">input</span> <span class="operator">=</span> sock.getInputStream()) &#123;</span><br><span class="line">            <span class="keyword">try</span> (<span class="type">OutputStream</span> <span class="variable">output</span> <span class="operator">=</span> sock.getOutputStream()) &#123;</span><br><span class="line">                handler(input, output);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;socket input or output get failure&quot;</span>);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                sock.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;socket close failure&quot;</span>);</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(e);</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(<span class="string">&quot;client disconnected&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">handler</span><span class="params">(InputStream input, OutputStream output)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;process new http request...&quot;</span>);</span><br><span class="line">        <span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">InputStreamReader</span>(input));</span><br><span class="line">        <span class="type">BufferedWriter</span> <span class="variable">writer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedWriter</span>(<span class="keyword">new</span> <span class="title class_">OutputStreamWriter</span>(output));</span><br><span class="line">        <span class="comment">// 读取HTTP请求</span></span><br><span class="line">        <span class="type">boolean</span> <span class="variable">requestOk</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">first</span> <span class="operator">=</span> reader.readLine();</span><br><span class="line">        System.out.println(first);</span><br><span class="line">        <span class="comment">// 这里我们只处理GET /的请求</span></span><br><span class="line">        <span class="keyword">if</span> (first.startsWith(<span class="string">&quot;GET / HTTP/1.&quot;</span>)) &#123;</span><br><span class="line">            requestOk = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="comment">// 注意BufferedReader会省略一行末尾的\r\n</span></span><br><span class="line">            <span class="type">String</span> <span class="variable">header</span> <span class="operator">=</span> reader.readLine();</span><br><span class="line">            <span class="comment">// 读取到空行时, HTTP Header读取完毕</span></span><br><span class="line">            <span class="keyword">if</span> (header.isEmpty()) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(header);</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(requestOk ? <span class="string">&quot;Response OK&quot;</span> : <span class="string">&quot;Response Error&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (!requestOk) &#123;</span><br><span class="line">            <span class="comment">// 发送错误响应</span></span><br><span class="line">            writer.write(<span class="string">&quot;HTTP/1.0 404 Not Found\r\n&quot;</span>);</span><br><span class="line">            writer.write(<span class="string">&quot;Content-Length: 0\r\n&quot;</span>);</span><br><span class="line">            writer.write(<span class="string">&quot;\r\n&quot;</span>);</span><br><span class="line">            writer.flush();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 发送成功响应</span></span><br><span class="line">            <span class="type">String</span> <span class="variable">data</span> <span class="operator">=</span> <span class="string">&quot;&lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello, world!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>;</span><br><span class="line">            <span class="type">int</span> <span class="variable">length</span> <span class="operator">=</span> data.getBytes(StandardCharsets.UTF_8).length;</span><br><span class="line">            writer.write(<span class="string">&quot;HTTP/1.0 200 OK\r\n&quot;</span>);</span><br><span class="line">            writer.write(<span class="string">&quot;Connection: close\r\n&quot;</span>);</span><br><span class="line">            writer.write(<span class="string">&quot;Content-Type: text/html\r\n&quot;</span>);</span><br><span class="line">            writer.write(<span class="string">&quot;Content-Length: &quot;</span> + length + <span class="string">&quot;\r\n&quot;</span>);</span><br><span class="line">            <span class="comment">// 空行标识Header和Body的分隔</span></span><br><span class="line">            writer.write(<span class="string">&quot;\r\n&quot;</span>);</span><br><span class="line">            writer.write(data);</span><br><span class="line">            writer.flush();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面代码中有两处需要注意的地方，知识点分别对应HTTP的格式和BufferedWriter的字符缓冲区：</p>
+<ul>
+<li>判断请求头的Header字段是否全部读取完成，是根据是否读到空行，因为HTTP的格式如下，每一行以\r\n结尾，请求头与请求体之间多一个\r\n</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">GET / HTTP/1.1</span><br><span class="line">Host: www.sina.com.cn</span><br><span class="line">User-Agent: Mozilla/5.0 xxx</span><br><span class="line">Accept: */*</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9,en-US;q=0.8</span><br><span class="line"></span><br><span class="line">data...</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>BufferedWriter写入数据会判断写入的数据大小是否超出内部缓冲区容量限制（默认是8192大小的字符数组），如果超出了则先刷新内部缓冲区数据到基本字符流，然后把要写入的字符串转换为字符数组直接写入内部的基本字符流，否则循环写入内部缓冲区的随后位置并等待写满刷新。因此，我们写入数据后通常需要调用flush方法强制BufferedWriter刷新缓冲区，保证数据完整正确发送。</li>
+</ul>
+</blockquote>
+<p>这里的核心代码是，先读取HTTP请求，这里我们只处理<code>GET /</code>的请求。当读取到空行时，表示已读到连续两个<code>\r\n</code>，说明请求结束，可以发送响应。发送响应的时候，首先发送响应代码<code>HTTP/1.0 200 OK</code>表示一个成功的200响应，使用<code>HTTP/1.0</code>协议，然后，依次发送Header，发送完Header后，再发送一个空行标识Header结束，紧接着发送HTTP Body。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#TCP%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">TCP多线程服务器</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&text=TCP多线程服务器"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&is_video=false&description=TCP多线程服务器"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=TCP多线程服务器&body=Check out this article: https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&title=TCP多线程服务器"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&name=TCP多线程服务器&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/01/JavaWeb%E8%AF%A6%E8%A7%A3%E7%AF%87/&t=TCP多线程服务器"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
