@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="MySQL基础-单行函数一、MySQL函数概念1.函数的定义函数在计算机语言的使用中贯穿始终，函数的作用是什么呢？它可以把我们经常使用的代码封装起来，需要的时候直接调用即可。这样既提高了代码效率，又提高了可维护性 ，在 SQL 中我们也可以使用函数对检索出来的数据进行函数操作。使用这些函数，可以极大地提高用户对数据库的管理效率 。 从函数定义的角度出发，我们可以将函数分成内置函数和自定义函数。在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL基础-单行函数">
+<meta property="og:url" content="https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="MySQL基础-单行函数一、MySQL函数概念1.函数的定义函数在计算机语言的使用中贯穿始终，函数的作用是什么呢？它可以把我们经常使用的代码封装起来，需要的时候直接调用即可。这样既提高了代码效率，又提高了可维护性 ，在 SQL 中我们也可以使用函数对检索出来的数据进行函数操作。使用这些函数，可以极大地提高用户对数据库的管理效率 。 从函数定义的角度出发，我们可以将函数分成内置函数和自定义函数。在">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/image-20231011180842685.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/image-20231011182200900.png">
+<meta property="article:published_time" content="2023-10-11T08:51:18.304Z">
+<meta property="article:modified_time" content="2023-10-11T10:26:37.459Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/image-20231011180842685.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>MySQL基础-单行函数</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/10/10/MySQL%E5%9F%BA%E7%A1%80-%E5%A4%9A%E8%A1%A8%E6%9F%A5%E8%AF%A2/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&text=MySQL基础-单行函数"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&is_video=false&description=MySQL基础-单行函数"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL基础-单行函数&body=Check out this article: https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&name=MySQL基础-单行函数&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&t=MySQL基础-单行函数"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0"><span class="toc-number">1.</span> <span class="toc-text">MySQL基础-单行函数</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81MySQL%E5%87%BD%E6%95%B0%E6%A6%82%E5%BF%B5"><span class="toc-number">1.1.</span> <span class="toc-text">一、MySQL函数概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%87%BD%E6%95%B0%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.函数的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%8D%E5%90%8CDBMS%E5%87%BD%E6%95%B0%E7%9A%84%E5%B7%AE%E5%BC%82"><span class="toc-number">1.1.2.</span> <span class="toc-text">2.不同DBMS函数的差异</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81MySQL%E6%95%B0%E5%80%BC%E5%87%BD%E6%95%B0"><span class="toc-number">1.2.</span> <span class="toc-text">二、MySQL数值函数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%9F%BA%E6%9C%AC%E5%87%BD%E6%95%B0"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.基本函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%A7%92%E5%BA%A6%E4%B8%8E%E5%BC%A7%E5%BA%A6%E4%BA%92%E6%8D%A2%E5%87%BD%E6%95%B0"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.角度与弧度互换函数</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MySQL基础-单行函数
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-10-11T08:51:18.304Z" class="dt-published" itemprop="datePublished">2023-10-11</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/MySQL/" rel="tag">MySQL</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="MySQL基础-单行函数"><a href="#MySQL基础-单行函数" class="headerlink" title="MySQL基础-单行函数"></a>MySQL基础-单行函数</h1><h2 id="一、MySQL函数概念"><a href="#一、MySQL函数概念" class="headerlink" title="一、MySQL函数概念"></a>一、MySQL函数概念</h2><h3 id="1-函数的定义"><a href="#1-函数的定义" class="headerlink" title="1.函数的定义"></a>1.函数的定义</h3><p>函数在计算机语言的使用中贯穿始终，函数的作用是什么呢？它可以把我们经常使用的代码<code>封装</code>起来，需要的时候直接调用即可。这样既提高了<code>代码效率</code>，又提高了<code>可维护性</code> ，在 SQL 中我们也可以使用函数对检索出来的数据进行函数操作。使用这些函数，可以极大地提高用户对数据库的管理效率 。</p>
+<p>从函数定义的角度出发，我们可以将函数分成<code>内置函数</code>和<code>自定义函数</code>。在 SQL 语言中，同样也包括了内置函数和自定义函数。&#x3D;&#x3D;内置函数是系统内置的通用函数，而自定义函数是我们根据自己的需要编写的&#x3D;&#x3D;，我们提到的单行函数和后面会提到的聚合函数都是 SQL 的内置函数。</p>
+<h3 id="2-不同DBMS函数的差异"><a href="#2-不同DBMS函数的差异" class="headerlink" title="2.不同DBMS函数的差异"></a>2.不同DBMS函数的差异</h3><p>实际上，只有<code>很少</code>的函数是被 DBMS 同时支持的。比如，大多数 DBMS 使用 || 或者 + 来做拼接符，而在MySQL中的字符串拼接函数为 concat。大部分 DBMS 会有自己特定的函数，这就意味着采用 SQL 函数的<code>代码可移植性是很差</code>的，因此在使用函数的时候需要特别注意。</p>
+<p>MySQL提供了<code>丰富</code>的内置函数，这些函数使得数据的维护与管理更加方便，能够更好地提供数据的分析与统计功能，在一定程度上提高了开发人员进行数据分析与统计的效率。MySQL提供的内置函数从<code>实现的功能角度</code>可以分为数值函数、字符串函数、日期和时间函数、流程控制函数、加密与解密函数、获取MySQL信息函数、聚合函数等。这里将这些丰富的内置函数再分为两类：<code>单行函数</code>、<code>聚合函数</code> 。</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/image-20231011180842685.png" alt="image-20231011180842685"></p>
+<h2 id="二、MySQL数值函数"><a href="#二、MySQL数值函数" class="headerlink" title="二、MySQL数值函数"></a>二、MySQL数值函数</h2><h3 id="1-基本函数"><a href="#1-基本函数" class="headerlink" title="1.基本函数"></a>1.基本函数</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th align="left">用法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ABS(x)</td>
+<td align="left">返回x的绝对值</td>
+</tr>
+<tr>
+<td>SIGN(X)</td>
+<td align="left">返回X的符号。正数返回1，负数返回-1，0返回0</td>
+</tr>
+<tr>
+<td>PI()</td>
+<td align="left">返回圆周率的值</td>
+</tr>
+<tr>
+<td>CEIL(x)，CEILING(x)</td>
+<td align="left">返回大于或等于某个值的最小整数</td>
+</tr>
+<tr>
+<td>FLOOR(x)</td>
+<td align="left">返回小于或等于某个值的最大整数</td>
+</tr>
+<tr>
+<td>LEAST(e1,e2,e3…)</td>
+<td align="left">返回列表中的最小值</td>
+</tr>
+<tr>
+<td>GREATEST(e1,e2,e3…)</td>
+<td align="left">返回列表中的最大值</td>
+</tr>
+<tr>
+<td>MOD(x,y)</td>
+<td align="left">返回X除以Y后的余数</td>
+</tr>
+<tr>
+<td>RAND()</td>
+<td align="left">返回0~1的随机值</td>
+</tr>
+<tr>
+<td>RAND(x)</td>
+<td align="left">返回0~1的随机值，其中x的值用作种子值，相同的X值会产生相同的随机数</td>
+</tr>
+<tr>
+<td>ROUND(x)</td>
+<td align="left">返回一个对x的值进行四舍五入后，最接近于X的整数</td>
+</tr>
+<tr>
+<td>ROUND(x,y)</td>
+<td align="left">返回一个对x的值进行四舍五入后最接近X的值，并保留到小数点后面Y位</td>
+</tr>
+<tr>
+<td>TRUNCATE(x,y)</td>
+<td align="left">返回数字x截断为y位小数的结果</td>
+</tr>
+<tr>
+<td>SQRT(x)</td>
+<td align="left">返回x的平方根。当X的值为负数时，返回NULL</td>
+</tr>
+</tbody></table>
+<p><img src="/../../../../../../imgs/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/image-20231011182200900.png" alt="image-20231011182200900"></p>
+<h3 id="2-角度与弧度互换函数"><a href="#2-角度与弧度互换函数" class="headerlink" title="2.角度与弧度互换函数"></a>2.角度与弧度互换函数</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>用法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RADIANS(x)</td>
+<td>将角度转化为弧度，其中，参数x为角度值</td>
+</tr>
+<tr>
+<td>DEGREES(x)</td>
+<td>将弧度转化为角度，其中，参数x为弧度值</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> RADIANS(<span class="number">30</span>),RADIANS(<span class="number">180</span>),PI(),DEGREES(<span class="number">0.5235987755982988</span>),DEGREES(<span class="number">3.141592653589793</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+-------------------+----------+-----------------------------+----------------------------+</span></span><br><span class="line"><span class="operator">|</span> RADIANS(<span class="number">30</span>)        <span class="operator">|</span> RADIANS(<span class="number">180</span>)      <span class="operator">|</span> PI()     <span class="operator">|</span> DEGREES(<span class="number">0.5235987755982988</span>) <span class="operator">|</span> DEGREES(<span class="number">3.141592653589793</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+-------------------+----------+-----------------------------+----------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">0.5235987755982988</span> <span class="operator">|</span> <span class="number">3.141592653589793</span> <span class="operator">|</span> <span class="number">3.141593</span> <span class="operator">|</span>          <span class="number">29.999999999999996</span> <span class="operator">|</span>                        <span class="number">180</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+-------------------+----------+-----------------------------+----------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0"><span class="toc-number">1.</span> <span class="toc-text">MySQL基础-单行函数</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81MySQL%E5%87%BD%E6%95%B0%E6%A6%82%E5%BF%B5"><span class="toc-number">1.1.</span> <span class="toc-text">一、MySQL函数概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%87%BD%E6%95%B0%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.函数的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%8D%E5%90%8CDBMS%E5%87%BD%E6%95%B0%E7%9A%84%E5%B7%AE%E5%BC%82"><span class="toc-number">1.1.2.</span> <span class="toc-text">2.不同DBMS函数的差异</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81MySQL%E6%95%B0%E5%80%BC%E5%87%BD%E6%95%B0"><span class="toc-number">1.2.</span> <span class="toc-text">二、MySQL数值函数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%9F%BA%E6%9C%AC%E5%87%BD%E6%95%B0"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.基本函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%A7%92%E5%BA%A6%E4%B8%8E%E5%BC%A7%E5%BA%A6%E4%BA%92%E6%8D%A2%E5%87%BD%E6%95%B0"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.角度与弧度互换函数</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&text=MySQL基础-单行函数"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&is_video=false&description=MySQL基础-单行函数"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL基础-单行函数&body=Check out this article: https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&title=MySQL基础-单行函数"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&name=MySQL基础-单行函数&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/11/MySQL%E5%9F%BA%E7%A1%80-%E5%8D%95%E8%A1%8C%E5%87%BD%E6%95%B0/&t=MySQL基础-单行函数"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
