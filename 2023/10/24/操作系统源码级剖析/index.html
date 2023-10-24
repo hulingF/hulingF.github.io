@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
     <meta name="description" content="第一部分：XV6操作系统简要剖析 学习目标：通过学习 MIT 的一套教学操作系统深度了解操作系统的内部简易实现机制，从代码层次更多把握OS 的内部机制，可以作为操作系统的实践部分进行阅读学习！注意：从我个人的角度出发，我不会细抠内部的每一行代码，我想达到的效果是能建立一个 OS 的全局观，打破这个”黑盒子”，但不是制作这个”盒子”，更多还是从 programmer 而不是自始而终的 builder">
 <meta property="og:type" content="article">
-<meta property="og:title" content="XV6操作系统学习">
+<meta property="og:title" content="操作系统源码级剖析">
 <meta property="og:url" content="https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
 <meta property="og:description" content="第一部分：XV6操作系统简要剖析 学习目标：通过学习 MIT 的一套教学操作系统深度了解操作系统的内部简易实现机制，从代码层次更多把握OS 的内部机制，可以作为操作系统的实践部分进行阅读学习！注意：从我个人的角度出发，我不会细抠内部的每一行代码，我想达到的效果是能建立一个 OS 的全局观，打破这个”黑盒子”，但不是制作这个”盒子”，更多还是从 programmer 而不是自始而终的 builder">
@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/image-20221119195251727.png">
 <meta property="og:image" content="c:\Users\lan\Pictures\%E5%A3%81%E7%BA%B8\wallhaven-o5dj1p.jpg">
 <meta property="article:published_time" content="2023-10-24T03:10:52.022Z">
-<meta property="article:modified_time" content="2023-10-24T03:13:05.424Z">
+<meta property="article:modified_time" content="2023-10-24T14:29:42.819Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="操作系统">
 <meta property="article:tag" content="XV6">
@@ -57,7 +57,7 @@
       
     
     <!-- title -->
-    <title>XV6操作系统学习</title>
+    <title>操作系统源码级剖析</title>
     <!-- async scripts -->
     <!-- Google Analytics -->
 
@@ -119,16 +119,16 @@
     <div id="share" style="display: none">
       <ul>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&text=XV6操作系统学习"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&is_video=false&description=XV6操作系统学习"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=XV6操作系统学习&body=Check out this article: https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&name=XV6操作系统学习&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&t=XV6操作系统学习"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&text=操作系统源码级剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&is_video=false&description=操作系统源码级剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=操作系统源码级剖析&body=Check out this article: https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&name=操作系统源码级剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&t=操作系统源码级剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -148,7 +148,7 @@
   <header>
     
     <h1 class="posttitle p-name" itemprop="name headline">
-        XV6操作系统学习
+        操作系统源码级剖析
     </h1>
 
 
@@ -1800,16 +1800,16 @@
     <div id="share-footer" style="display: none">
       <ul>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&text=XV6操作系统学习"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&is_video=false&description=XV6操作系统学习"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=XV6操作系统学习&body=Check out this article: https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=XV6操作系统学习"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&name=XV6操作系统学习&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&t=XV6操作系统学习"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&text=操作系统源码级剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&is_video=false&description=操作系统源码级剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=操作系统源码级剖析&body=Check out this article: https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&title=操作系统源码级剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&name=操作系统源码级剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%BA%90%E7%A0%81%E7%BA%A7%E5%89%96%E6%9E%90/&t=操作系统源码级剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
