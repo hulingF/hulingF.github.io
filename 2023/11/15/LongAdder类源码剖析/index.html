@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="LongAdder类源码剖析 为了记录的方便主要参考了死磕LongAdder源码分析-彤哥读源码和LongAdder源码分析  一、LongAdder类的简介当多个线程更新用于收集统计信息等目的而不是用于细粒度同步控制的公共总和时，此类通常比AtomicLong更可取。在低更新争用的情况下，这两个类具有相似的特征。但在高竞争情况下，此类的预期吞吐量明显更高，但代价是空间消耗更高。此类扩展了Numb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LongAdder类源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="LongAdder类源码剖析 为了记录的方便主要参考了死磕LongAdder源码分析-彤哥读源码和LongAdder源码分析  一、LongAdder类的简介当多个线程更新用于收集统计信息等目的而不是用于细粒度同步控制的公共总和时，此类通常比AtomicLong更可取。在低更新争用的情况下，这两个类具有相似的特征。但在高竞争情况下，此类的预期吞吐量明显更高，但代价是空间消耗更高。此类扩展了Numb">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231115164641020.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231115165038291.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBASmF2YUVkZ2Uu,size_20,color_FFFFFF,t_70,g_se,x_16.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231115205227356.png">
+<meta property="article:published_time" content="2023-11-15T08:41:45.150Z">
+<meta property="article:modified_time" content="2023-11-15T14:27:33.655Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="并发编程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231115164641020.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>LongAdder类源码剖析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/11/15/AtomicStampedReference%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=LongAdder类源码剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=LongAdder类源码剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LongAdder类源码剖析&body=Check out this article: https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=LongAdder类源码剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=LongAdder类源码剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">LongAdder类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81LongAdder%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、LongAdder类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81LongAdder%E7%B1%BB%E7%9A%84%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.</span> <span class="toc-text">二、LongAdder类的原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Striped64%E7%B1%BB%E7%9A%84%E8%A7%A3%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">三、Striped64类的解析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%86%85%E9%83%A8%E7%B1%BB"><span class="toc-number">1.3.1.</span> <span class="toc-text">主要内部类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%B1%9E%E6%80%A7"><span class="toc-number">1.3.2.</span> <span class="toc-text">主要属性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81LongAdder%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、LongAdder类的方法</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        LongAdder类源码剖析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-11-15T08:41:45.150Z" class="dt-published" itemprop="datePublished">2023-11-15</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="LongAdder类源码剖析"><a href="#LongAdder类源码剖析" class="headerlink" title="LongAdder类源码剖析"></a>LongAdder类源码剖析</h1><blockquote>
+<p>为了记录的方便主要参考了<a target="_blank" rel="noopener" href="https://www.cnblogs.com/tong-yuan/p/LongAdder.html">死磕LongAdder源码分析-彤哥读源码</a>和<a target="_blank" rel="noopener" href="https://bbs.huaweicloud.com/blogs/329333">LongAdder源码分析</a></p>
+</blockquote>
+<h2 id="一、LongAdder类的简介"><a href="#一、LongAdder类的简介" class="headerlink" title="一、LongAdder类的简介"></a>一、LongAdder类的简介</h2><p><img src="/../../../../../../imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231115164641020.png" alt="image-20231115164641020"><br>当多个线程更新用于<code>收集统计信息</code>等目的而不是用于细粒度同步控制的公共总和时，此类通常比AtomicLong更可取。在低更新争用的情况下，这两个类具有相似的特征。但在<code>高竞争</code>情况下，此类的<code>预期吞吐量明显更高</code>，但代价是<code>空间消耗更高</code>。此类扩展了Number，但没有定义equals、hashCode和compareTo等方法，因为实例预计会发生变化，因此不能用作集合键。</p>
+<p><img src="/../../../../../../imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231115165038291.png" alt="image-20231115165038291"></p>
+<h2 id="二、LongAdder类的原理"><a href="#二、LongAdder类的原理" class="headerlink" title="二、LongAdder类的原理"></a>二、LongAdder类的原理</h2><p>LongAdder的原理是，在最初无竞争时，只更新base的值，当有多线程竞争时通过分段的思想，让不同的线程更新不同的段，最后把这些段相加就得到了完整的LongAdder存储的值。如下图，把一个Long型拆成一个base变量外加多个Cell，每个Cell包装一个Long型变量。当多个线程并发累加的时：</p>
+<ul>
+<li>如果并发度低，就直接加到base变量上</li>
+<li>如果并发度高，冲突频繁，就平摊到这些Cell上</li>
+</ul>
+<p>最后取值时，再把base和这些Cell求sum运算。</p>
+<p><img src="/../../../../../../imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBASmF2YUVkZ2Uu,size_20,color_FFFFFF,t_70,g_se,x_16.png" alt="img"></p>
+<h2 id="三、Striped64类的解析"><a href="#三、Striped64类的解析" class="headerlink" title="三、Striped64类的解析"></a>三、Striped64类的解析</h2><blockquote>
+<p>下面的内容来自源码注释，第一手资料!</p>
+</blockquote>
+<p>LongAdder继承自Striped64抽象类，Striped64类中定义了Cell内部类和各重要属性。此类维护一个延迟初始化的原子更新变量表即cells数组，以及一个额外的base字段，表的大小是2的幂次，索引使用屏蔽的<code>每线程哈希码</code>。 此类中几乎所有声明都是包私有的，可以由子类直接访问，表条目属于Cell类即AtomicLong 填充的变体（通过 <code>@sun.misc.Contished</code>）以<code>减少缓存争用</code>。 对于大多数原子来说，填充是多余的，因为它们通常不规则地分散在内存中，因此不会互相干扰。但是驻留在数组中的原子对象往往会彼此相邻放置，因此在没有这种预防措施的情况下，通常会共享缓存行即<code>伪共享</code>（会对性能产生巨大的负面影响）。 Cell类相对较大，我们避免在需要它们之前创建它们。当没有争用时，所有更新都对base字段进行；第一次争用时（base进行CAS更新时失败），表将初始化为大小2；在进一步争用时，表大小将加倍，直到达到大于或等于CPUS数量的最接近的2的幂。表槽保持为空 (null)，直到需要它们为止。 单个<code>自旋锁</code>（“cellsBusy”）用于<code>初始化表和调整表大小，以及用新的Cell填充槽</code>。 当锁不可用时，线程尝试其他槽（或base字段）。 通过<code>ThreadLocalRandom</code>维护的<code>线程探测字段</code>用作每线程哈希码。我们让它们保持未初始化时为零（如果它们以这种方式出现），直到它们在槽0上竞争，然后它们被初始化为通常不会与其他值冲突的值。执行更新操作时，失败的CAS会指示<code>争用</code>和&#x2F;或<code>表冲突</code>。发生冲突时，如果表大小小于容量，则大小会加倍，除非其他线程持有锁。如果哈希槽为空，并且锁可用，则会创建一个新的Cell。否则，如果槽存在，则尝试CAS。通过<code>双重散列</code>进行重试，使用<code>辅助散列 (Marsaglia XorShift) </code>来尝试找到空闲插槽。&#x3D;&#x3D;表的大小是有上限的，因为当线程数多于CPUs时，假设每个线程都绑定到一个CPU，就会存在一个完美的哈希函数将线程映射到槽，从而消除冲突。 当我们达到容量时，我们通过随机改变冲突线程的哈希码来搜索该映射。 由于搜索是随机的，并且冲突只能通过CAS故障得知，因此收敛速度可能很慢，而且由于线程通常不会永远绑定到CPUS，因此可能根本不会发生。然而，尽管有这些限制，在这些情况下观察到的争用率通常很低。&#x3D;&#x3D;当曾经散列到它的线程终止时，以及在加倍表导致没有线程在扩展掩码下散列到它的情况下，单元有可能变得未使用。我们不会尝试检测或删除此类单元，因为假设对于长时间运行的实例，观察到的争用级别将再次出现，因此最终将再次需要这些单元；</p>
+<h3 id="主要内部类"><a href="#主要内部类" class="headerlink" title="主要内部类"></a>主要内部类</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AtomicLong的填充变体仅支持原始访问和CAS</span></span><br><span class="line"><span class="meta">@sun</span>.misc.Contended <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Cell</span> &#123;</span><br><span class="line">    <span class="comment">// 存储元素的值，使用volatile修饰保证可见性</span></span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">long</span> value;</span><br><span class="line">    Cell(<span class="type">long</span> x) &#123; value = x; &#125;</span><br><span class="line">    <span class="comment">// CAS更新value的值</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">boolean</span> <span class="title function_">cas</span><span class="params">(<span class="type">long</span> cmp, <span class="type">long</span> val)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> UNSAFE.compareAndSwapLong(<span class="built_in">this</span>, valueOffset, cmp, val);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Unsafe实例</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> sun.misc.Unsafe UNSAFE;</span><br><span class="line">    <span class="comment">// value字段的偏移量</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">long</span> valueOffset;</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            UNSAFE = sun.misc.Unsafe.getUnsafe();</span><br><span class="line">            Class&lt;?&gt; ak = Cell.class;</span><br><span class="line">            valueOffset = UNSAFE.objectFieldOffset</span><br><span class="line">                (ak.getDeclaredField(<span class="string">&quot;value&quot;</span>));</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>CPU缓存行能带来免费加载数据的好处，所以处理数组性能非常高，但同时CPU缓存行也带来了弊端，多线程处理不相干的变量时会相互影响，也就是伪共享；Cell数组中的元素依次顺序排列，存在伪共享的问题，避免伪共享的主要思路就是让不相干的变量不要出现在同一个缓存行中，可以使用Java8提供的注解<code>@sun.misc.Contended</code>。</p>
+<h3 id="主要属性"><a href="#主要属性" class="headerlink" title="主要属性"></a>主要属性</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cells数组，存储各个段的值</span></span><br><span class="line"><span class="keyword">transient</span> <span class="keyword">volatile</span> Cell[] cells;</span><br><span class="line"><span class="comment">// 最初无竞争时使用的，也算一个特殊的段</span></span><br><span class="line"><span class="keyword">transient</span> <span class="keyword">volatile</span> <span class="type">long</span> base;</span><br><span class="line"><span class="comment">// 标记当前是否有线程在创建或扩容cells，或者在创建Cell</span></span><br><span class="line"><span class="comment">// 通过CAS更新该值，相当于是一个锁</span></span><br><span class="line"><span class="keyword">transient</span> <span class="keyword">volatile</span> <span class="type">int</span> cellsBusy;</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、LongAdder类的方法"><a href="#四、LongAdder类的方法" class="headerlink" title="四、LongAdder类的方法"></a>四、LongAdder类的方法</h2><p><img src="/../../../../../../imgs/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231115205227356.png" alt="image-20231115205227356"></p>
+<p>下面我们看一下LongAdder类的核心方法<code>add</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">(<span class="type">long</span> x)</span> &#123;</span><br><span class="line">    Cell[] as; <span class="type">long</span> b, v; <span class="type">int</span> m; Cell a;</span><br><span class="line">    <span class="comment">// 判断cells是否还没被初始化，并且尝试对base值进行cas操作</span></span><br><span class="line">    <span class="keyword">if</span> ((as = cells) != <span class="literal">null</span> || !casBase(b = base, b + x)) &#123;</span><br><span class="line">        <span class="comment">// 如果cells已经初始化或cas操作失败，则运行if内部语句</span></span><br><span class="line">        <span class="type">boolean</span> <span class="variable">uncontended</span> <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line">        <span class="comment">// 1.cell[]数组是否初始化</span></span><br><span class="line">        <span class="comment">// 2.cell[]数组虽然初始化了但是数组长度是否为0,应该不会出现</span></span><br><span class="line">     	<span class="comment">// 3.该线程所对应cell槽位是否为null</span></span><br><span class="line">      	<span class="comment">// 4.尝试对该线程对应的cell槽位进行cas更新</span></span><br><span class="line">        <span class="keyword">if</span> (as == <span class="literal">null</span> || (m = as.length - <span class="number">1</span>) &lt; <span class="number">0</span> ||</span><br><span class="line">            (a = as[getProbe() &amp; m]) == <span class="literal">null</span> ||</span><br><span class="line">            !(uncontended = a.cas(v = a.value, v + x)))</span><br><span class="line">            longAccumulate(x, <span class="literal">null</span>, uncontended);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>总结：开始竞争不激烈的时候直接CAS更新base变量，随着竞争的增加CAS可能失败，随即会创建Cell数组，后续的请求线程会根据线程的threadLocalRandomProbe值计算哈希槽位，如果该槽位为空则创建新Cell，否则对该Cell槽位进行CAS更新，一旦更新失败可能就要扩容了。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">longAccumulate</span><span class="params">(<span class="type">long</span> x, LongBinaryOperator fn,</span></span><br><span class="line"><span class="params">                          <span class="type">boolean</span> wasUncontended)</span> &#123;</span><br><span class="line">    <span class="type">int</span> h;</span><br><span class="line">    <span class="comment">// 如果getProbe()方法返回0，说明随机数未初始化</span></span><br><span class="line">    <span class="keyword">if</span> ((h = getProbe()) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 强制初始化</span></span><br><span class="line">        ThreadLocalRandom.current(); </span><br><span class="line">        <span class="comment">// 重新获取probe值</span></span><br><span class="line">        h = getProbe();</span><br><span class="line">        <span class="comment">// 都未初始化，肯定还不存在竞争激烈</span></span><br><span class="line">        wasUncontended = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">boolean</span> <span class="variable">collide</span> <span class="operator">=</span> <span class="literal">false</span>;                <span class="comment">// True if last slot nonempty</span></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        Cell[] as; Cell a; <span class="type">int</span> n; <span class="type">long</span> v;</span><br><span class="line">        <span class="keyword">if</span> ((as = cells) != <span class="literal">null</span> &amp;&amp; (n = as.length) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 情况1：当前线程对应的Cell槽位未初始化</span></span><br><span class="line">            <span class="keyword">if</span> ((a = as[(n - <span class="number">1</span>) &amp; h]) == <span class="literal">null</span>) &#123;</span><br><span class="line">                <span class="comment">// 当前无其它线程在创建或扩容cells，也没有线程在创建Cell</span></span><br><span class="line">                <span class="keyword">if</span> (cellsBusy == <span class="number">0</span>) &#123;       <span class="comment">// Try to attach new Cell</span></span><br><span class="line">                    <span class="comment">// 新建一个Cell，值为当前需要增加的值</span></span><br><span class="line">                    <span class="type">Cell</span> <span class="variable">r</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Cell</span>(x);   <span class="comment">// Optimistically create</span></span><br><span class="line">                    <span class="comment">// 再次检测cellsBusy，并尝试CAS加锁</span></span><br><span class="line">                    <span class="keyword">if</span> (cellsBusy == <span class="number">0</span> &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">                        <span class="type">boolean</span> <span class="variable">created</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">                        <span class="keyword">try</span> &#123;               <span class="comment">// Recheck under lock</span></span><br><span class="line">                            Cell[] rs; <span class="type">int</span> m, j;</span><br><span class="line">                            <span class="comment">// 这里一定要重新获取cells，因为as并不在锁定范围内，有可能已经扩容了</span></span><br><span class="line">                            <span class="keyword">if</span> ((rs = cells) != <span class="literal">null</span> &amp;&amp;</span><br><span class="line">                                (m = rs.length) &gt; <span class="number">0</span> &amp;&amp;</span><br><span class="line">                                rs[j = (m - <span class="number">1</span>) &amp; h] == <span class="literal">null</span>) &#123;</span><br><span class="line">                                rs[j] = r;</span><br><span class="line">                                created = <span class="literal">true</span>;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                            <span class="comment">// 释放锁</span></span><br><span class="line">                            cellsBusy = <span class="number">0</span>;</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="comment">// 创建成功了就返回，否则继续自旋尝试</span></span><br><span class="line">                        <span class="keyword">if</span> (created)</span><br><span class="line">                            <span class="keyword">break</span>;</span><br><span class="line">                        <span class="keyword">continue</span>;           <span class="comment">// Slot is now non-empty</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                collide = <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 重新尝试</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (!wasUncontended)       <span class="comment">// CAS already known to fail</span></span><br><span class="line">                wasUncontended = <span class="literal">true</span>;      <span class="comment">// Continue after rehash</span></span><br><span class="line">            <span class="comment">// 情况2：再次尝试CAS更新当前线程所在Cell的值</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (a.cas(v = a.value, ((fn == <span class="literal">null</span>) ? v + x :</span><br><span class="line">                                         fn.applyAsLong(v, x))))</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="comment">// 如果cells数组的长度达到了CPU核心数，或者cells数组扩容了，则设置collide为false保证能够跳过扩容逻辑</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (n &gt;= NCPU || cells != as)</span><br><span class="line">                collide = <span class="literal">false</span>;            <span class="comment">// At max size or stale</span></span><br><span class="line">            <span class="comment">// 这里都是代码技巧，归根结底是为了保证后续再次CAS失败后扩容的正常运行</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (!collide)</span><br><span class="line">                collide = <span class="literal">true</span>;</span><br><span class="line">            <span class="comment">// 情况3：明确出现冲突了，尝试占有锁，并扩容</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (cellsBusy == <span class="number">0</span> &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="comment">// 检查是否有其它线程已经扩容过了</span></span><br><span class="line">                    <span class="keyword">if</span> (cells == as) &#123;      <span class="comment">// Expand table unless stale</span></span><br><span class="line">                        <span class="comment">// 新数组为原数组的两倍</span></span><br><span class="line">                        Cell[] rs = <span class="keyword">new</span> <span class="title class_">Cell</span>[n &lt;&lt; <span class="number">1</span>];</span><br><span class="line">                        <span class="comment">// 把旧数组元素拷贝到新数组中</span></span><br><span class="line">                        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; n; ++i)</span><br><span class="line">                            rs[i] = as[i];</span><br><span class="line">                        <span class="comment">// 重新赋值cells为新数组</span></span><br><span class="line">                        cells = rs;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    <span class="comment">// 释放锁</span></span><br><span class="line">                    cellsBusy = <span class="number">0</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 已解决冲突</span></span><br><span class="line">                collide = <span class="literal">false</span>;</span><br><span class="line">                <span class="comment">// 使用扩容后的新数组重新尝试</span></span><br><span class="line">                <span class="keyword">continue</span>;                   </span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 更新失败或者达到了CPU核心数，重新生成probe，并重试</span></span><br><span class="line">            h = advanceProbe(h);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 情况4：需要加锁初始化Cell数组，并且检查Cell数组之前没有初始化</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (cellsBusy == <span class="number">0</span> &amp;&amp; cells == as &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">            <span class="type">boolean</span> <span class="variable">init</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="comment">// 双重检查，确保Cell数组不会重复初始化</span></span><br><span class="line">                <span class="keyword">if</span> (cells == as) &#123;</span><br><span class="line">                    <span class="comment">// 默认Cell数组初始容量为2</span></span><br><span class="line">                    Cell[] rs = <span class="keyword">new</span> <span class="title class_">Cell</span>[<span class="number">2</span>];</span><br><span class="line">                    rs[h &amp; <span class="number">1</span>] = <span class="keyword">new</span> <span class="title class_">Cell</span>(x);</span><br><span class="line">                    cells = rs;</span><br><span class="line">                    init = <span class="literal">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                <span class="comment">// 释放锁</span></span><br><span class="line">                cellsBusy = <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 初始化成功就可以直接退出，否则表明Cell数组因为并发初始化而失败</span></span><br><span class="line">            <span class="keyword">if</span> (init)</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 情况5：锁被占用，其他线程在尝试初始化Cell数组，则直接CAS更新base变量</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (casBase(v = base, ((fn == <span class="literal">null</span>) ? v + x :</span><br><span class="line">                                    fn.applyAsLong(v, x))))</span><br><span class="line">            <span class="keyword">break</span>;                          <span class="comment">// Fall back on using base</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>longAccumulate</code>方法可以看作是LongAdder类底层使用的最重要也是最难的方法，基本上可以分成5种情况：</p>
+<ul>
+<li>情况1：线程待处理的Cell数组槽位为空，需要创建新Cell</li>
+<li>情况2：线程CAS更新相应的Cell槽位失败，需要再次尝试</li>
+<li>情况3：线程多次CAS尝试更新对应的Cell槽位均失败，表明竞争过于激烈，需要进行Cell数组扩容</li>
+<li>情况4：线程开始CAS更新base变量失败后发现Cell数组还未初始化，于是初始化容量为2的Cell数组</li>
+<li>情况5：cellsBusy锁被占用而无法初始化，表明其他线程在尝试初始化Cell数组，于是CAS更新base变量，这无疑是一个兜底方案！</li>
+</ul>
+<p>那么如何获取LongAdder当前的累积总和呢，其实就是通过<code>sum</code>方法获取最终一致性的结果(并非强一致性，因为没有加锁控制这一过程)，因此，适合高并发的统计场景，而不适合要对某个Long型变量进行严格同步的场景。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">long</span> <span class="title function_">sum</span><span class="params">()</span> &#123;</span><br><span class="line">    Cell[] as = cells; Cell a;</span><br><span class="line">    <span class="comment">// sum初始等于base</span></span><br><span class="line">    <span class="type">long</span> <span class="variable">sum</span> <span class="operator">=</span> base;</span><br><span class="line">    <span class="comment">// 如果cells不为空</span></span><br><span class="line">    <span class="keyword">if</span> (as != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 遍历所有的Cell</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; as.length; ++i) &#123;</span><br><span class="line">            <span class="comment">// 如果所在的Cell不为空，就把它的value累加到sum中</span></span><br><span class="line">            <span class="keyword">if</span> ((a = as[i]) != <span class="literal">null</span>)</span><br><span class="line">                sum += a.value;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回sum</span></span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>LongAdder</code>减少冲突的方法以及在求和场景下比<code>AtomicLong</code>更高效。因为<code>LongAdder</code>在更新数值时并非对一个数进行更新，而是分散到多个Cell，这样在多线程的情况下可以有效的嫌少冲突和压力，使得更加高效。</p>
+<blockquote>
+<p>有趣的是Cell数组最多扩容到大于或等于NCPU的最小二次幂，因为同一时刻最后只有NCPU个线程同时运行并操作Cell数组，而每个线程会根据自己的threadLocalRandomProbe哈希值找到对应的Cell槽位，如果发生冲突并CAS失败会重新计算线程的该probe值，因此哈希分布随着时间会逐渐均匀，Cells数组的长度并不需要多长，达到CPU核心数即可。</p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">LongAdder类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81LongAdder%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、LongAdder类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81LongAdder%E7%B1%BB%E7%9A%84%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.</span> <span class="toc-text">二、LongAdder类的原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Striped64%E7%B1%BB%E7%9A%84%E8%A7%A3%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">三、Striped64类的解析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%86%85%E9%83%A8%E7%B1%BB"><span class="toc-number">1.3.1.</span> <span class="toc-text">主要内部类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%B1%9E%E6%80%A7"><span class="toc-number">1.3.2.</span> <span class="toc-text">主要属性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81LongAdder%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、LongAdder类的方法</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=LongAdder类源码剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=LongAdder类源码剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LongAdder类源码剖析&body=Check out this article: https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LongAdder类源码剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=LongAdder类源码剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/11/15/LongAdder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=LongAdder类源码剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
