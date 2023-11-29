@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Servlet高级之过滤器1.Filter简单使用在一个比较复杂的Web应用程序中，通常都有很多URL映射，对应的，也会有多个Servlet来处理URL。我们考察这样一个论坛应用程序：  各个Servlet设计功能如下：  IndexServlet：浏览帖子； SignInServlet：登录； SignOutServlet：登出； ProfileServlet：修改用户资料； PostServl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Servlet高级之过滤器">
+<meta property="og:url" content="https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Servlet高级之过滤器1.Filter简单使用在一个比较复杂的Web应用程序中，通常都有很多URL映射，对应的，也会有多个Servlet来处理URL。我们考察这样一个论坛应用程序：  各个Servlet设计功能如下：  IndexServlet：浏览帖子； SignInServlet：登录； SignOutServlet：登出； ProfileServlet：修改用户资料； PostServl">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/image-20231129161633010.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/image-20231129161750585.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/image-20231129161828823.png">
+<meta property="article:published_time" content="2023-10-06T15:29:53.000Z">
+<meta property="article:modified_time" content="2023-11-29T08:35:24.411Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="JavaWeb">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/image-20231129161633010.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Servlet高级之过滤器</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/10/08/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E7%9B%91%E5%90%AC%E5%99%A8/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/10/04/%E7%AE%80%E6%98%93MVC%E6%A1%86%E6%9E%B6%E5%AE%9E%E7%8E%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&text=Servlet高级之过滤器"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&is_video=false&description=Servlet高级之过滤器"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Servlet高级之过滤器&body=Check out this article: https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&name=Servlet高级之过滤器&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&t=Servlet高级之过滤器"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">Servlet高级之过滤器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Filter%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8"><span class="toc-number">1.1.</span> <span class="toc-text">1.Filter简单使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Filter%E4%BF%AE%E6%94%B9%E8%AF%B7%E6%B1%82"><span class="toc-number">1.2.</span> <span class="toc-text">2.Filter修改请求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Filter%E4%BF%AE%E6%94%B9%E5%93%8D%E5%BA%94"><span class="toc-number">1.3.</span> <span class="toc-text">3.Filter修改响应</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Servlet高级之过滤器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-10-06T15:29:53.000Z" class="dt-published" itemprop="datePublished">2023-10-06</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/JavaWeb/" rel="tag">JavaWeb</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Servlet高级之过滤器"><a href="#Servlet高级之过滤器" class="headerlink" title="Servlet高级之过滤器"></a>Servlet高级之过滤器</h1><h2 id="1-Filter简单使用"><a href="#1-Filter简单使用" class="headerlink" title="1.Filter简单使用"></a>1.Filter简单使用</h2><p>在一个比较复杂的Web应用程序中，通常都有很多URL映射，对应的，也会有多个Servlet来处理URL。我们考察这样一个论坛应用程序：</p>
+<p><img src="/../../../../../../imgs/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/image-20231129161633010.png" alt="image-20231129161633010"></p>
+<p>各个Servlet设计功能如下：</p>
+<ul>
+<li>IndexServlet：浏览帖子；</li>
+<li>SignInServlet：登录；</li>
+<li>SignOutServlet：登出；</li>
+<li>ProfileServlet：修改用户资料；</li>
+<li>PostServlet：发帖；</li>
+<li>ReplyServlet：回复。</li>
+</ul>
+<p>其中，ProfileServlet、PostServlet和ReplyServlet都需要用户登录后才能操作，否则，应当直接跳转到登录页面。</p>
+<p>我们可以直接把判断登录的逻辑写到这3个Servlet中，但是，同样的逻辑重复3次没有必要，并且，如果后续继续加Servlet并且也需要验证登录时，还需要继续重复这个检查逻辑。</p>
+<p>为了把一些公用逻辑从各个Servlet中抽离出来，JavaEE的Servlet规范还提供了一种Filter组件，即过滤器，它的作用是，在HTTP请求到达Servlet之前，可以被一个或多个Filter预处理，类似打印日志、登录检查等逻辑，完全可以放到Filter中。</p>
+<p>例如，我们编写一个最简单的EncodingFilter，它强制把输入和输出的编码设置为UTF-8：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebFilter(urlPatterns = &quot;/*&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EncodingFilter</span> <span class="keyword">implements</span> <span class="title class_">Filter</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span></span><br><span class="line">            <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;EncodingFilter:doFilter&quot;</span>);</span><br><span class="line">        request.setCharacterEncoding(<span class="string">&quot;UTF-8&quot;</span>);</span><br><span class="line">        response.setCharacterEncoding(<span class="string">&quot;UTF-8&quot;</span>);</span><br><span class="line">        chain.doFilter(request, response);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编写Filter时，必须实现<code>Filter</code>接口，在<code>doFilter()</code>方法内部，要继续处理请求，必须调用<code>chain.doFilter()</code>。最后，用<code>@WebFilter</code>注解标注该Filter需要过滤的URL。这里的<code>/*</code>表示所有路径。</p>
+<p>添加了Filter之后，整个请求的处理架构如下：</p>
+<p><img src="/../../../../../../imgs/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/image-20231129161750585.png" alt="image-20231129161750585"></p>
+<p>还可以继续添加其他Filter，例如LogFilter：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebFilter(&quot;/*&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LogFilter</span> <span class="keyword">implements</span> <span class="title class_">Filter</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span></span><br><span class="line">            <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;LogFilter: process &quot;</span> + ((HttpServletRequest) request).getRequestURI());</span><br><span class="line">        chain.doFilter(request, response);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>多个Filter会组成一个链，每个请求都被链上的Filter依次处理：</p>
+<p><img src="/../../../../../../imgs/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/image-20231129161828823.png" alt="image-20231129161828823"></p>
+<p>那么有多个Filter的时候，Filter的顺序如何指定？多个Filter按不同顺序处理会造成处理结果不同吗？</p>
+<p>答案是Filter的顺序确实对处理的结果有影响。但遗憾的是，Servlet规范并没有对<code>@WebFilter</code>注解标注的Filter规定顺序。如果一定要给每个Filter指定顺序，就必须在<code>web.xml</code>文件中对这些Filter再配置一遍。</p>
+<p>注意到上述两个Filter的过滤路径都是<code>/*</code>，即它们会对所有请求进行过滤。也可以编写只对特定路径进行过滤的Filter，例如<code>AuthFilter</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebFilter(&quot;/user/*&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AuthFilter</span> <span class="keyword">implements</span> <span class="title class_">Filter</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span></span><br><span class="line">            <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;AuthFilter: check authentication&quot;</span>);</span><br><span class="line">        <span class="type">HttpServletRequest</span> <span class="variable">req</span> <span class="operator">=</span> (HttpServletRequest) request;</span><br><span class="line">        <span class="type">HttpServletResponse</span> <span class="variable">resp</span> <span class="operator">=</span> (HttpServletResponse) response;</span><br><span class="line">        <span class="keyword">if</span> (req.getSession().getAttribute(<span class="string">&quot;user&quot;</span>) == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="comment">// 未登录，自动跳转到登录页:</span></span><br><span class="line">            System.out.println(<span class="string">&quot;AuthFilter: not signin!&quot;</span>);</span><br><span class="line">            resp.sendRedirect(<span class="string">&quot;/signin&quot;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 已登录，继续处理:</span></span><br><span class="line">            chain.doFilter(request, response);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意到<code>AuthFilter</code>只过滤以<code>/user/</code>开头的路径，因此：</p>
+<ul>
+<li>如果一个请求路径类似<code>/user/profile</code>，那么它会被上述3个Filter依次处理；</li>
+<li>如果一个请求路径类似<code>/test</code>，那么它会被上述2个Filter依次处理（不会被AuthFilter处理）。</li>
+</ul>
+<p>再注意观察<code>AuthFilter</code>，当用户没有登录时，在<code>AuthFilter</code>内部，直接调用<code>resp.sendRedirect()</code>发送重定向，且没有调用<code>chain.doFilter()</code>，因此，当用户没有登录时，请求到达<code>AuthFilter</code>后，不再继续处理，即后续的Filter和任何Servlet都没有机会处理该请求了。</p>
+<p>可见，Filter可以有针对性地拦截或者放行HTTP请求。</p>
+<p>如果一个Filter在当前请求中生效，但什么都没有做：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebFilter(&quot;/*&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyFilter</span> <span class="keyword">implements</span> <span class="title class_">Filter</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span></span><br><span class="line">            <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">        <span class="comment">// TODO</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那么，用户将看到一个空白页，因为请求没有继续处理，默认响应是200+空白输出。</p>
+<blockquote>
+<p>如果Filter要使请求继续被处理，就一定要调用chain.doFilter()！</p>
+</blockquote>
+<p>如果我们使用上一节介绍的MVC模式，即一个统一的<code>DispatcherServlet</code>入口，加上多个Controller，这种模式下Filter仍然是正常工作的。例如，一个处理<code>/user/*</code>的Filter实际上作用于那些处理<code>/user/</code>开头的Controller方法之前。</p>
+<h2 id="2-Filter修改请求"><a href="#2-Filter修改请求" class="headerlink" title="2.Filter修改请求"></a>2.Filter修改请求</h2><p>Filter可以对请求进行预处理，因此，我们可以把很多公共预处理逻辑放到Filter中完成。</p>
+<p>考察这样一种需求：我们在Web应用中经常需要处理用户上传文件，例如，一个UploadServlet可以简单地编写如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebServlet(urlPatterns = &quot;/upload/file&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UploadServlet</span> <span class="keyword">extends</span> <span class="title class_">HttpServlet</span> &#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">doPost</span><span class="params">(HttpServletRequest req, HttpServletResponse resp)</span> <span class="keyword">throws</span> ServletException, IOException &#123;</span><br><span class="line">        <span class="comment">// 读取Request Body:</span></span><br><span class="line">        <span class="type">InputStream</span> <span class="variable">input</span> <span class="operator">=</span> req.getInputStream();</span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">output</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span>];</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> input.read(buffer);</span><br><span class="line">            <span class="keyword">if</span> (len == -<span class="number">1</span>) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            output.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// <span class="doctag">TODO:</span> 写入文件:</span></span><br><span class="line">        <span class="comment">// 显示上传结果:</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">uploadedText</span> <span class="operator">=</span> output.toString(StandardCharsets.UTF_8);</span><br><span class="line">        <span class="type">PrintWriter</span> <span class="variable">pw</span> <span class="operator">=</span> resp.getWriter();</span><br><span class="line">        pw.write(<span class="string">&quot;&lt;h1&gt;Uploaded:&lt;/h1&gt;&quot;</span>);</span><br><span class="line">        pw.write(<span class="string">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>);</span><br><span class="line">        pw.write(uploadedText);</span><br><span class="line">        pw.write(<span class="string">&quot;&lt;/code&gt;&lt;/pre&gt;&quot;</span>);</span><br><span class="line">        pw.flush();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是要保证文件上传的完整性怎么办？我们知道，如果在上传文件的同时，把文件的哈希也传过来，服务器端做一个验证，就可以确保用户上传的文件一定是完整的。这个验证逻辑非常适合写在<code>ValidateUploadFilter</code>中，因为它可以复用。</p>
+<p>我们先写一个简单的版本，快速实现<code>ValidateUploadFilter</code>的逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebFilter(&quot;/upload/*&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ValidateUploadFilter</span> <span class="keyword">implements</span> <span class="title class_">Filter</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span></span><br><span class="line">            <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">        <span class="type">HttpServletRequest</span> <span class="variable">req</span> <span class="operator">=</span> (HttpServletRequest) request;</span><br><span class="line">        <span class="type">HttpServletResponse</span> <span class="variable">resp</span> <span class="operator">=</span> (HttpServletResponse) response;</span><br><span class="line">        <span class="comment">// 获取客户端传入的签名方法和签名:</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">digest</span> <span class="operator">=</span> req.getHeader(<span class="string">&quot;Signature-Method&quot;</span>);</span><br><span class="line">        <span class="type">String</span> <span class="variable">signature</span> <span class="operator">=</span> req.getHeader(<span class="string">&quot;Signature&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (digest == <span class="literal">null</span> || digest.isEmpty() || signature == <span class="literal">null</span> || signature.isEmpty()) &#123;</span><br><span class="line">            sendErrorPage(resp, <span class="string">&quot;Missing signature.&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 读取Request的Body并验证签名:</span></span><br><span class="line">        <span class="type">MessageDigest</span> <span class="variable">md</span> <span class="operator">=</span> getMessageDigest(digest);</span><br><span class="line">        <span class="type">InputStream</span> <span class="variable">input</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DigestInputStream</span>(request.getInputStream(), md);</span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span>];</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> input.read(buffer);</span><br><span class="line">            <span class="keyword">if</span> (len == -<span class="number">1</span>) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">String</span> <span class="variable">actual</span> <span class="operator">=</span> toHexString(md.digest());</span><br><span class="line">        <span class="keyword">if</span> (!signature.equals(actual)) &#123;</span><br><span class="line">            sendErrorPage(resp, <span class="string">&quot;Invalid signature.&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 验证成功后继续处理:</span></span><br><span class="line">        chain.doFilter(request, response);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将byte[]转换为hex string:</span></span><br><span class="line">    <span class="keyword">private</span> String <span class="title function_">toHexString</span><span class="params">(<span class="type">byte</span>[] digest)</span> &#123;</span><br><span class="line">        <span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">byte</span> b : digest) &#123;</span><br><span class="line">            sb.append(String.format(<span class="string">&quot;%02x&quot;</span>, b));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> sb.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 根据名称创建MessageDigest:</span></span><br><span class="line">    <span class="keyword">private</span> MessageDigest <span class="title function_">getMessageDigest</span><span class="params">(String name)</span> <span class="keyword">throws</span> ServletException &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> MessageDigest.getInstance(name);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ServletException</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 发送一个错误响应:</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">sendErrorPage</span><span class="params">(HttpServletResponse resp, String errorMessage)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);</span><br><span class="line">        <span class="type">PrintWriter</span> <span class="variable">pw</span> <span class="operator">=</span> resp.getWriter();</span><br><span class="line">        pw.write(<span class="string">&quot;&lt;html&gt;&lt;body&gt;&lt;h1&gt;&quot;</span>);</span><br><span class="line">        pw.write(errorMessage);</span><br><span class="line">        pw.write(<span class="string">&quot;&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>);</span><br><span class="line">        pw.flush();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个<code>ValidateUploadFilter</code>的逻辑似乎没有问题，我们可以用curl命令测试：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">curl http://localhost:8080/upload/file -v -d <span class="string">&#x27;test-data&#x27;</span> \</span></span><br><span class="line"><span class="language-bash">  -H <span class="string">&#x27;Signature-Method: SHA-1&#x27;</span> \</span></span><br><span class="line"><span class="language-bash">  -H <span class="string">&#x27;Signature: 7115e9890f5b5cc6914bdfa3b7c011db1cdafedb&#x27;</span> \</span></span><br><span class="line"><span class="language-bash">  -H <span class="string">&#x27;Content-Type: application/octet-stream&#x27;</span></span></span><br><span class="line">*   Trying ::1...</span><br><span class="line">* TCP_NODELAY set</span><br><span class="line">* Connected to localhost (::1) port 8080 (#0)</span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">POST /upload/file HTTP/1.1</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Host: localhost:8080</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">User-Agent: curl/7.64.1</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Accept: */*</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Signature-Method: SHA-1</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Signature: 7115e9890f5b5cc6914bdfa3b7c011db1cdafedb</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Content-Type: application/octet-stream</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Content-Length: 9</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">* upload completely sent off: 9 out of 9 bytes</span></span><br><span class="line">&lt; HTTP/1.1 200 </span><br><span class="line">&lt; Transfer-Encoding: chunked</span><br><span class="line">&lt; Date: Thu, 30 Jan 2020 13:56:39 GMT</span><br><span class="line">&lt; </span><br><span class="line">* Connection #0 to host localhost left intact</span><br><span class="line">&lt;h1&gt;Uploaded:&lt;/h1&gt;&lt;pre&gt;&lt;code&gt;&lt;/code&gt;&lt;/pre&gt;</span><br><span class="line">* Closing connection 0</span><br></pre></td></tr></table></figure>
+
+<p><code>ValidateUploadFilter</code>对签名进行验证的逻辑是没有问题的，但是，细心的童鞋注意到，<code>UploadServlet</code>并未读取到任何数据！</p>
+<p>这里的原因是对<code>HttpServletRequest</code>进行读取时，只能读取一次。如果Filter调用<code>getInputStream()</code>读取了一次数据，后续Servlet处理时，再次读取，将无法读到任何数据。怎么办？</p>
+<p>这个时候，我们需要一个“伪造”的<code>HttpServletRequest</code>，具体做法是使用<code>代理模式</code>，对<code>getInputStream()</code>和<code>getReader()</code>返回一个新的流：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ReReadableHttpServletRequest</span> <span class="keyword">extends</span> <span class="title class_">HttpServletRequestWrapper</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">byte</span>[] body;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">boolean</span> <span class="variable">open</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ReReadableHttpServletRequest</span><span class="params">(HttpServletRequest request, <span class="type">byte</span>[] body)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(request);</span><br><span class="line">        <span class="built_in">this</span>.body = body;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回InputStream:</span></span><br><span class="line">    <span class="keyword">public</span> ServletInputStream <span class="title function_">getInputStream</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="keyword">if</span> (open) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;Cannot re-open input stream!&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        open = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ServletInputStream</span>() &#123;</span><br><span class="line">            <span class="keyword">private</span> <span class="type">int</span> <span class="variable">offset</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isFinished</span><span class="params">()</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> offset &gt;= body.length;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isReady</span><span class="params">()</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setReadListener</span><span class="params">(ReadListener listener)</span> &#123;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">                <span class="keyword">if</span> (offset &gt;= body.length) &#123;</span><br><span class="line">                    <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> body[offset] &amp; <span class="number">0xff</span>;</span><br><span class="line">                offset++;</span><br><span class="line">                <span class="keyword">return</span> n;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回Reader:</span></span><br><span class="line">    <span class="keyword">public</span> BufferedReader <span class="title function_">getReader</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="keyword">if</span> (open) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;Cannot re-open reader!&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        open = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">InputStreamReader</span>(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(body), <span class="string">&quot;UTF-8&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意观察<code>ReReadableHttpServletRequest</code>的构造方法，它保存了<code>ValidateUploadFilter</code>读取的<code>byte[]</code>内容，并在调用<code>getInputStream()</code>时通过<code>byte[]</code>构造了一个新的<code>ServletInputStream</code>。</p>
+<p>然后，我们在<code>ValidateUploadFilter</code>中，把<code>doFilter()</code>调用时传给下一个处理者的<code>HttpServletRequest</code>替换为我们自己“伪造”的<code>ReReadableHttpServletRequest</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span></span><br><span class="line">        <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">    ...</span><br><span class="line">    chain.doFilter(<span class="keyword">new</span> <span class="title class_">ReReadableHttpServletRequest</span>(req, output.toByteArray()), response);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再注意到我们编写<code>ReReadableHttpServletRequest</code>时，是从<code>HttpServletRequestWrapper</code>继承，而不是直接实现<code>HttpServletRequest</code>接口。这是因为，Servlet的每个新版本都会对接口增加一些新方法，从<code>HttpServletRequestWrapper</code>继承可以确保新方法被正确地覆写了，因为<code>HttpServletRequestWrapper</code>是由Servlet的jar包提供的，目的就是为了让我们方便地实现对<code>HttpServletRequest</code>接口的代理。</p>
+<p>我们总结一下对<code>HttpServletRequest</code>接口进行代理的步骤：</p>
+<ol>
+<li>从<code>HttpServletRequestWrapper</code>继承一个<code>XxxHttpServletRequest</code>，需要传入原始的<code>HttpServletRequest</code>实例；</li>
+<li>覆写某些方法，使得新的<code>XxxHttpServletRequest</code>实例看上去“改变”了原始的<code>HttpServletRequest</code>实例；</li>
+<li>在<code>doFilter()</code>中传入新的<code>XxxHttpServletRequest</code>实例。</li>
+</ol>
+<p>虽然整个Filter的代码比较复杂，但它的好处在于：这个Filter在整个处理链中实现了灵活的“可插拔”特性，即是否启用对Web应用程序的其他组件（Filter、Servlet）完全没有影响。</p>
+<h2 id="3-Filter修改响应"><a href="#3-Filter修改响应" class="headerlink" title="3.Filter修改响应"></a>3.Filter修改响应</h2><p>既然我们能通过Filter修改<code>HttpServletRequest</code>，自然也能修改<code>HttpServletResponse</code>，因为这两者都是接口。</p>
+<p>我们来看一下在什么情况下我们需要修改<code>HttpServletResponse</code>。</p>
+<p>假设我们编写了一个Servlet，但由于业务逻辑比较复杂，处理该请求需要耗费很长的时间：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebServlet(urlPatterns = &quot;/slow/hello&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloServlet</span> <span class="keyword">extends</span> <span class="title class_">HttpServlet</span> &#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">doGet</span><span class="params">(HttpServletRequest req, HttpServletResponse resp)</span> <span class="keyword">throws</span> ServletException, IOException &#123;</span><br><span class="line">        resp.setContentType(<span class="string">&quot;text/html&quot;</span>);</span><br><span class="line">        <span class="comment">// 模拟耗时1秒:</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">PrintWriter</span> <span class="variable">pw</span> <span class="operator">=</span> resp.getWriter();</span><br><span class="line">        pw.write(<span class="string">&quot;&lt;h1&gt;Hello, world!&lt;/h1&gt;&quot;</span>);</span><br><span class="line">        pw.flush();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>好消息是每次返回的响应内容是固定的，因此，如果我们能使用缓存将结果缓存起来，就可以大大提高Web应用程序的运行效率。</p>
+<p>缓存逻辑最好不要在Servlet内部实现，因为我们希望能复用缓存逻辑，所以，编写一个<code>CacheFilter</code>最合适：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@WebFilter(&quot;/slow/*&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CacheFilter</span> <span class="keyword">implements</span> <span class="title class_">Filter</span> &#123;</span><br><span class="line">    <span class="comment">// Path到byte[]的缓存:</span></span><br><span class="line">    <span class="keyword">private</span> Map&lt;String, <span class="type">byte</span>[]&gt; cache = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span></span><br><span class="line">            <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">        <span class="type">HttpServletRequest</span> <span class="variable">req</span> <span class="operator">=</span> (HttpServletRequest) request;</span><br><span class="line">        <span class="type">HttpServletResponse</span> <span class="variable">resp</span> <span class="operator">=</span> (HttpServletResponse) response;</span><br><span class="line">        <span class="comment">// 获取Path:</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> req.getRequestURI();</span><br><span class="line">        <span class="comment">// 获取缓存内容:</span></span><br><span class="line">        <span class="type">byte</span>[] data = <span class="built_in">this</span>.cache.get(url);</span><br><span class="line">        resp.setHeader(<span class="string">&quot;X-Cache-Hit&quot;</span>, data == <span class="literal">null</span> ? <span class="string">&quot;No&quot;</span> : <span class="string">&quot;Yes&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (data == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="comment">// 缓存未找到,构造一个伪造的Response:</span></span><br><span class="line">            <span class="type">CachedHttpServletResponse</span> <span class="variable">wrapper</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CachedHttpServletResponse</span>(resp);</span><br><span class="line">            <span class="comment">// 让下游组件写入数据到伪造的Response:</span></span><br><span class="line">            chain.doFilter(request, wrapper);</span><br><span class="line">            <span class="comment">// 从伪造的Response中读取写入的内容并放入缓存:</span></span><br><span class="line">            data = wrapper.getContent();</span><br><span class="line">            cache.put(url, data);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 写入到原始的Response:</span></span><br><span class="line">        <span class="type">ServletOutputStream</span> <span class="variable">output</span> <span class="operator">=</span> resp.getOutputStream();</span><br><span class="line">        output.write(data);</span><br><span class="line">        output.flush();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实现缓存的关键在于，调用<code>doFilter()</code>时，我们不能传入原始的<code>HttpServletResponse</code>，因为这样就会写入Socket，我们也就无法获取下游组件写入的内容。如果我们传入的是“伪造”的<code>HttpServletResponse</code>，让下游组件写入到我们预设的<code>ByteArrayOutputStream</code>，我们就“截获”了下游组件写入的内容，于是，就可以把内容缓存起来，再通过原始的<code>HttpServletResponse</code>实例写入到网络。</p>
+<p>这个<code>CachedHttpServletResponse</code>实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CachedHttpServletResponse</span> <span class="keyword">extends</span> <span class="title class_">HttpServletResponseWrapper</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">boolean</span> <span class="variable">open</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">ByteArrayOutputStream</span> <span class="variable">output</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">CachedHttpServletResponse</span><span class="params">(HttpServletResponse response)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(response);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取Writer:</span></span><br><span class="line">    <span class="keyword">public</span> PrintWriter <span class="title function_">getWriter</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="keyword">if</span> (open) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;Cannot re-open writer!&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        open = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">PrintWriter</span>(output, <span class="literal">false</span>, StandardCharsets.UTF_8);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取OutputStream:</span></span><br><span class="line">    <span class="keyword">public</span> ServletOutputStream <span class="title function_">getOutputStream</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="keyword">if</span> (open) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;Cannot re-open output stream!&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        open = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ServletOutputStream</span>() &#123;</span><br><span class="line">            <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isReady</span><span class="params">()</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setWriteListener</span><span class="params">(WriteListener listener)</span> &#123;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 实际写入ByteArrayOutputStream:</span></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">write</span><span class="params">(<span class="type">int</span> b)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">                output.write(b);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回写入的byte[]:</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] getContent() &#123;</span><br><span class="line">        <span class="keyword">return</span> output.toByteArray();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可见，如果我们想要修改响应，就可以通过<code>HttpServletResponseWrapper</code>构造一个“伪造”的<code>HttpServletResponse</code>，这样就能拦截到写入的数据。修改响应时，最后不要忘记把数据写入原始的<code>HttpServletResponse</code>实例。</p>
+<p>这个<code>CacheFilter</code>同样是一个“可插拔”组件，它是否启用不影响Web应用程序的其他组件（Filter、Servlet）。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">Servlet高级之过滤器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Filter%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8"><span class="toc-number">1.1.</span> <span class="toc-text">1.Filter简单使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Filter%E4%BF%AE%E6%94%B9%E8%AF%B7%E6%B1%82"><span class="toc-number">1.2.</span> <span class="toc-text">2.Filter修改请求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Filter%E4%BF%AE%E6%94%B9%E5%93%8D%E5%BA%94"><span class="toc-number">1.3.</span> <span class="toc-text">3.Filter修改响应</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&text=Servlet高级之过滤器"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&is_video=false&description=Servlet高级之过滤器"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Servlet高级之过滤器&body=Check out this article: https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&title=Servlet高级之过滤器"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&name=Servlet高级之过滤器&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/06/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E8%BF%87%E6%BB%A4%E5%99%A8/&t=Servlet高级之过滤器"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
