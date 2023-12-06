@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%B8%80)/image-20230802155934497.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%B8%80)/image-20230802175807886.png">
 <meta property="article:published_time" content="2023-08-02T07:16:40.388Z">
-<meta property="article:modified_time" content="2023-10-11T15:05:32.140Z">
+<meta property="article:modified_time" content="2023-12-05T03:31:46.446Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Java">
 <meta name="twitter:card" content="summary">
@@ -176,33 +176,33 @@
 </ul>
 <p>Java 语言的语法与 C 语言和 C++ 语言很接近，使得大多数程序员很容易学习和使用。另一方面，Java 丢弃了 C++ 中很少使用的、很难理解的、令人迷惑的那些特性，如操作符重载、多继承、自动的强制类型转换。特别地，Java 语言不使用指针而是引用，并提供了自动分配和回收内存空间，使得程序员不必为内存管理而担忧。</p>
 <blockquote>
-<p>Java 和 C++ 作为后端开发中的两种主流语言(当然还有Go)，其使用形式非常接近，不过写过 C++ 的便知道 C++ 明显更加细致和啰嗦，而且 C++ 因为严谨和复杂一些特性比较抽象，例如 C++ 中通过运算符重载能够完成 Student1 + Student2 这种类相加操作，Java则完全不允许 + 运算符的这种行为；C++ 中子类还能够同时继承多个父类，当父类中有名称一样的属性时便发生了“多重继承二义性”现象，此时子类访问同名属性需要作用域限定符 “::”，并且 C++ 只针对父类的虚函数进行动态绑定(虚函数表原理)，Java 则完全不需要担心这些东西。最重要的一点是，Java 不使用指针而是引用，还消除了 C++ 程序员最为头疼的内存分配与回收的问题(垃圾回收原理)。</p>
+<p>Java 和 C++ 作为后端开发中的两种主流语言(当然还有Go)，其使用形式非常接近，不过写过 C++ 的便知道 C++ 明显更加细致和啰嗦，而且 C++ 因为严谨和复杂一些特性比较抽象，例如 C++ 中通过运算符重载能够完成 Student1 + Student2 这种类相加操作，Java则完全不允许 + 运算符的这种行为；C++ 中子类还能够同时继承多个父类，当父类中有名称一样的属性时便发生了“多重继承二义性”现象，此时子类访问同名属性需要作用域限定符 “::”，并且 C++ 只针对父类的虚函数进行动态绑定(虚函数表原理)，Java 则完全不需要担心这些东西。最重要的一点是，Java 不使用指针而是引用，消除了 C++ 程序员最为头疼的内存分配与回收的问题(垃圾回收原理)。</p>
 </blockquote>
 <ul>
 <li>Java 语言是面向对象的</li>
 </ul>
-<p>Java 语言提供类、接口和继承等面向对象的特性，为了简单起见，只支持类之间的单继承，但支持接口之间的多继承，并支持类与接口之间的实现机制（关键字为 <code>implements</code>）。Java 语言全面支持<code>动态绑定</code>，而 C++语言只对虚函数使用动态绑定。总之，Java语言是一个纯的面向对象程序设计语言。</p>
+<p>Java 语言提供类、接口和继承等面向对象的特性，为了简单起见，只支持类的单继承，但支持接口的多继承，并支持类与接口之间的实现机制（关键字为 <code>implements</code>）。Java 语言全面支持<code>动态绑定</code>，而 C++ 语言只对虚函数使用动态绑定。总之，Java 语言是一个纯粹的面向对象程序设计语言。</p>
 <blockquote>
 <p>C++ 也是面向对象的编程语言，同时支持面向模板的泛型编程，还保留了 C 语言的低级特性。Java 过于纯粹了哦！</p>
 </blockquote>
 <ul>
-<li>Java语言是分布式的</li>
+<li>Java 语言是分布式的</li>
 </ul>
 <p>Java 语言支持 Internet 应用的开发，在基本的 Java 应用编程接口中有一个网络应用编程接口（java net），它提供了用于网络应用编程的类库，包括 URL、URLConnection、Socket、ServerSocket 等。Java 的 RMI（远程方法激活）机制也是开发分布式应用的重要手段。</p>
 <blockquote>
-<p>Java本身并不是”分布式的”，但Java在设计和实现上考虑了分布式计算的需求，因此可以很容易地用于开发分布式系统。如网络编程(Java提供了丰富的网络编程API)、RMI(远程方法调用)、JNDI(Java命名和目录接口，JNDI提供了访问命名和目录服务的API，使得分布式系统可以轻松查找和访问不同的资源)、序列化(Java的序列化机制允许将Java对象转换为字节流，并在不同计算机之间传输，实现对象的跨网络传输)等。</p>
+<p>Java 本身并不是”分布式的”，但 Java 在设计和实现上考虑了分布式计算的需求，因此可以很容易地用于开发分布式系统。如网络编程(Java 提供了丰富的网络编程 API)、RMI(远程方法调用)、JNDI(Java 命名和目录接口，JNDI 提供了访问命名和目录服务的 API，使得分布式系统可以轻松查找和访问不同的资源)、序列化(Java 的序列化机制允许将 Java 对象转换为字节流，并在不同计算机之间传输，实现对象的跨网络传输)等。</p>
 </blockquote>
 <ul>
 <li>Java 语言是健壮的</li>
 </ul>
 <p>Java 的强类型机制、异常处理、垃圾的自动收集等是 Java 程序健壮性的重要保证。对指针的丢弃是 Java 的明智选择。Java 的安全检查机制使得 Java 更具健壮性。</p>
 <blockquote>
-<p>Java 是静态类型语言，编译器在编译时会进行类型检查，Java提供了异常处理机制，允许开发者在程序出现异常时进行适当处理，防止程序崩溃或安全漏洞，同时Java的垃圾回收机制自动处理不再使用的对象，防止内存泄漏，减少了许多与动态内存管理相关的问题。</p>
+<p>Java 是静态类型语言，编译器在编译时会进行类型检查，Java 提供了异常处理机制，允许开发者在程序出现异常时进行适当处理，防止程序崩溃或安全漏洞，同时 Java 的垃圾回收机制自动处理不再使用的对象，防止内存泄漏，减少了许多与动态内存管理相关的问题。</p>
 </blockquote>
 <ul>
-<li>Java语言是安全的</li>
+<li>Java 语言是安全的</li>
 </ul>
-<p>Java通常被用在网络环境中，为此，Java 提供了一个安全机制以防恶意代码的攻击。除了Java 语言具有的许多安全特性以外，Java 对通过网络下载的类具有一个安全防范机制（类 <code>ClassLoader</code>），如分配不同的名字空间以防替代本地的同名类、字节代码检查，并提供安全管理机制（类 <code>SecurityManager</code>）让 Java 应用设置安全哨兵。</p>
+<p>Java 通常被用在网络环境中，为此，Java 提供了一个安全机制以防恶意代码的攻击。除了 Java 语言具有的许多安全特性以外，Java 对通过网络下载的类具有一个安全防范机制（类 <code>ClassLoader</code>），如分配不同的名字空间以防替代本地的同名类、字节代码检查，并提供安全管理机制（类 <code>SecurityManager</code>）让 Java 应用设置安全哨兵。</p>
 <blockquote>
 <p>Java 的安全性体现在很多方面。例如强类型检查、数组边界检查、无指针、访问控制、类加载机制、安全管理机制等。有趣的是，Java 中没有全局变量的概念(只有实例变量、静态变量、局部变量)，所有的变量都必须定义在类的作用域内，这样才能保证变量的访问权限和生命周期。</p>
 <ul>
@@ -214,26 +214,26 @@
 <ul>
 <li>Java 语言是体系结构中立的</li>
 </ul>
-<p>Java 程序（后缀为 java 的文件）在 Java 平台上被编译为体系结构中立的字节码格式（后缀为 class 的文件），然后可以在实现这个 Java 平台的任何系统中运行。这种途径适合于异构的网络环境和软件的分发。</p>
+<p>Java 程序（后缀为 .java 的文件）在 Java 平台上被编译为体系结构中立的字节码格式（后缀为 .class 的文件），然后可以在实现这个 Java 平台的任何系统中运行。这种途径适合于异构的网络环境和软件的分发。</p>
 <blockquote>
-<p>Java 虚拟机是 Java 语言的核心执行环境，它充当了 Java程序 与底层操作系统之间的中间层。不同平台上的 JVM 实现可以解释执行相同的字节码，从而实现了跨平台的特性。然而，需要注意的是，Java 的平台中立性主要体现在 Java 源代码和字节码层面。一旦涉及到与底层操作系统直接交互的部分，如文件操作、网络套接字等，就可能涉及到平台相关性，需要特别注意处理平台差异。因此，在编写跨平台的 Java 程序时，需要避免直接依赖于底层系统特定的功能。</p>
+<p>Java 虚拟机是 Java 语言的核心执行环境，它充当了 Java 程序与底层操作系统之间的中间层。不同平台上的 JVM 实现可以解释执行相同的字节码，从而实现了跨平台的特性。然而，需要注意的是，Java 的平台中立性主要体现在 Java 源代码和字节码层面。一旦涉及到与底层操作系统直接交互的部分，如文件操作、网络套接字等，就可能涉及到平台相关性，需要特别注意处理平台差异。因此，在编写跨平台的 Java 程序时，需要避免直接依赖于底层系统特定的功能。</p>
 </blockquote>
 <ul>
 <li>Java 语言是可移植的</li>
 </ul>
 <p>这种可移植性来源于<code>体系结构中立性</code>，另外，Java 还严格规定了各个基本数据类型的长度。Java 系统本身也具有很强的可移植性，Java 编译器是用 Java 实现的，Java 的运行环境是用 ANSI C 实现的。</p>
 <blockquote>
-<p>Java的 跨平台特性使得开发者可以在一台平台上编写 Java 程序，然后将生成的字节码文件拷贝到其他平台的 JVM 上执行，而不需要重新编译。</p>
+<p>Java 的跨平台特性使得开发者可以在一台平台上编写 Java 程序，然后将生成的字节码文件拷贝到其他平台的 JVM 上执行，而不需要重新编译。</p>
 </blockquote>
 <ul>
 <li>Java 语言是解释型的</li>
 </ul>
-<p>如前所述，Java 程序在 Java 平台上被编译为字节码格式，然后可以在实现这个 Java 平台的任何系统中运行。在运行时，Java 平台中的 Java 解释器对这些字节码进行解释执行，执行过程中需要的类在联接阶段被载入到运行环境中。</p>
+<p>如前所述，Java 程序在 Java 平台上被编译为字节码格式，然后可以在实现这个 Java 平台的任何系统中运行。在运行时，Java 平台中的 字节码解释器对这些字节码进行解释执行，执行过程中需要的类在联接阶段被载入到运行环境中。</p>
 <blockquote>
-<p>准确的说，Java语言是一种混合型语言，Java 程序的执行过程涉及解释和编译两个阶段：</p>
+<p>准确的说，Java 语言是一种混合型语言，Java 程序的执行过程涉及解释和编译两个阶段：</p>
 <ol>
-<li><strong>编译阶段：</strong> Java源代码首先经过编译器编译成中间代码，称为字节码（Bytecode），它是一种与平台无关的中间形式。</li>
-<li><strong>解释阶段：</strong> 在执行阶段，Java虚拟机（JVM）负责将字节码解释成特定平台的机器码，或者通过即时编译（JIT Compilation）技术将部分字节码编译成本地机器码，以提高执行效率。</li>
+<li><strong>编译阶段：</strong> Java 源代码首先经过编译器编译成中间代码，称为字节码（Bytecode），它是一种与平台无关的中间形式。</li>
+<li><strong>解释阶段：</strong> 在执行阶段，Java 虚拟机（JVM）负责将字节码解释成特定平台的机器码，或者通过即时编译（JIT Compilation）技术将部分字节码编译成本地机器码，以提高执行效率。</li>
 </ol>
 </blockquote>
 <ul>
@@ -243,11 +243,11 @@
 <blockquote>
 <p>Java是一种相对高性能的编程语言，但性能取决于具体的使用场景和优化措施。</p>
 <ol>
-<li><strong>即时编译（JIT Compilation）：</strong> Java虚拟机（JVM）使用即时编译器（JIT Compiler）将字节码转换成本地机器码，从而提高程序的执行速度。JIT编译可以根据代码的执行情况进行优化，对热点代码进行特殊处理，从而进一步提高性能。</li>
-<li><strong>垃圾回收（Garbage Collection）：</strong> Java的内存管理是由垃圾回收机制来处理的。垃圾回收可以自动回收不再使用的内存，避免了内存泄漏和悬挂指针等问题。但垃圾回收也可能导致一定的性能损耗，特别是在进行大规模内存回收时。因此，在高性能应用中，需要适当地调整垃圾回收策略和选择合适的垃圾回收器。</li>
-<li><strong>多线程支持：</strong> Java具有强大的多线程支持，可以充分利用多核处理器的性能。但同时，多线程编程也带来了线程安全和同步的挑战，如果不正确地处理多线程问题，可能会导致性能下降或者出现并发问题。</li>
-<li><strong>底层交互：</strong> Java提供了本地方法接口（JNI），可以与底层系统进行交互。在一些性能敏感的场景，可以使用JNI来调用C或C++编写的本地库，以获得更高的性能。</li>
-<li><strong>平台中立性：</strong> Java的跨平台特性允许同一份Java代码在不同平台上运行，但有时为了实现跨平台性，可能需要在某些特定平台上做出性能上的妥协。</li>
+<li><strong>即时编译（JIT Compilation）：</strong> Java 虚拟机（JVM）使用即时编译器（JIT Compiler）将字节码转换成本地机器码，从而提高程序的执行速度。JIT 编译可以根据代码的执行情况进行优化，对热点代码进行特殊处理，从而进一步提高性能。</li>
+<li><strong>垃圾回收（Garbage Collection）：</strong> Java 的内存管理是由垃圾回收机制来处理的。垃圾回收可以自动回收不再使用的内存，避免了内存泄漏和悬挂指针等问题。但垃圾回收也可能导致一定的性能损耗，特别是在进行大规模内存回收时。因此，在高性能应用中，需要适当地调整垃圾回收策略和选择合适的垃圾回收器。</li>
+<li><strong>多线程支持：</strong> Java 具有强大的多线程支持，可以充分利用多核处理器的性能。但同时，多线程编程也带来了线程安全和同步的挑战，如果不正确地处理多线程问题，可能会导致性能下降或者出现并发问题。</li>
+<li><strong>底层交互：</strong> Java 提供了本地方法接口（JNI），可以与底层系统进行交互。在一些性能敏感的场景，可以使用 JNI 来调用 C 或C++ 编写的本地库，以获得更高的性能。</li>
+<li><strong>平台中立性：</strong> Java 的跨平台特性允许同一份 Java 代码在不同平台上运行，但有时为了实现跨平台性，可能需要在某些特定平台上做出性能上的妥协。</li>
 </ol>
 </blockquote>
 <h2 id="2-Java关键字"><a href="#2-Java关键字" class="headerlink" title="2.Java关键字"></a>2.Java关键字</h2><table>
@@ -469,17 +469,17 @@
 <td align="left">基本数据类型之一,短整数类型</td>
 </tr>
 <tr>
-<td align="left">基本类型</td>
+<td align="left">字面量</td>
 <td align="left"><code>null</code></td>
 <td align="left">空，表示无值，不能将null赋给原始类型（byte、short、int、long、char、float、double、boolean）变量</td>
 </tr>
 <tr>
-<td align="left">基本类型</td>
+<td align="left">字面量</td>
 <td align="left"><code>true</code></td>
 <td align="left">真，boolean变量的两个合法值中的一个</td>
 </tr>
 <tr>
-<td align="left">基本类型</td>
+<td align="left">字面量</td>
 <td align="left"><code>false</code></td>
 <td align="left">假，boolean变量的两个合法值之一</td>
 </tr>
@@ -535,6 +535,9 @@
 <li><strong>值传递：</strong>在方法调用时，传递的是实际参数的值的副本。当参数变量被赋予新的值时，只会修改副本的值，不会影响原始值。Java 中的基本数据类型都采用值传递方式传递参数变量的值。</li>
 <li><strong>引用传递：</strong>在方法调用时，传递的是实际参数的引用（即内存地址）。当参数变量被赋予新的值时，会修改原始值的内容。Java 中的对象类型采用引用传递方式传递参数变量的值。</li>
 </ul>
+<blockquote>
+<p>实际上，Java 中的引用类型如数组对象、类对象也可以理解为值传递，只不过这个值是引用类型对象的内存地址值。</p>
+</blockquote>
 <p>Java 中的引用类似于 C++ 中的指针，<code>Java 引用&quot;指向&quot;堆中分配的类对象</code>，传递引用类似于传递指针，参数变量与原变量引用同一个堆中的类对象，如果方法体内修改了引用的指向，则后续操作便不再影响原变量的内容！</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PassByReference</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 值传递</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">swap</span><span class="params">(<span class="type">int</span> x, <span class="type">int</span> y)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">temp</span> <span class="operator">=</span> x;</span><br><span class="line">        x = y;</span><br><span class="line">        y = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 引用传递1</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">swap</span><span class="params">(InnerClass c1, InnerClass c2)</span> &#123;</span><br><span class="line">        <span class="type">InnerClass</span> <span class="variable">temp</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InnerClass</span>(c1.num);</span><br><span class="line">        c1 = c2;</span><br><span class="line">        c2 = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 引用传递2</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">swap2</span><span class="params">(InnerClass c1, InnerClass c2)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">temp</span> <span class="operator">=</span> c1.num;</span><br><span class="line">        c1.num = c2.num;</span><br><span class="line">        c2.num = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">a</span> <span class="operator">=</span> <span class="number">1</span>, b = <span class="number">2</span>;</span><br><span class="line">        <span class="type">PassByReference</span> <span class="variable">passByReference</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PassByReference</span>();</span><br><span class="line">        <span class="type">InnerClass</span> <span class="variable">c1</span> <span class="operator">=</span> passByReference.<span class="keyword">new</span> <span class="title class_">InnerClass</span>(<span class="number">1</span>);</span><br><span class="line">        <span class="type">InnerClass</span> <span class="variable">c2</span> <span class="operator">=</span> passByReference.<span class="keyword">new</span> <span class="title class_">InnerClass</span>(<span class="number">2</span>);</span><br><span class="line">        passByReference.swap(a, b);</span><br><span class="line">        passByReference.swap(c1, c2);</span><br><span class="line">        System.out.println(<span class="string">&quot;交换后a:&quot;</span> + a);</span><br><span class="line">        System.out.println(<span class="string">&quot;交换后b:&quot;</span> + b);</span><br><span class="line">        System.out.println(<span class="string">&quot;交换后c1.num:&quot;</span> + c1.num);</span><br><span class="line">        System.out.println(<span class="string">&quot;交换后c2.num:&quot;</span> + c2.num);</span><br><span class="line">        passByReference.swap2(c1, c2);</span><br><span class="line">        System.out.println(<span class="string">&quot;交换后c1.num:&quot;</span> + c1.num);</span><br><span class="line">        System.out.println(<span class="string">&quot;交换后c2.num:&quot;</span> + c2.num);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 非静态内部类</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">class</span> <span class="title class_">InnerClass</span> &#123;</span><br><span class="line">        <span class="type">int</span> num;</span><br><span class="line">        InnerClass(<span class="type">int</span> num) &#123;</span><br><span class="line">            <span class="built_in">this</span>.num = num;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 

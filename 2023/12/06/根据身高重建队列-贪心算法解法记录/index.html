@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="根据身高重建队列假设有打乱顺序的一群人站成一个队列，数组 people 表示队列中一些人的属性（不一定按顺序）。每个 people[i] &#x3D; [hi, ki] 表示第 i 个人的身高为 hi ，前面 正好 有 ki 个身高大于或等于 hi 的人。 请你重新构造并返回输入数组 people 所表示的队列。返回的队列应该格式化为数组 queue ，其中 queue[j] &#x3D; [hj, kj] 是队列中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="根据身高重建队列-贪心算法解法记录">
+<meta property="og:url" content="https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="根据身高重建队列假设有打乱顺序的一群人站成一个队列，数组 people 表示队列中一些人的属性（不一定按顺序）。每个 people[i] &#x3D; [hi, ki] 表示第 i 个人的身高为 hi ，前面 正好 有 ki 个身高大于或等于 hi 的人。 请你重新构造并返回输入数组 people 所表示的队列。返回的队列应该格式化为数组 queue ，其中 queue[j] &#x3D; [hj, kj] 是队列中">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/image-20231206180723678.png">
+<meta property="article:published_time" content="2023-12-06T09:58:15.165Z">
+<meta property="article:modified_time" content="2023-12-06T10:10:58.231Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/image-20231206180723678.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>根据身高重建队列-贪心算法解法记录</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/03/%E9%87%8D%E6%96%B0%E5%AE%89%E6%8E%92%E8%A1%8C%E7%A8%8B-%E5%9B%9E%E6%BA%AF%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&text=根据身高重建队列-贪心算法解法记录"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&is_video=false&description=根据身高重建队列-贪心算法解法记录"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=根据身高重建队列-贪心算法解法记录&body=Check out this article: https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&name=根据身高重建队列-贪心算法解法记录&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&t=根据身高重建队列-贪心算法解法记录"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97"><span class="toc-number">1.</span> <span class="toc-text">根据身高重建队列</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        根据身高重建队列-贪心算法解法记录
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-06T09:58:15.165Z" class="dt-published" itemprop="datePublished">2023-12-06</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="根据身高重建队列"><a href="#根据身高重建队列" class="headerlink" title="根据身高重建队列"></a>根据身高重建队列</h1><p>假设有打乱顺序的一群人站成一个队列，数组 <code>people</code> 表示队列中一些人的属性（不一定按顺序）。每个 <code>people[i] = [hi, ki]</code> 表示第 <code>i</code> 个人的身高为 <code>hi</code> ，前面 <strong>正好</strong> 有 <code>ki</code> 个身高大于或等于 <code>hi</code> 的人。</p>
+<p>请你重新构造并返回输入数组 <code>people</code> 所表示的队列。返回的队列应该格式化为数组 <code>queue</code> ，其中 <code>queue[j] = [hj, kj]</code> 是队列中第 <code>j</code> 个人的属性（<code>queue[0]</code> 是排在队列前面的人）。</p>
+<p><strong>示例 1：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">输入：people = [[<span class="number">7</span>,<span class="number">0</span>],[<span class="number">4</span>,<span class="number">4</span>],[<span class="number">7</span>,<span class="number">1</span>],[<span class="number">5</span>,<span class="number">0</span>],[<span class="number">6</span>,<span class="number">1</span>],[<span class="number">5</span>,<span class="number">2</span>]]</span><br><span class="line">输出：[[<span class="number">5</span>,<span class="number">0</span>],[<span class="number">7</span>,<span class="number">0</span>],[<span class="number">5</span>,<span class="number">2</span>],[<span class="number">6</span>,<span class="number">1</span>],[<span class="number">4</span>,<span class="number">4</span>],[<span class="number">7</span>,<span class="number">1</span>]]</span><br><span class="line">解释：</span><br><span class="line">编号为 <span class="number">0</span> 的人身高为 <span class="number">5</span> ，没有身高更高或者相同的人排在他前面。</span><br><span class="line">编号为 <span class="number">1</span> 的人身高为 <span class="number">7</span> ，没有身高更高或者相同的人排在他前面。</span><br><span class="line">编号为 <span class="number">2</span> 的人身高为 <span class="number">5</span> ，有 <span class="number">2</span> 个身高更高或者相同的人排在他前面，即编号为 <span class="number">0</span> 和 <span class="number">1</span> 的人。</span><br><span class="line">编号为 <span class="number">3</span> 的人身高为 <span class="number">6</span> ，有 <span class="number">1</span> 个身高更高或者相同的人排在他前面，即编号为 <span class="number">1</span> 的人。</span><br><span class="line">编号为 <span class="number">4</span> 的人身高为 <span class="number">4</span> ，有 <span class="number">4</span> 个身高更高或者相同的人排在他前面，即编号为 <span class="number">0</span>、<span class="number">1</span>、<span class="number">2</span>、<span class="number">3</span> 的人。</span><br><span class="line">编号为 <span class="number">5</span> 的人身高为 <span class="number">7</span> ，有 <span class="number">1</span> 个身高更高或者相同的人排在他前面，即编号为 <span class="number">1</span> 的人。</span><br><span class="line">因此 [[<span class="number">5</span>,<span class="number">0</span>],[<span class="number">7</span>,<span class="number">0</span>],[<span class="number">5</span>,<span class="number">2</span>],[<span class="number">6</span>,<span class="number">1</span>],[<span class="number">4</span>,<span class="number">4</span>],[<span class="number">7</span>,<span class="number">1</span>]] 是重新构造后的队列。</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 2：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：people = [[<span class="number">6</span>,<span class="number">0</span>],[<span class="number">5</span>,<span class="number">0</span>],[<span class="number">4</span>,<span class="number">0</span>],[<span class="number">3</span>,<span class="number">2</span>],[<span class="number">2</span>,<span class="number">2</span>],[<span class="number">1</span>,<span class="number">4</span>]]</span><br><span class="line">输出：[[<span class="number">4</span>,<span class="number">0</span>],[<span class="number">5</span>,<span class="number">0</span>],[<span class="number">2</span>,<span class="number">2</span>],[<span class="number">3</span>,<span class="number">2</span>],[<span class="number">1</span>,<span class="number">4</span>],[<span class="number">6</span>,<span class="number">0</span>]]</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>1 &lt;= people.length &lt;= 2000</code></li>
+<li><code>0 &lt;= hi &lt;= 10^6^</code></li>
+<li><code>0 &lt;= ki &lt; people.length</code></li>
+<li>题目数据确保队列可以被重建</li>
+</ul>
+<p>这道题感觉就是需要先排序，没错我们就是先按照身高排序，身高hi相同的ki小的在前面，这样的话我们就可以按照排完序的顺序往队列queue中依次添加元素了，因为新添加的元素肯定是小于等于已加入队列中的元素(身高hi相同的ki小的先插入在前面)，因此我们直接根据ki选择插入位置，队列中已有元素的关系也不会被破坏(因为身高hi相同的ki小的先插入在前面)：</p>
+<p><img src="/../../../../../../imgs/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/image-20231206180723678.png" alt="image-20231206180723678"></p>
+<p>按照身高排序之后，优先按身高高的people的k来插入，后序插入节点也不会影响前面已经插入的节点，最终按照k的规则完成了队列。</p>
+<p>回归本题，整个插入过程如下：</p>
+<p>排序完的people： [[7,0], [7,1], [6,1], [5,0], [5,2]，[4,4]]</p>
+<p>插入的过程：</p>
+<ul>
+<li>插入[7,0]：[[7,0]]</li>
+<li>插入[7,1]：[[7,0],[7,1]]</li>
+<li>插入[6,1]：[[7,0],[6,1],[7,1]]</li>
+<li>插入[5,0]：[[5,0],[7,0],[6,1],[7,1]]</li>
+<li>插入[5,2]：[[5,0],[7,0],[5,2],[6,1],[7,1]]</li>
+<li>插入[4,4]：[[5,0],[7,0],[5,2],[6,1],[4,4],[7,1]]</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">int</span>[][] reconstructQueue(<span class="type">int</span>[][] people) &#123;</span><br><span class="line">    <span class="comment">// 按照身高排序，身高相同的按照k排序</span></span><br><span class="line">    Arrays.sort(people, (o1, o2) -&gt; o1[<span class="number">0</span>] &lt; o2[<span class="number">0</span>] ? <span class="number">1</span> : o1[<span class="number">0</span>] == o2[<span class="number">0</span>] ? o1[<span class="number">1</span>] - o2[<span class="number">1</span>] : -<span class="number">1</span>);</span><br><span class="line">    <span class="comment">// 结果队列</span></span><br><span class="line">    LinkedList&lt;<span class="type">int</span>[]&gt; list = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line">    <span class="comment">// 直接根据k决定插入位置</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; people.length; i++) &#123;</span><br><span class="line">        list.add(people[i][<span class="number">1</span>], people[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回结果</span></span><br><span class="line">    <span class="type">int</span>[][] result = <span class="keyword">new</span> <span class="title class_">int</span>[people.length][<span class="number">2</span>];</span><br><span class="line">    list.toArray(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97"><span class="toc-number">1.</span> <span class="toc-text">根据身高重建队列</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&text=根据身高重建队列-贪心算法解法记录"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&is_video=false&description=根据身高重建队列-贪心算法解法记录"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=根据身高重建队列-贪心算法解法记录&body=Check out this article: https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&title=根据身高重建队列-贪心算法解法记录"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&name=根据身高重建队列-贪心算法解法记录&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/06/%E6%A0%B9%E6%8D%AE%E8%BA%AB%E9%AB%98%E9%87%8D%E5%BB%BA%E9%98%9F%E5%88%97-%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/&t=根据身高重建队列-贪心算法解法记录"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

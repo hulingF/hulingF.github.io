@@ -28,7 +28,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%94)/image-20230814202902551.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%9F%BA%E7%A1%80(%E4%BA%94)/image-20230814203325149.png">
 <meta property="article:published_time" content="2023-08-14T09:09:37.749Z">
-<meta property="article:modified_time" content="2023-10-03T14:15:17.842Z">
+<meta property="article:modified_time" content="2023-12-05T07:30:38.289Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Java">
 <meta name="twitter:card" content="summary">
@@ -400,7 +400,7 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -XX:+ShowCodeDetailsInExceptionMessages Main.java</span><br></pre></td></tr></table></figure>
 
 <h2 id="6-使用断言"><a href="#6-使用断言" class="headerlink" title="6.使用断言"></a>6.使用断言</h2><p>断言（Assertion）是一种调试程序的方式。在Java中，使用<code>assert</code>关键字来实现断言。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">double</span> <span class="variable">x</span> <span class="operator">=</span> Math.abs(-<span class="number">123.45</span>);</span><br><span class="line"> <span class="keyword">assert</span> x &lt; <span class="number">0</span>;</span><br><span class="line"> System.out.println(x);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">double</span> <span class="variable">x</span> <span class="operator">=</span> Math.abs(-<span class="number">123.45</span>);</span><br><span class="line"><span class="keyword">assert</span> x &lt; <span class="number">0</span>;</span><br><span class="line">System.out.println(x);</span><br></pre></td></tr></table></figure>
 
 <p>语句<code>assert x &gt;= 0;</code>即为断言，断言条件<code>x &gt;= 0</code>预期为<code>true</code>。如果计算结果为<code>false</code>，则断言失败，抛出<code>AssertionError</code>。</p>
 <p>使用<code>assert</code>语句时，还可以添加一个可选的断言消息：</p>
