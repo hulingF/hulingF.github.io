@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="CopyOnWriteArrayList类源码剖析一、ArrayList的线程安全问题12345678910111213public static void main(String[] args) throws InterruptedException &amp;#123;    List&lt;Integer&gt; list &#x3D; new ArrayList&lt;&gt;();    CountDow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java集合之CopyOnWriteArrayList类源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="CopyOnWriteArrayList类源码剖析一、ArrayList的线程安全问题12345678910111213public static void main(String[] args) throws InterruptedException &amp;#123;    List&lt;Integer&gt; list &#x3D; new ArrayList&lt;&gt;();    CountDow">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231210152320182.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231210153602951.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/copyonwritearraylist-class-diagram.png">
+<meta property="article:published_time" content="2023-12-10T07:05:48.738Z">
+<meta property="article:modified_time" content="2023-12-10T08:13:55.729Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="并发编程">
+<meta property="article:tag" content="Java集合">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231210152320182.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Java集合之CopyOnWriteArrayList类源码剖析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BPriorityQueue%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BConcurrentHashMap%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java集合之CopyOnWriteArrayList类源码剖析&body=Check out this article: https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=Java集合之CopyOnWriteArrayList类源码剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#CopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">CopyOnWriteArrayList类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81ArrayList%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.</span> <span class="toc-text">一、ArrayList的线程安全问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81ConpyOnWriteArrayList%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.2.</span> <span class="toc-text">二、ConpyOnWriteArrayList的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81ConpyOnWriteArrayList%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、ConpyOnWriteArrayList的定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81ConpyOnWriteArrayList%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、ConpyOnWriteArrayList的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81CopyOnWriteArrayList%E7%9A%84add%E6%96%B9%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">五、CopyOnWriteArrayList的add方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81CopyOnWriteArrayList%E7%9A%84get%E6%96%B9%E6%B3%95"><span class="toc-number">1.6.</span> <span class="toc-text">六、CopyOnWriteArrayList的get方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81CopyOnWriteArrayList%E7%9A%84size%E6%96%B9%E6%B3%95"><span class="toc-number">1.7.</span> <span class="toc-text">七、CopyOnWriteArrayList的size方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81CopyOnWriteArrayList%E7%9A%84remove%E6%96%B9%E6%B3%95"><span class="toc-number">1.8.</span> <span class="toc-text">八、CopyOnWriteArrayList的remove方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81CopyOnWriteArrayList%E7%9A%84contains%E6%96%B9%E6%B3%95"><span class="toc-number">1.9.</span> <span class="toc-text">九、CopyOnWriteArrayList的contains方法</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Java集合之CopyOnWriteArrayList类源码剖析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-10T07:05:48.738Z" class="dt-published" itemprop="datePublished">2023-12-10</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Java%E9%9B%86%E5%90%88/" rel="tag">Java集合</a>, <a class="p-category" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="CopyOnWriteArrayList类源码剖析"><a href="#CopyOnWriteArrayList类源码剖析" class="headerlink" title="CopyOnWriteArrayList类源码剖析"></a>CopyOnWriteArrayList类源码剖析</h1><h2 id="一、ArrayList的线程安全问题"><a href="#一、ArrayList的线程安全问题" class="headerlink" title="一、ArrayList的线程安全问题"></a>一、ArrayList的线程安全问题</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    List&lt;Integer&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    <span class="type">CountDownLatch</span> <span class="variable">countDownLatch</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CountDownLatch</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="type">int</span> <span class="variable">num</span> <span class="operator">=</span> i;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(()-&gt;&#123;</span><br><span class="line">            list.add(num);</span><br><span class="line">            countDownLatch.countDown();</span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">    countDownLatch.await();</span><br><span class="line">    System.out.println(list.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231210152320182.png" alt="image-20231210152320182"></p>
+<p>ArrayList是线程不安全的List实现类，在多线程情况下可能会发生<code>底层数组下标越界</code>或<code>值覆盖</code>，通过add方法的源码我们一探究竟：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">add</span><span class="params">(E e)</span> &#123;</span><br><span class="line">    modCount++;</span><br><span class="line">    add(e, elementData, size);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">(E e, Object[] elementData, <span class="type">int</span> s)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (s == elementData.length)</span><br><span class="line">        elementData = grow();</span><br><span class="line">    <span class="comment">// 1.多线程并发add时，可能会发生数组下标越界或值覆盖</span></span><br><span class="line">    elementData[s] = e;</span><br><span class="line">    <span class="comment">// 2.由于值覆盖情况，列表大小可能小于add次数</span></span><br><span class="line">    size = s + <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 JDK1.5 之前，如果想要使用并发安全的 <code>List</code> 只能选择 <code>Vector</code>。而 <code>Vector</code> 是一种老旧的集合，已经被淘汰。<code>Vector</code> 对于增删改查等方法基本都加了 <code>synchronized</code>，这种方式虽然能够保证同步，但这相当于对整个 <code>Vector</code> 加上了一把大锁，使得每个方法执行的时候都要去获得锁，导致性能非常低下。</p>
+<p>JDK1.5 引入了 <code>Java.util.concurrent</code>（JUC）包，其中提供了很多线程安全且并发性能良好的容器，其中唯一的线程安全 <code>List</code> 实现就是 <code>CopyOnWriteArrayList</code> 。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    List&lt;Integer&gt; list = <span class="keyword">new</span> <span class="title class_">CopyOnWriteArrayList</span>&lt;&gt;();</span><br><span class="line">    <span class="type">CountDownLatch</span> <span class="variable">countDownLatch</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CountDownLatch</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="type">int</span> <span class="variable">num</span> <span class="operator">=</span> i;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(()-&gt;&#123;</span><br><span class="line">            list.add(num);</span><br><span class="line">            countDownLatch.countDown();</span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">    countDownLatch.await();</span><br><span class="line">    System.out.println(list.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231210153602951.png" alt="image-20231210153602951"></p>
+<h2 id="二、ConpyOnWriteArrayList的简介"><a href="#二、ConpyOnWriteArrayList的简介" class="headerlink" title="二、ConpyOnWriteArrayList的简介"></a>二、ConpyOnWriteArrayList的简介</h2><p>对于大部分业务场景来说，读取操作往往是远大于写入操作的。由于读取操作不会对原有数据进行修改，因此，对于每次读取都进行加锁其实是一种资源浪费。相比之下，我们应该允许多个线程同时访问 <code>List</code> 的内部数据，毕竟对于读取操作来说是安全的。</p>
+<p>这种思路与 <code>ReentrantReadWriteLock</code> 读写锁的设计思想非常类似，即读读不互斥、读写互斥、写写互斥（只有读读不互斥）。<code>CopyOnWriteArrayList</code> 更进一步地实现了这一思想。为了将读操作性能发挥到极致，<code>CopyOnWriteArrayList</code> 中的读取操作是完全无需加锁的。更加厉害的是，写入操作也不会阻塞读取操作，只有写写才会互斥。这样一来，读操作的性能就可以大幅度提升。</p>
+<p><code>CopyOnWriteArrayList</code> 线程安全的核心在于其采用了 <strong>写时复制（Copy-On-Write）</strong> 的策略，从 <code>CopyOnWriteArrayList</code> 的名字就能看出了。</p>
+<blockquote>
+<p>写入时复制（英语：Copy-on-write，简称 COW）是一种计算机程序设计领域的优化策略。其核心思想是，如果有多个调用者（callers）同时请求相同资源（如内存或磁盘上的数据存储），他们会共同获取相同的指针指向相同的资源，直到某个调用者试图修改资源的内容时，系统才会真正复制一份专用副本（private copy）给该调用者，而其他调用者所见到的最初的资源仍然保持不变。这个过程对其他的调用者都是透明的。此作法主要的优点是如果调用者没有修改该资源，就不会有副本（private copy）被创建，因此多个调用者只是读取操作时可以共享同一份资源。</p>
+</blockquote>
+<p>这里再以 <code>CopyOnWriteArrayList</code>为例介绍：当需要修改（ <code>add</code>，<code>set</code>、<code>remove</code> 等操作）<code>CopyOnWriteArrayList</code> 的内容时，不会直接修改原数组，而是会先创建底层数组的副本，对副本数组进行修改，修改完之后再将修改后的数组赋值回去，这样就可以保证写操作不会影响读操作了。</p>
+<p>可以看出，写时复制机制非常适合读多写少的并发场景，能够极大地提高系统的并发性能。</p>
+<p>不过，写时复制机制并不是银弹，其依然存在一些缺点，下面列举几点：</p>
+<ol>
+<li>内存占用：每次写操作都需要复制一份原始数据，会占用额外的内存空间，在数据量比较大的情况下，可能会导致内存资源不足。</li>
+<li>写操作开销：每一次写操作都需要复制一份原始数据，然后再进行修改和替换，所以写操作的开销相对较大，在写入比较频繁的场景下，性能可能会受到影响。</li>
+<li>数据一致性问题：修改操作不会立即反映到最终结果中，还需要等待复制完成，这可能会导致一定的数据一致性问题。</li>
+<li>……</li>
+</ol>
+<h2 id="三、ConpyOnWriteArrayList的定义"><a href="#三、ConpyOnWriteArrayList的定义" class="headerlink" title="三、ConpyOnWriteArrayList的定义"></a>三、ConpyOnWriteArrayList的定义</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CopyOnWriteArrayList</span>&lt;E&gt;</span><br><span class="line">    <span class="keyword">implements</span> <span class="title class_">List</span>&lt;E&gt;, RandomAccess, Cloneable, java.io.Serializable &#123;</span><br><span class="line">	<span class="comment">// ReentrantLock和synchronized都可以，只不过作者说比较偏向synchronized</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">transient</span> <span class="type">Object</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line">    <span class="comment">// 底层数组</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Object[] array;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>CopyOnWriteArrayList</code> 实现了以下接口：</p>
+<ul>
+<li><code>List</code> : 表明它是一个列表，支持添加、删除、查找等操作，并且可以通过下标进行访问。</li>
+<li><code>RandomAccess</code> ：这是一个标志接口，表明实现这个接口的 <code>List</code> 集合是支持 <strong>快速随机访问</strong> 的。</li>
+<li><code>Cloneable</code> ：表明它具有拷贝能力，可以进行深拷贝或浅拷贝操作。</li>
+<li><code>Serializable</code> : 表明它可以进行序列化操作，也就是可以将对象转换为字节流进行持久化存储或网络传输，非常方便。</li>
+</ul>
+<p><img src="/../../../../../../imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/copyonwritearraylist-class-diagram.png" alt="CopyOnWriteArrayList 类图"></p>
+<h2 id="四、ConpyOnWriteArrayList的构造方法"><a href="#四、ConpyOnWriteArrayList的构造方法" class="headerlink" title="四、ConpyOnWriteArrayList的构造方法"></a>四、ConpyOnWriteArrayList的构造方法</h2><p><code>CopyOnWriteArrayList</code> 中有一个无参构造函数和两个有参构造函数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建一个空的 CopyOnWriteArrayList</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">CopyOnWriteArrayList</span><span class="params">()</span> &#123;</span><br><span class="line">    setArray(<span class="keyword">new</span> <span class="title class_">Object</span>[<span class="number">0</span>]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 按照集合的迭代器返回的顺序创建一个包含指定集合元素的 CopyOnWriteArrayList</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">CopyOnWriteArrayList</span><span class="params">(Collection&lt;? extends E&gt; c)</span> &#123;</span><br><span class="line">    Object[] es;</span><br><span class="line">    <span class="keyword">if</span> (c.getClass() == CopyOnWriteArrayList.class)</span><br><span class="line">        es = ((CopyOnWriteArrayList&lt;?&gt;)c).getArray();</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        es = c.toArray();</span><br><span class="line">        <span class="keyword">if</span> (c.getClass() != java.util.ArrayList.class)</span><br><span class="line">            es = Arrays.copyOf(es, es.length, Object[].class);</span><br><span class="line">    &#125;</span><br><span class="line">    setArray(es);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建一个包含指定数组的副本的 CopyOnWriteArrayList</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">CopyOnWriteArrayList</span><span class="params">(E[] toCopyIn)</span> &#123;</span><br><span class="line">    setArray(Arrays.copyOf(toCopyIn, toCopyIn.length, Object[].class));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、CopyOnWriteArrayList的add方法"><a href="#五、CopyOnWriteArrayList的add方法" class="headerlink" title="五、CopyOnWriteArrayList的add方法"></a>五、CopyOnWriteArrayList的add方法</h2><p><code>CopyOnWriteArrayList</code> 的 <code>add()</code>方法有三个版本：</p>
+<ul>
+<li><code>add(E e)</code>：在 <code>CopyOnWriteArrayList</code> 的尾部插入元素。</li>
+<li><code>add(int index, E element)</code>：在 <code>CopyOnWriteArrayList</code> 的指定位置插入元素。</li>
+<li><code>addIfAbsent(E e)</code>：如果指定元素不存在，那么添加该元素。如果成功添加元素则返回 true。</li>
+</ul>
+<p>这里以<code>add(E e)</code>为例进行介绍：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 插入元素到 CopyOnWriteArrayList 的尾部</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">add</span><span class="params">(E e)</span> &#123;</span><br><span class="line">    <span class="comment">// 加锁</span></span><br><span class="line">    <span class="keyword">synchronized</span> (lock) &#123;</span><br><span class="line">        <span class="comment">// 获取原来的数组</span></span><br><span class="line">        Object[] es = getArray();</span><br><span class="line">        <span class="comment">// 原来数组的长度</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> es.length;</span><br><span class="line">        <span class="comment">// 创建一个长度+1的新数组，并将原来数组的元素复制给新数组</span></span><br><span class="line">        es = Arrays.copyOf(es, len + <span class="number">1</span>);</span><br><span class="line">        <span class="comment">// 元素放在新数组末尾</span></span><br><span class="line">        es[len] = e;</span><br><span class="line">        <span class="comment">// array指向新数组</span></span><br><span class="line">        setArray(es);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面的源码可以看出：</p>
+<ul>
+<li><code>add</code>方法内部用到了 <code>synchronized</code> 加锁，保证了同步，避免了多线程写的时候会复制出多个副本出来。</li>
+<li><code>CopyOnWriteArrayList</code> 通过复制底层数组的方式实现写操作，即先创建一个新的数组来容纳新添加的元素，然后在新数组中进行写操作，最后将新数组赋值给底层数组的引用，替换掉旧的数组。这也就证明了我们前面说的：<code>CopyOnWriteArrayList</code> 线程安全的核心在于其采用了 <strong>写时复制（Copy-On-Write）</strong> 的策略。</li>
+<li>每次写操作都需要通过 <code>Arrays.copyOf</code> 复制底层数组，时间复杂度是 O(n) 的，且会占用额外的内存空间。因此，<code>CopyOnWriteArrayList</code> 适用于读多写少的场景，在写操作不频繁且内存资源充足的情况下，可以提升系统的性能表现。</li>
+<li><code>CopyOnWriteArrayList</code> 中并没有类似于 <code>ArrayList</code> 的 <code>grow()</code> 方法扩容的操作。</li>
+</ul>
+<blockquote>
+<p><code>Arrays.copyOf</code> 方法的时间复杂度是 O(n)，其中 n 表示需要复制的数组长度。因为这个方法的实现原理是先创建一个新的数组，然后将源数组中的数据复制到新数组中，最后返回新数组。这个方法会复制整个数组，因此其时间复杂度与数组长度成正比，即 O(n)。值得注意的是，由于底层调用了系统级别的拷贝指令，因此在实际应用中这个方法的性能表现比较优秀，但是也需要注意控制复制的数据量，避免出现内存占用过高的情况。</p>
+</blockquote>
+<h2 id="六、CopyOnWriteArrayList的get方法"><a href="#六、CopyOnWriteArrayList的get方法" class="headerlink" title="六、CopyOnWriteArrayList的get方法"></a>六、CopyOnWriteArrayList的get方法</h2><p><code>CopyOnWriteArrayList</code> 的读取操作是基于内部数组 <code>array</code> 并没有发生实际的修改，因此在读取操作时不需要进行同步控制和锁操作，可以保证数据的安全性。这种机制下，多个线程可以同时读取列表中的元素。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 底层数组，只能通过getArray和setArray方法访问</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Object[] array;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> &lt;E&gt; E <span class="title function_">elementAt</span><span class="params">(Object[] a, <span class="type">int</span> index)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (E) a[index];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">final</span> Object[] getArray() &#123;</span><br><span class="line">    <span class="keyword">return</span> array;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> E <span class="title function_">get</span><span class="params">(<span class="type">int</span> index)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> elementAt(getArray(), index);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>不过，<code>get</code>方法是弱一致性的，在某些情况下可能读到旧的元素值。</p>
+<p><code>get(int index)</code>方法是分两步进行的：</p>
+<ol>
+<li>通过<code>getArray()</code>获取当前数组的引用；</li>
+<li>直接从数组中获取下标为 index 的元素。</li>
+</ol>
+<p>这个过程并没有加锁，所以在并发环境下可能出现如下情况：</p>
+<ol>
+<li>线程 1 调用<code>get(int index)</code>方法获取值，内部通过<code>getArray()</code>方法获取到了 array 属性值；</li>
+<li>线程 2 调用<code>CopyOnWriteArrayList</code>的<code>add</code>、<code>set</code>、<code>remove</code> 等修改方法时，内部通过<code>setArray</code>方法修改了<code>array</code>属性的值；</li>
+<li>线程 1 还是从旧的 <code>array</code> 数组中取值。</li>
+</ol>
+<h2 id="七、CopyOnWriteArrayList的size方法"><a href="#七、CopyOnWriteArrayList的size方法" class="headerlink" title="七、CopyOnWriteArrayList的size方法"></a>七、CopyOnWriteArrayList的size方法</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">size</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> getArray().length;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>CopyOnWriteArrayList</code>中的<code>array</code>数组每次复制都刚好能够容纳下所有元素，并不像<code>ArrayList</code>那样会预留一定的空间。因此，<code>CopyOnWriteArrayList</code>中并没有<code>size</code>属性，<code>CopyOnWriteArrayList</code>的底层数组的长度就是元素个数，因此<code>size()</code>方法只要返回数组长度就可以了。</p>
+<h2 id="八、CopyOnWriteArrayList的remove方法"><a href="#八、CopyOnWriteArrayList的remove方法" class="headerlink" title="八、CopyOnWriteArrayList的remove方法"></a>八、CopyOnWriteArrayList的remove方法</h2><p><code>CopyOnWriteArrayList</code>删除元素相关的方法一共有 4 个：</p>
+<ol>
+<li><code>remove(int index)</code>：移除此列表中指定位置上的元素，将任何后续元素向左移动（从它们的索引中减去 1）。</li>
+<li><code>boolean remove(Object o)</code>：删除此列表中首次出现的指定元素，如果不存在该元素则返回 false。</li>
+<li><code>boolean removeAll(Collection&lt;?&gt; c)</code>：从此列表中删除指定集合中包含的所有元素。</li>
+<li><code>void clear()</code>：移除此列表中的所有元素。</li>
+</ol>
+<p>这里以<code>remove(int index)</code>为例进行介绍：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> E <span class="title function_">remove</span><span class="params">(<span class="type">int</span> index)</span> &#123;</span><br><span class="line">    <span class="comment">// 加锁</span></span><br><span class="line">    <span class="keyword">synchronized</span> (lock) &#123;</span><br><span class="line">        <span class="comment">//获取当前array数组</span></span><br><span class="line">        Object[] es = getArray();</span><br><span class="line">        <span class="comment">// 获取当前array长度</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> es.length;</span><br><span class="line">        <span class="comment">//获取指定索引的元素(旧值)</span></span><br><span class="line">        <span class="type">E</span> <span class="variable">oldValue</span> <span class="operator">=</span> elementAt(es, index);</span><br><span class="line">        <span class="comment">// 计算需要前移的元素个数</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">numMoved</span> <span class="operator">=</span> len - index - <span class="number">1</span>;</span><br><span class="line">        Object[] newElements;</span><br><span class="line">        <span class="keyword">if</span> (numMoved == <span class="number">0</span>)</span><br><span class="line">            <span class="comment">// 如果删除的是最后一个元素，直接复制该元素前的所有元素到新的数组</span></span><br><span class="line">            newElements = Arrays.copyOf(es, len - <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 分段复制，将index前的元素和index+1后的元素复制到新数组</span></span><br><span class="line">            <span class="comment">// 新数组长度为旧数组长度-1</span></span><br><span class="line">            newElements = <span class="keyword">new</span> <span class="title class_">Object</span>[len - <span class="number">1</span>];</span><br><span class="line">            System.arraycopy(es, <span class="number">0</span>, newElements, <span class="number">0</span>, index);</span><br><span class="line">            System.arraycopy(es, index + <span class="number">1</span>, newElements, index,</span><br><span class="line">                             numMoved);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//将新数组赋值给array引用</span></span><br><span class="line">        setArray(newElements);</span><br><span class="line">        <span class="keyword">return</span> oldValue;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="九、CopyOnWriteArrayList的contains方法"><a href="#九、CopyOnWriteArrayList的contains方法" class="headerlink" title="九、CopyOnWriteArrayList的contains方法"></a>九、CopyOnWriteArrayList的contains方法</h2><p><code>CopyOnWriteArrayList</code>提供了两个用于判断指定元素是否在列表中的方法：</p>
+<ul>
+<li><code>contains(Object o)</code>：判断是否包含指定元素。</li>
+<li><code>containsAll(Collection&lt;?&gt; c)</code>：判断是否保证指定集合的全部元素。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 判断是否包含指定元素</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">contains</span><span class="params">(Object o)</span> &#123;</span><br><span class="line">    <span class="comment">//获取当前array数组</span></span><br><span class="line">    Object[] elements = getArray();</span><br><span class="line">    <span class="comment">//调用indexOf尝试查找指定元素，如果返回值大于等于0，则返回true，否则返回false</span></span><br><span class="line">    <span class="keyword">return</span> indexOf(o, elements, <span class="number">0</span>, elements.length) &gt;= <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 判断是否保证指定集合的全部元素</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">containsAll</span><span class="params">(Collection&lt;?&gt; c)</span> &#123;</span><br><span class="line">    <span class="comment">//获取当前array数组</span></span><br><span class="line">    Object[] elements = getArray();</span><br><span class="line">    <span class="comment">//获取数组长度</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> elements.length;</span><br><span class="line">    <span class="comment">//遍历指定集合</span></span><br><span class="line">    <span class="keyword">for</span> (Object e : c) &#123;</span><br><span class="line">        <span class="comment">//循环调用indexOf方法判断，只要有一个没有包含就直接返回false</span></span><br><span class="line">        <span class="keyword">if</span> (indexOf(e, elements, <span class="number">0</span>, len) &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//最后表示全部包含或者制定集合为空集合，那么返回true</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#CopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">CopyOnWriteArrayList类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81ArrayList%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.</span> <span class="toc-text">一、ArrayList的线程安全问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81ConpyOnWriteArrayList%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.2.</span> <span class="toc-text">二、ConpyOnWriteArrayList的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81ConpyOnWriteArrayList%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、ConpyOnWriteArrayList的定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81ConpyOnWriteArrayList%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、ConpyOnWriteArrayList的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81CopyOnWriteArrayList%E7%9A%84add%E6%96%B9%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">五、CopyOnWriteArrayList的add方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81CopyOnWriteArrayList%E7%9A%84get%E6%96%B9%E6%B3%95"><span class="toc-number">1.6.</span> <span class="toc-text">六、CopyOnWriteArrayList的get方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81CopyOnWriteArrayList%E7%9A%84size%E6%96%B9%E6%B3%95"><span class="toc-number">1.7.</span> <span class="toc-text">七、CopyOnWriteArrayList的size方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81CopyOnWriteArrayList%E7%9A%84remove%E6%96%B9%E6%B3%95"><span class="toc-number">1.8.</span> <span class="toc-text">八、CopyOnWriteArrayList的remove方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81CopyOnWriteArrayList%E7%9A%84contains%E6%96%B9%E6%B3%95"><span class="toc-number">1.9.</span> <span class="toc-text">九、CopyOnWriteArrayList的contains方法</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java集合之CopyOnWriteArrayList类源码剖析&body=Check out this article: https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=Java集合之CopyOnWriteArrayList类源码剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=Java集合之CopyOnWriteArrayList类源码剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
