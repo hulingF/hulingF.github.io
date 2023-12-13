@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Error与Exception类源码剖析一、Error类的简介Error是Throwable的子类，它表示合理的应用程序不应尝试捕获的严重问题。大多数此类错误都是异常情况。ThreadDeath错误虽然是“正常”情况，但也是Error的子类，因为大多数应用程序不应尝试捕获它。方法不需要在其throws子句中声明在方法执行期间可能抛出但未被捕获的任何Error子类，因为这些错误是永远不应该发生的异常">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Exception类源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Error与Exception类源码剖析一、Error类的简介Error是Throwable的子类，它表示合理的应用程序不应尝试捕获的严重问题。大多数此类错误都是异常情况。ThreadDeath错误虽然是“正常”情况，但也是Error的子类，因为大多数应用程序不应尝试捕获它。方法不需要在其throws子句中声明在方法执行期间可能抛出但未被捕获的任何Error子类，因为这些错误是永远不应该发生的异常">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230920161132802.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230920161440710.png">
+<meta property="article:published_time" content="2023-09-20T08:00:51.726Z">
+<meta property="article:modified_time" content="2023-10-03T14:10:58.935Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="JDK源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230920161132802.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Exception类源码剖析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/09/21/Maven%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/09/18/Throwable%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=Exception类源码剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=Exception类源码剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Exception类源码剖析&body=Check out this article: https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=Exception类源码剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=Exception类源码剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Error%E4%B8%8EException%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">Error与Exception类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81Error%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、Error类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Exception%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.2.</span> <span class="toc-text">二、Exception类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Error%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、Error类的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81Exception%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、Exception类的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">1.5.</span> <span class="toc-text">五、总结</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Exception类源码剖析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-09-20T08:00:51.726Z" class="dt-published" itemprop="datePublished">2023-09-20</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/JDK%E6%BA%90%E7%A0%81/" rel="tag">JDK源码</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Error与Exception类源码剖析"><a href="#Error与Exception类源码剖析" class="headerlink" title="Error与Exception类源码剖析"></a>Error与Exception类源码剖析</h1><h2 id="一、Error类的简介"><a href="#一、Error类的简介" class="headerlink" title="一、Error类的简介"></a>一、Error类的简介</h2><p><code>Error</code>是<code>Throwable</code>的子类，它表示合理的应用程序不应尝试捕获的<code>严重问题</code>。大多数此类错误都是异常情况。ThreadDeath错误虽然是“正常”情况，但也是Error的子类，因为大多数应用程序不应尝试捕获它。<br>方法不需要在其<code>throws</code>子句中声明在方法执行期间可能抛出但未被捕获的任何Error子类，因为这些错误是永远不应该发生的异常情况。也就是说，Error及其子类被视为<code>非检查时异常</code>，以便进行异常的编译时检查。<img src="/../../../../../../imgs/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230920161132802.png" alt="image-20230920161132802"></p>
+<h2 id="二、Exception类的简介"><a href="#二、Exception类的简介" class="headerlink" title="二、Exception类的简介"></a>二、Exception类的简介</h2><p><code>Exception</code>类及其子类是<code>Throwable</code>的一种实现形式，表示合理的应用程序可能想要捕获的条件。<br>Exception类以及任何不是<code>RuntimeException</code>子类的子类都是检查时异常。如果检查时异常可以由方法或构造函数的执行引发并传播到方法或构造函数边界之外，则需要在方法或构造函数的<code>throws</code>子句中声明这些异常。</p>
+<p><img src="/../../../../../../imgs/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230920161440710.png" alt="image-20230920161440710"></p>
+<h2 id="三、Error类的构造方法"><a href="#三、Error类的构造方法" class="headerlink" title="三、Error类的构造方法"></a>三、Error类的构造方法</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">Error</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">Error</span><span class="params">(String message)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(message);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">Error</span><span class="params">(String message, Throwable cause)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(message, cause);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">Error</span><span class="params">(Throwable cause)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(cause);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">protected</span> <span class="title function_">Error</span><span class="params">(String message, Throwable cause,</span></span><br><span class="line"><span class="params">                    <span class="type">boolean</span> enableSuppression,</span></span><br><span class="line"><span class="params">                    <span class="type">boolean</span> writableStackTrace)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(message, cause, enableSuppression, writableStackTrace);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>构造一个新Error，并将<code>null</code>作为其详细消息。cause未初始化，随后可以通过调用<code>initCause</code>来初始化。</li>
+<li>使用指定的详细消息构造一个新Error。cause未初始化，随后可以通过调用<code>initCause</code>来初始化。</li>
+<li>使用指定的详细消息和原因构造一个新Error。请注意，与原因cause相关的详细消息不会自动合并到此Error的详细消息中。</li>
+<li>使用指定的原因和<code>(cause==null ? null : Cause.toString())</code>的详细消息构造一个新Error（通常包含原因的类和详细消息）。这个构造函数对于那些只不过是其他Throwable的包装器的Error很有用。</li>
+<li>使用指定的详细消息、原因、启用或禁用的抑制以及启用或禁用的可写堆栈跟踪构造一个新Error。</li>
+</ol>
+<h2 id="四、Exception类的构造方法"><a href="#四、Exception类的构造方法" class="headerlink" title="四、Exception类的构造方法"></a>四、Exception类的构造方法</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">Exception</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">Exception</span><span class="params">(String message)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(message);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">Exception</span><span class="params">(String message, Throwable cause)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(message, cause);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">Exception</span><span class="params">(Throwable cause)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(cause);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="title function_">Exception</span><span class="params">(String message, Throwable cause,</span></span><br><span class="line"><span class="params">                        <span class="type">boolean</span> enableSuppression,</span></span><br><span class="line"><span class="params">                        <span class="type">boolean</span> writableStackTrace)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(message, cause, enableSuppression, writableStackTrace);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>构造一个新Exception，并将<code>null</code>作为其详细消息。cause未初始化，随后可以通过调用<code>initCause</code>来初始化。</li>
+<li>使用指定的详细消息构造一个新Exception。cause未初始化，随后可以通过调用<code>initCause</code>来初始化。</li>
+<li>使用指定的详细消息和原因构造一个新Exception。请注意，与原因cause相关的详细消息不会自动合并到此Exception的详细消息中。</li>
+<li>使用指定的原因和<code>(cause==null ? null : Cause.toString())</code>的详细消息构造一个新Exception（通常包含原因的类和详细消息）。这个构造函数对于那些只不过是其他Throwable的包装器的Exception很有用。</li>
+<li>使用指定的详细消息、原因、启用或禁用的抑制以及启用或禁用的可写堆栈跟踪构造一个新Exception。</li>
+</ol>
+<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h2><p>Error和Exception类作为Throwable的两个直接子类，都只有五个构造方法(最终还是调用Throwable的相应构造方法)，其他方法一丝不动的直接继承Throwable类，因此实际的实现体需要到Throwable类中查看。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Error%E4%B8%8EException%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">Error与Exception类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81Error%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、Error类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Exception%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.2.</span> <span class="toc-text">二、Exception类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Error%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、Error类的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81Exception%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、Exception类的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">1.5.</span> <span class="toc-text">五、总结</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=Exception类源码剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=Exception类源码剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Exception类源码剖析&body=Check out this article: https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Exception类源码剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=Exception类源码剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/09/20/Exception%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=Exception类源码剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

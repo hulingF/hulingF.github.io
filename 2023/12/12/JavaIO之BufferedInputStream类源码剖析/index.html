@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="JavaIO之装饰器模式一、奇怪的JavaIO用法在我初学 Java 的时候，曾经对 Java IO 的一些用法产生过很大疑惑，比如下面这样一段代码。我们打开文件 test.txt，从中读取数据。其中，InputStream 是一个抽象类，FileInputStream 是专门用来读取文件流的子类。BufferedInputStream 是一个支持带缓存功能的数据读取类，可以提高数据读取的效率。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaIO之装饰器模式">
+<meta property="og:url" content="https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="JavaIO之装饰器模式一、奇怪的JavaIO用法在我初学 Java 的时候，曾经对 Java IO 的一些用法产生过很大疑惑，比如下面这样一段代码。我们打开文件 test.txt，从中读取数据。其中，InputStream 是一个抽象类，FileInputStream 是专门用来读取文件流的子类。BufferedInputStream 是一个支持带缓存功能的数据读取类，可以提高数据读取的效率。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-12-12T08:09:09.031Z">
+<meta property="article:modified_time" content="2023-12-12T13:03:34.431Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="JDK源码">
+<meta property="article:tag" content="JavaIO">
+<meta property="article:tag" content="设计模式">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>JavaIO之装饰器模式</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/12/12/JavaIO%E4%B9%8B%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=JavaIO之装饰器模式"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=JavaIO之装饰器模式"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JavaIO之装饰器模式&body=Check out this article: https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=JavaIO之装饰器模式&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=JavaIO之装饰器模式"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JavaIO%E4%B9%8B%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">JavaIO之装饰器模式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%A5%87%E6%80%AA%E7%9A%84JavaIO%E7%94%A8%E6%B3%95"><span class="toc-number">1.1.</span> <span class="toc-text">一、奇怪的JavaIO用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9F%BA%E4%BA%8E%E7%BB%A7%E6%89%BF%E7%9A%84%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.</span> <span class="toc-text">二、基于继承的设计方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%9F%BA%E4%BA%8E%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F%E7%9A%84%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="toc-number">1.3.</span> <span class="toc-text">三、基于装饰器模式的设计方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81BufferedInputStream%E7%B1%BB%E5%89%96%E6%9E%90"><span class="toc-number">1.4.</span> <span class="toc-text">四、BufferedInputStream类剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-BufferedInputStream%E7%B1%BB%E7%9A%84%E5%AD%97%E6%AE%B5"><span class="toc-number">1.4.1.</span> <span class="toc-text">1.BufferedInputStream类的字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-BufferedInputStream%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.2.</span> <span class="toc-text">2.BufferedInputStream类的构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-BufferedInputStream%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.BufferedInputStream类的方法</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        JavaIO之装饰器模式
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-12T08:09:09.031Z" class="dt-published" itemprop="datePublished">2023-12-12</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/JDK%E6%BA%90%E7%A0%81/" rel="tag">JDK源码</a>, <a class="p-category" href="/tags/JavaIO/" rel="tag">JavaIO</a>, <a class="p-category" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="JavaIO之装饰器模式"><a href="#JavaIO之装饰器模式" class="headerlink" title="JavaIO之装饰器模式"></a>JavaIO之装饰器模式</h1><h2 id="一、奇怪的JavaIO用法"><a href="#一、奇怪的JavaIO用法" class="headerlink" title="一、奇怪的JavaIO用法"></a>一、奇怪的JavaIO用法</h2><p>在我初学 Java 的时候，曾经对 Java IO 的一些用法产生过很大疑惑，比如下面这样一段代码。我们打开文件 test.txt，从中读取数据。其中，<code>InputStream</code> 是一个抽象类，<code>FileInputStream</code> 是专门用来读取文件流的子类。<code>BufferedInputStream</code> 是一个支持带缓存功能的数据读取类，可以提高数据读取的效率。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">InputStream</span> <span class="variable">in</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(<span class="string">&quot;/user/wangzheng/test.txt&quot;</span>);</span><br><span class="line"><span class="type">InputStream</span> <span class="variable">bin</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(in);</span><br><span class="line"><span class="type">byte</span>[] data = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">128</span>];</span><br><span class="line"><span class="keyword">while</span> (bin.read(data) != -<span class="number">1</span>) &#123;</span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>初看上面的代码，我们会觉得 Java IO 的用法比较麻烦，需要先创建一个 FileInputStream 对象，然后再传递给 BufferedInputStream 对象来使用。我在想，Java IO 为什么不设计一个继承 FileInputStream 并且支持缓存的 BufferedFileInputStream 类呢？这样我们就可以像下面的代码中这样，直接创建一个 BufferedFileInputStream 类对象，打开文件读取数据，用起来岂不是更加简单？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">InputStream</span> <span class="variable">bin</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedFileInputStream</span>(<span class="string">&quot;/user/wangzheng/test.txt&quot;</span>);</span><br><span class="line"><span class="type">byte</span>[] data = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">128</span>];</span><br><span class="line"><span class="keyword">while</span> (bin.read(data) != -<span class="number">1</span>) &#123;</span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、基于继承的设计方案"><a href="#二、基于继承的设计方案" class="headerlink" title="二、基于继承的设计方案"></a>二、基于继承的设计方案</h2><p>如果 InputStream 只有一个子类 FileInputStream 的话，那我们在 FileInputStream 基础之上，再设计一个孙子类 BufferedFileInputStream，也算是可以接受的，毕竟继承结构还算简单。但实际上，继承 InputStream 的子类有很多。我们需要给每一个 InputStream 的子类，再继续派生支持缓存读取的子类。</p>
+<p>除了支持缓存读取之外，如果我们还需要对功能进行其他方面的增强，比如下面的 DataInputStream 类，支持按照基本数据类型（int、boolean、long 等）来读取数据。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">FileInputStream</span> <span class="variable">in</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(<span class="string">&quot;/user/wangzheng/test.txt&quot;</span>);</span><br><span class="line"><span class="type">DataInputStream</span> <span class="variable">din</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DataInputStream</span>(in);</span><br><span class="line"><span class="type">int</span> <span class="variable">data</span> <span class="operator">=</span> din.readInt();</span><br></pre></td></tr></table></figure>
+
+<p>在这种情况下，如果我们继续按照继承的方式来实现的话，就需要再继续派生出 DataFileInputStream、DataPipedInputStream 等类。如果我们还需要既支持缓存、又支持按照基本类型读取数据的类，那就要再继续派生出 BufferedDataFileInputStream、BufferedDataPipedInputStream 等 n 多类。这还只是附加了两个增强功能，如果我们需要附加更多的增强功能，那就会导致<code>组合爆炸</code>，类继承结构变得无比复杂，代码既不好扩展，也不好维护。</p>
+<h2 id="三、基于装饰器模式的设计方案"><a href="#三、基于装饰器模式的设计方案" class="headerlink" title="三、基于装饰器模式的设计方案"></a>三、基于装饰器模式的设计方案</h2><p>针对刚刚的继承结构过于复杂的问题，我们可以通过将继承关系改为<code>组合关系</code>来解决。下面的代码展示了 Java IO 的这种设计思路。不过，我对代码做了简化，只抽象出了必要的代码结构，如果你感兴趣的话，可以直接去查看 JDK 源码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">InputStream</span> &#123;</span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">(<span class="type">byte</span> b[])</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> read(b, <span class="number">0</span>, b.length);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">(<span class="type">byte</span> b[], <span class="type">int</span> off, <span class="type">int</span> len)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">public</span> <span class="type">long</span> <span class="title function_">skip</span><span class="params">(<span class="type">long</span> n)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">available</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;&#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">mark</span><span class="params">(<span class="type">int</span> readlimit)</span> &#123;&#125;</span><br><span class="line">    </span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">reset</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IOException</span>(<span class="string">&quot;mark/reset not supported&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">markSupported</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BufferedInputStream</span> <span class="keyword">extends</span> <span class="title class_">InputStream</span> &#123;</span><br><span class="line">  <span class="keyword">protected</span> <span class="keyword">volatile</span> InputStream in;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> <span class="title function_">BufferedInputStream</span><span class="params">(InputStream in)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.in = in;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">//...实现基于缓存的读数据接口...  </span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DataInputStream</span> <span class="keyword">extends</span> <span class="title class_">InputStream</span> &#123;</span><br><span class="line">  <span class="keyword">protected</span> <span class="keyword">volatile</span> InputStream in;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> <span class="title function_">DataInputStream</span><span class="params">(InputStream in)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.in = in;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">//...实现读取基本类型数据的接口</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看了上面的代码，你可能会问，那装饰器模式就是简单的“用组合替代继承”吗？当然不是。从 Java IO 的设计来看，装饰器模式相对于简单的组合关系，还有两个比较特殊的地方。</p>
+<p>&#x3D;&#x3D;第一个比较特殊的地方是：装饰器类和原始类继承同样的父类，这样我们可以对原始类“嵌套”多个装饰器类。&#x3D;&#x3D;比如，下面这样一段代码，我们对 FileInputStream 嵌套了两个装饰器类：BufferedInputStream 和 DataInputStream，让它既支持缓存读取，又支持按照基本数据类型来读取数据。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">InputStream</span> <span class="variable">in</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(<span class="string">&quot;/user/wangzheng/test.txt&quot;</span>);</span><br><span class="line"><span class="type">InputStream</span> <span class="variable">bin</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(in);</span><br><span class="line"><span class="type">DataInputStream</span> <span class="variable">din</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DataInputStream</span>(bin);</span><br><span class="line"><span class="type">int</span> <span class="variable">data</span> <span class="operator">=</span> din.readInt();</span><br></pre></td></tr></table></figure>
+
+<p>&#x3D;&#x3D;第二个比较特殊的地方是：装饰器类是对功能的增强，这也是装饰器模式应用场景的一个重要特点。&#x3D;&#x3D;实际上，符合“组合关系”这种代码结构的设计模式有很多，比如代理模式、桥接模式，还有现在的装饰器模式。尽管它们的代码结构很相似，但是每种设计模式的意图是不同的。就拿比较相似的代理模式和装饰器模式来说吧，代理模式中，代理类附加的是跟原始类无关的功能，而在装饰器模式中，装饰器类附加的是跟原始类相关的增强功能。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 代理模式的代码结构(下面的接口也可以替换成抽象类)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">IA</span> &#123;</span><br><span class="line">  <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">A</span> impelements IA &#123;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span> &#123; <span class="comment">//... &#125;</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AProxy</span> <span class="keyword">implements</span> <span class="title class_">IA</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> IA a;</span><br><span class="line">  <span class="keyword">public</span> <span class="title function_">AProxy</span><span class="params">(IA a)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.a = a;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 新添加的代理逻辑</span></span><br><span class="line">    a.f();</span><br><span class="line">    <span class="comment">// 新添加的代理逻辑</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 装饰器模式的代码结构(下面的接口也可以替换成抽象类)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">IA</span> &#123;</span><br><span class="line">  <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">A</span> <span class="keyword">implements</span> <span class="title class_">IA</span> &#123;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span> &#123; <span class="comment">//... &#125;</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ADecorator</span> <span class="keyword">implements</span> <span class="title class_">IA</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> IA a;</span><br><span class="line">  <span class="keyword">public</span> <span class="title function_">ADecorator</span><span class="params">(IA a)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.a = a;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 功能增强代码</span></span><br><span class="line">    a.f();</span><br><span class="line">    <span class="comment">// 功能增强代码</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实际上，如果去查看 JDK 的源码，你会发现，BufferedInputStream、DataInputStream 并非继承自 InputStream，而是另外一个叫 FilterInputStream 的类。那这又是出于什么样的设计意图，才引入这样一个类呢？</p>
+<p>我们再重新来看一下 BufferedInputStream 类的代码。InputStream 是一个抽象类而非接口，而且它的大部分函数（比如 read(byte b[])、available()）都有默认实现，按理来说，我们只需要在 BufferedInputStream 类中重新实现那些需要增加缓存功能的函数就可以了，其他函数继承 InputStream 的默认实现。但实际上，这样做是行不通的。</p>
+<p>对于即便是不需要增加缓存功能的函数来说，BufferedInputStream 还是必须把它重新实现一遍，简单包裹对 InputStream 对象的函数调用。具体的代码示例如下所示。&#x3D;&#x3D;如果不重新实现，那 BufferedInputStream 类就无法将最终读取数据的任务，委托给传递进来的 InputStream 对象来完成。&#x3D;&#x3D;</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BufferedInputStream</span> <span class="keyword">extends</span> <span class="title class_">InputStream</span> &#123;</span><br><span class="line">  <span class="keyword">protected</span> <span class="keyword">volatile</span> InputStream in;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> <span class="title function_">BufferedInputStream</span><span class="params">(InputStream in)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.in = in;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// f()函数不需要增强，只是重新调用一下InputStream in对象的f()</span></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span> &#123;</span><br><span class="line">    in.f();</span><br><span class="line">  &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实际上，DataInputStream 也存在跟 BufferedInputStream 同样的问题。为了避免代码重复，Java IO 抽象出了一个装饰器父类 FilterInputStream，代码实现如下所示。InputStream 的所有的装饰器类（BufferedInputStream、DataInputStream）都继承自这个装饰器父类。&#x3D;&#x3D;这样，装饰器类只需要实现它需要增强的方法就可以了，其他方法继承装饰器父类的默认实现。&#x3D;&#x3D;</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// FilterInputStream类本身只是用将所有请求传递到所包含的输入流来重写InputStream的所有方法。 </span></span><br><span class="line"><span class="comment">// FilterInputStream的子类可以进一步重写其中一些方法，并且还可以提供其他方法和字段。</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FilterInputStream</span> <span class="keyword">extends</span> <span class="title class_">InputStream</span> &#123;</span><br><span class="line">  <span class="keyword">protected</span> <span class="keyword">volatile</span> InputStream in;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> <span class="title function_">FilterInputStream</span><span class="params">(InputStream in)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.in = in;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> in.read();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">(<span class="type">byte</span> b[])</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> read(b, <span class="number">0</span>, b.length);</span><br><span class="line">  &#125;</span><br><span class="line">   </span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">(<span class="type">byte</span> b[], <span class="type">int</span> off, <span class="type">int</span> len)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> in.read(b, off, len);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="type">long</span> <span class="title function_">skip</span><span class="params">(<span class="type">long</span> n)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> in.skip(n);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">available</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> in.available();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    in.close();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">mark</span><span class="params">(<span class="type">int</span> readlimit)</span> &#123;</span><br><span class="line">    in.mark(readlimit);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">reset</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    in.reset();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">markSupported</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> in.markSupported();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里，我们已经知道为了给InputStream子类增强功能，我们使用装饰器设计模式，组合代替继承，并且可以对原始类嵌套多个装饰器。下面，我们着重查看装饰器类BufferedInputStream的源代码。</p>
+<h2 id="四、BufferedInputStream类剖析"><a href="#四、BufferedInputStream类剖析" class="headerlink" title="四、BufferedInputStream类剖析"></a>四、BufferedInputStream类剖析</h2><p>BufferedInputStream向另一个字节输入流添加功能，即缓冲输入并支持mark和reset方法的能力。创建BufferedInputStream时，会创建一个内部缓冲区数组。当读取或跳过流中的字节时，内部缓冲区会根据需要从包含的输入流中重新填充，一次填充多个字节。mark操作会记住输入流中的一个点，而reset操作会导致在从所包含的输入流中获取新字节之前重新读取自最近的mark操作以来读取的所有字节。</p>
+<h3 id="1-BufferedInputStream类的字段"><a href="#1-BufferedInputStream类的字段" class="headerlink" title="1.BufferedInputStream类的字段"></a>1.BufferedInputStream类的字段</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 默认缓冲区大小</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">DEFAULT_BUFFER_SIZE</span> <span class="operator">=</span> <span class="number">8192</span>;</span><br><span class="line"><span class="comment">// 分配的数组的最大大小。一些虚拟机在数组中保留一些头字，尝试分配更大的数组可能会导致OutOfMemoryError，即请求的数组大小超出VM限制</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">MAX_BUFFER_SIZE</span> <span class="operator">=</span> Integer.MAX_VALUE - <span class="number">8</span>;</span><br><span class="line"><span class="comment">// unsafe类实例</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Unsafe</span> <span class="variable">U</span> <span class="operator">=</span> Unsafe.getUnsafe();</span><br><span class="line"><span class="comment">// buf字段的内存偏移量</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">long</span> <span class="variable">BUF_OFFSET</span></span><br><span class="line">            <span class="operator">=</span> U.objectFieldOffset(BufferedInputStream.class, <span class="string">&quot;buf&quot;</span>);</span><br><span class="line"><span class="comment">// 存储数据的内部缓冲区数组。必要时，可以将其替换为另一个不同大小的数组。</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">volatile</span> <span class="type">byte</span>[] buf;</span><br><span class="line"><span class="comment">// 该索引比缓冲区中最后一个有效字节的索引大1。该值始终在0到buf.length范围内；元素buf[0]到buf[count-1]包含从底层输入流获得的缓冲输入数据。</span></span><br><span class="line"><span class="keyword">protected</span> <span class="type">int</span> count;</span><br><span class="line"><span class="comment">// 缓冲区中的当前位置。这是要从buf数组中读取的下一个字符的索引。</span></span><br><span class="line"><span class="comment">// 该值始终在0到count范围内。如果它小于count，则buf[pos]是要作为输入提供的下一个字节；如果它等于count，则下一个read或skip操作将需要从包含的输入流中读取更多字节。</span></span><br><span class="line"><span class="keyword">protected</span> <span class="type">int</span> pos;</span><br><span class="line"><span class="comment">// 我们先忽略mark方法和reset方法的影响</span></span><br><span class="line"><span class="keyword">protected</span> <span class="type">int</span> <span class="variable">markpos</span> <span class="operator">=</span> -<span class="number">1</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="type">int</span> marklimit;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-BufferedInputStream类的构造方法"><a href="#2-BufferedInputStream类的构造方法" class="headerlink" title="2.BufferedInputStream类的构造方法"></a>2.BufferedInputStream类的构造方法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建BufferedInputStream并将其参数（即输入流）保存in以供以后使用。创建内部缓冲区数组并将其存储在buf中。</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">BufferedInputStream</span><span class="params">(InputStream in)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>(in, DEFAULT_BUFFER_SIZE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建具有指定缓冲区大小的BufferedInputStream，并将其参数（即输入流）保存in以供以后使用。创建长度为size的内部缓冲区数组并将其存储在buf中。</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">BufferedInputStream</span><span class="params">(InputStream in, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="comment">// 调用父类FilterInputStream的构造方法</span></span><br><span class="line">    <span class="built_in">super</span>(in);</span><br><span class="line">    <span class="keyword">if</span> (size &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;Buffer size &lt;= 0&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    buf = <span class="keyword">new</span> <span class="title class_">byte</span>[size];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-BufferedInputStream类的方法"><a href="#3-BufferedInputStream类的方法" class="headerlink" title="3.BufferedInputStream类的方法"></a>3.BufferedInputStream类的方法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 返回内部实际输入流</span></span><br><span class="line"><span class="keyword">private</span> InputStream <span class="title function_">getInIfOpen</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="type">InputStream</span> <span class="variable">input</span> <span class="operator">=</span> in;</span><br><span class="line">    <span class="keyword">if</span> (input == <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IOException</span>(<span class="string">&quot;Stream closed&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> input;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 返回内部缓冲数组</span></span><br><span class="line"><span class="keyword">private</span> <span class="type">byte</span>[] getBufIfOpen() <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="type">byte</span>[] buffer = buf;</span><br><span class="line">    <span class="keyword">if</span> (buffer == <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IOException</span>(<span class="string">&quot;Stream closed&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> buffer;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 详见InputStream的read()方法规约</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="comment">// 若有效字节已读取完</span></span><br><span class="line">    <span class="keyword">if</span> (pos &gt;= count) &#123;</span><br><span class="line">        <span class="comment">// 读取字节填充缓冲数组</span></span><br><span class="line">        fill();</span><br><span class="line">        <span class="comment">// 实际内部输入流的read方法返回-1，说明到达流末尾，返回-1</span></span><br><span class="line">        <span class="keyword">if</span> (pos &gt;= count)</span><br><span class="line">            <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 有效字节尚未读完，继续读取</span></span><br><span class="line">    <span class="keyword">return</span> getBufIfOpen()[pos++] &amp; <span class="number">0xff</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// fill方法中我们先忽略mark和reset方法的影响，下面是简化版的内容</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">fill</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="comment">// 获取缓冲数组，同时检查输入流是否已经关闭</span></span><br><span class="line">    <span class="type">byte</span>[] buffer = getBufIfOpen();</span><br><span class="line">    <span class="comment">// pos重置为0</span></span><br><span class="line">    pos = <span class="number">0</span>;    </span><br><span class="line">    <span class="comment">// count重置为0</span></span><br><span class="line">    count = pos;</span><br><span class="line">    <span class="comment">// 读取填充缓冲数组的实际字节数</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> getInIfOpen().read(buffer, pos, buffer.length - pos);</span><br><span class="line">    <span class="comment">// 更新有效字节数count</span></span><br><span class="line">    <span class="keyword">if</span> (n &gt; <span class="number">0</span>)</span><br><span class="line">        count = n + pos;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 关闭此输入流并释放与该流关联的所有系统资源。一旦流被关闭，进一步的read()、available()、reset()或skip()调用将抛出IOException。关闭之前已关闭的流没有任何效果。</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="type">byte</span>[] buffer;</span><br><span class="line">    <span class="comment">// 自旋+CAS关闭输入流是必要的，因为close方法可以异步发生</span></span><br><span class="line">    <span class="keyword">while</span> ( (buffer = buf) != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="comment">// CAS修改缓冲数组为null</span></span><br><span class="line">        <span class="keyword">if</span> (U.compareAndSetObject(<span class="built_in">this</span>, BUF_OFFSET, buffer, <span class="literal">null</span>)) &#123;</span><br><span class="line">            <span class="type">InputStream</span> <span class="variable">input</span> <span class="operator">=</span> in;</span><br><span class="line">            <span class="comment">// 帮助GC</span></span><br><span class="line">            in = <span class="literal">null</span>;</span><br><span class="line">            <span class="comment">// 关闭内部实际输入流</span></span><br><span class="line">            <span class="keyword">if</span> (input != <span class="literal">null</span>)</span><br><span class="line">                input.close();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// Else retry in case a new buf was CASed in fill()</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JavaIO%E4%B9%8B%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">JavaIO之装饰器模式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%A5%87%E6%80%AA%E7%9A%84JavaIO%E7%94%A8%E6%B3%95"><span class="toc-number">1.1.</span> <span class="toc-text">一、奇怪的JavaIO用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9F%BA%E4%BA%8E%E7%BB%A7%E6%89%BF%E7%9A%84%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.</span> <span class="toc-text">二、基于继承的设计方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%9F%BA%E4%BA%8E%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F%E7%9A%84%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="toc-number">1.3.</span> <span class="toc-text">三、基于装饰器模式的设计方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81BufferedInputStream%E7%B1%BB%E5%89%96%E6%9E%90"><span class="toc-number">1.4.</span> <span class="toc-text">四、BufferedInputStream类剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-BufferedInputStream%E7%B1%BB%E7%9A%84%E5%AD%97%E6%AE%B5"><span class="toc-number">1.4.1.</span> <span class="toc-text">1.BufferedInputStream类的字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-BufferedInputStream%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.2.</span> <span class="toc-text">2.BufferedInputStream类的构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-BufferedInputStream%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.BufferedInputStream类的方法</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=JavaIO之装饰器模式"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=JavaIO之装饰器模式"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JavaIO之装饰器模式&body=Check out this article: https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之装饰器模式"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=JavaIO之装饰器模式&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=JavaIO之装饰器模式"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

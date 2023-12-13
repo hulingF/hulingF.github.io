@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="InputStream类源码剖析一、InputStream类的简介InputStream是所有字节输入流的公共祖先类，下面有很多的实现类，最常用的包括ByteArrayInputStream、FileInputStream和BufferedInputStream，后面我们会单独对这些类一一讲解。  二、InputStream类的字段123456&#x2F;&#x2F; MAX_SKIP_BUFFER_SIZE is">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaIO之InputStream类源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="InputStream类源码剖析一、InputStream类的简介InputStream是所有字节输入流的公共祖先类，下面有很多的实现类，最常用的包括ByteArrayInputStream、FileInputStream和BufferedInputStream，后面我们会单独对这些类一一讲解。  二、InputStream类的字段123456&#x2F;&#x2F; MAX_SKIP_BUFFER_SIZE is">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/io-inputstream-1.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231212151224085.png">
+<meta property="article:published_time" content="2023-12-12T06:11:31.544Z">
+<meta property="article:modified_time" content="2023-12-12T07:41:25.916Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="JDK源码">
+<meta property="article:tag" content="JavaIO">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/io-inputstream-1.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>JavaIO之InputStream类源码剖析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/12/12/JavaIO%E4%B9%8BBufferedInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BPriorityQueue%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=JavaIO之InputStream类源码剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=JavaIO之InputStream类源码剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JavaIO之InputStream类源码剖析&body=Check out this article: https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=JavaIO之InputStream类源码剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=JavaIO之InputStream类源码剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#InputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">InputStream类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81InputStream%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、InputStream类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81InputStream%E7%B1%BB%E7%9A%84%E5%AD%97%E6%AE%B5"><span class="toc-number">1.2.</span> <span class="toc-text">二、InputStream类的字段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81InputStream%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、InputStream类的方法</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        JavaIO之InputStream类源码剖析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-12T06:11:31.544Z" class="dt-published" itemprop="datePublished">2023-12-12</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/JDK%E6%BA%90%E7%A0%81/" rel="tag">JDK源码</a>, <a class="p-category" href="/tags/JavaIO/" rel="tag">JavaIO</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="InputStream类源码剖析"><a href="#InputStream类源码剖析" class="headerlink" title="InputStream类源码剖析"></a>InputStream类源码剖析</h1><h2 id="一、InputStream类的简介"><a href="#一、InputStream类的简介" class="headerlink" title="一、InputStream类的简介"></a>一、InputStream类的简介</h2><p>InputStream是所有字节输入流的公共祖先类，下面有很多的实现类，最常用的包括<code>ByteArrayInputStream</code>、<code>FileInputStream</code>和<code>BufferedInputStream</code>，后面我们会单独对这些类一一讲解。</p>
+<p><img src="/../../../../../../imgs/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/io-inputstream-1.png" alt="img"></p>
+<h2 id="二、InputStream类的字段"><a href="#二、InputStream类的字段" class="headerlink" title="二、InputStream类的字段"></a>二、InputStream类的字段</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// MAX_SKIP_BUFFER_SIZE is used to determine the maximum buffer size to use when skipping.</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MAX_SKIP_BUFFER_SIZE</span> <span class="operator">=</span> <span class="number">2048</span>;</span><br><span class="line"><span class="comment">// 默认的Buffer大小</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">DEFAULT_BUFFER_SIZE</span> <span class="operator">=</span> <span class="number">8192</span>;</span><br><span class="line"><span class="comment">// 分配数组的最大大小，一些虚拟机在数组中保留一些头字。尝试分配更大的数组可能会导致OutOfMemoryError，即请求的数组大小超出VM限制</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MAX_BUFFER_SIZE</span> <span class="operator">=</span> Integer.MAX_VALUE - <span class="number">8</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、InputStream类的方法"><a href="#三、InputStream类的方法" class="headerlink" title="三、InputStream类的方法"></a>三、InputStream类的方法</h2><p>字节输入流InputStream中最重要的方法必然就是读取字节数据的<code>read</code>方法了，包含三个重载形式，最终调用的还是原始的<code>read()</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 从输入流读取下一个数据字节，以0到255范围内的int返回。如果由于已到达流末尾而没有可用字节，则返回值-1。此方法会阻塞，直到输入数据可用、检测到流结束或引发异常为止。</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">()</span> <span class="keyword">throws</span> IOException;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 从输入流读取一定数量的字节并将它们存储到缓冲区数组b中。实际读取的字节数以整数形式返回。此方法会阻塞，直到输入数据可用、检测到文件结尾或引发异常。</span></span><br><span class="line"><span class="comment">// 如果b的长度为零，则不读取任何字节，返回0；否则，将尝试读取至少一个字节。如果由于流位于文件末尾而没有可用字节，则返回值-1；否则，至少读取一个字节并将其存储到b中。</span></span><br><span class="line"><span class="comment">// 读取的第一个字节存储到元素b[0]中，下一个字节存储到b[1]中，依此类推。读取的字节数最多等于b的长度。令k为实际读取的字节数；这些字节将存储在元素b[0]到b[k-1]中，而元素b[k]到b[b.length-1]不受影响。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">(<span class="type">byte</span> b[])</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> read(b, <span class="number">0</span>, b.length);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 从输入流读取最多len个字节的数据到字节数组中。尝试读取多达len个字节，但可能会读取更少的字节数。实际读取的字节数以整数形式返回。此方法会阻塞，直到输入数据可用、检测到文件结尾或引发异常。</span></span><br><span class="line"><span class="comment">// 如果len为零，则不读取任何字节并返回0；否则，将尝试读取至少一个字节。如果由于流位于文件末尾而没有可用字节，则返回值-1；否则，至少读取一个字节并将其存储到b中。</span></span><br><span class="line"><span class="comment">// 读取的第一个字节存储到元素b[off]中，下一个字节存储到b[off+1]中，依此类推，读取的字节数最多等于len。令k为实际读取的字节数；这些字节将存储在元素b[off]到b[off+k-1]中，而元素b[off+k]到b[off+len-1]不受影响。在每种情况下，元素b[0]到b[off]和元素b[off+len]到b[b.length-1]不受影响。</span></span><br><span class="line"><span class="comment">// InputStream类的read(b, off, len)方法只是重复调用read()方法。如果第一个此类调用导致IOException，则该异常将从对read(b, off, len)方法的调用中返回。如果对read()的任何后续调用导致IOException，则该异常将被捕获并被视为文件结尾；到目前为止读取的字节存储到b中，并返回异常发生之前读取的字节数。此方法的默认实现会阻塞，直到读取了请求的输入数据量len、检测到文件末尾或引发异常。鼓励子类提供此方法的更有效的实现。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">read</span><span class="params">(<span class="type">byte</span> b[], <span class="type">int</span> off, <span class="type">int</span> len)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    Objects.checkFromIndexSize(off, len, b.length);</span><br><span class="line">    <span class="comment">// 如果len为零，则不读取任何字节并返回0</span></span><br><span class="line">    <span class="keyword">if</span> (len == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// 读取第一个字节</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">c</span> <span class="operator">=</span> read();</span><br><span class="line">    <span class="comment">// 检测到文件末尾</span></span><br><span class="line">    <span class="keyword">if</span> (c == -<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 放入字节数组的第一个偏移位置</span></span><br><span class="line">    b[off] = (<span class="type">byte</span>)c;</span><br><span class="line">	<span class="comment">// 实际读取的字节数</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 循环调用read直至读取len个字节、检测到文件末尾或发生异常</span></span><br><span class="line">        <span class="keyword">for</span> (; i &lt; len ; i++) &#123;</span><br><span class="line">            c = read();</span><br><span class="line">            <span class="keyword">if</span> (c == -<span class="number">1</span>) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            b[off + i] = (<span class="type">byte</span>)c;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException ee) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回实际读取的字节数</span></span><br><span class="line">    <span class="keyword">return</span> i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第二个我们看一下<code>skip</code>方法，这在一些子类中可能会使用到，用于跳过若干字节的数据。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 跳过并丢弃此输入流中的n字节的数据。由于各种原因，skip方法最终可能会跳过一些较小数量的字节，可能是0。这可能是由多种情况中的任何一种造成的，在跳过n字节之前到达文件末尾只是一种可能性。</span></span><br><span class="line"><span class="comment">// 返回实际跳过的字节数。如果n为负数，则类InputStream的skip方法始终返回0，并且不会跳过任何字节。子类可能会以不同的方式处理负值。</span></span><br><span class="line"><span class="comment">// 此类的skip方法实现创建一个字节数组，然后重复读取它，直到读取n字节或到达流的末尾。鼓励子类提供此方法的更有效的实现。例如，具体实现可能取决于seek的能力。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">long</span> <span class="title function_">skip</span><span class="params">(<span class="type">long</span> n)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">	<span class="comment">// 待读取(跳过)的字节数</span></span><br><span class="line">    <span class="type">long</span> <span class="variable">remaining</span> <span class="operator">=</span> n;</span><br><span class="line">    <span class="type">int</span> nr;</span><br><span class="line">	<span class="comment">// 始终返回0，不会跳过任何字节</span></span><br><span class="line">    <span class="keyword">if</span> (n &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// 计算字节数组的大小，不能超过MAX_SKIP_BUFFER_SIZE</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">size</span> <span class="operator">=</span> (<span class="type">int</span>)Math.min(MAX_SKIP_BUFFER_SIZE, remaining);</span><br><span class="line">    <span class="type">byte</span>[] skipBuffer = <span class="keyword">new</span> <span class="title class_">byte</span>[size];</span><br><span class="line">    <span class="comment">// 循环读取n字节的数据不做任何处理，表示跳过这些数据</span></span><br><span class="line">    <span class="keyword">while</span> (remaining &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 读取字节输入流的数据，返回实际读取的字节数</span></span><br><span class="line">        nr = read(skipBuffer, <span class="number">0</span>, (<span class="type">int</span>)Math.min(size, remaining));</span><br><span class="line">        <span class="comment">// 检测到文件末尾，退出循环</span></span><br><span class="line">        <span class="keyword">if</span> (nr &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 计算剩余待读取的字节数</span></span><br><span class="line">        remaining -= nr;</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// 返回实际跳过的字节数</span></span><br><span class="line">    <span class="keyword">return</span> n - remaining;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们顺便看一下<code>available</code>和<code>close</code>方法的含义。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 返回可以从此输入流中无阻塞读取（或跳过）的字节数的估计值，该值可能为0，或者在检测到流结束时为0。读取可能在同一个线程或另一个线程上。单次读取或跳过这么多字节不会阻塞，但可能会读取或跳过更少的字节。</span></span><br><span class="line"><span class="comment">// 请注意，虽然InputStream的某些实现将返回流中的字节总数，但许多实现不会返回。使用此方法的返回值来分配用于保存此流中所有数据的缓冲区永远是不正确的。</span></span><br><span class="line"><span class="comment">// 如果此输入流已通过调用close()方法关闭，则此方法的子类实现可能会选择抛出IOException。</span></span><br><span class="line"><span class="comment">// InputStream的available方法始终返回0，该方法应该由子类重写。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">available</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 关闭此输入流并释放与该流关联的所有系统资源。</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面，我们看一下跟标记相关的一些方法，这些方法不太常用，我们简单过一遍。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 标记此输入流中的当前位置。随后调用reset方法会将此流重新定位到最后标记的位置，以便后续读取重新读取相同的字节。</span></span><br><span class="line"><span class="comment">// readlimit参数告诉该输入流允许在标记位置失效之前读取足够多的字节。</span></span><br><span class="line"><span class="comment">// mark的一般约定是，如果方法markSupported返回true，则流会以某种方式记住调用mark后读取的所有字节，并准备好在调用方法reset时再次提供这些相同的字节。但是，如果在reset之前从流中读取了超过readlimit字节，则流根本不需要记住任何数据。</span></span><br><span class="line"><span class="comment">// 标记关闭的流不应该对流产生任何影响。</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">mark</span><span class="params">(<span class="type">int</span> readlimit)</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 测试此输入流是否支持mark和reset方法。是否支持mark和reset是特定输入流实例的不变属性。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">markSupported</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231212151224085.png" alt="image-20231212151224085"></p>
+<p>自JDK9依赖，InputStream中增加了一些新的方法来读取和复制InputStream中包含的数据。</p>
+<p><code>readAllBytes</code>：读取InputStream中的所有剩余字节。</p>
+<p><code>readNBytes</code>：从InputStream中读取指定数量的字节到数组中。</p>
+<p><code>transferTo</code>：读取InputStream中的全部字节并写入到指定的OutputStream中 。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 从输入流中读取所有剩余字节。此方法会阻塞，直到读取了所有剩余字节并检测到流结束，或者引发异常。</span></span><br><span class="line"><span class="comment">// 当该流到达流末尾时，进一步调用该方法将返回一个空字节数组。</span></span><br><span class="line"><span class="comment">// 请注意，此方法适用于可以方便地将所有字节读入字节数组的简单情况。它不适用于读取具有大量数据的输入流!</span></span><br><span class="line"><span class="comment">// 如果从输入流读取时发生I/O错误，则可能会在读取部分（但不是全部）字节后发生此错误。因此，输入流可能不在流的末尾，并且可能处于不一致的状态。强烈建议在发生I/O错误时立即关闭流。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">byte</span>[] readAllBytes() <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">return</span> readNBytes(Integer.MAX_VALUE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 从输入流中读取最多指定数量的字节。此方法会阻塞，直到读取了请求的字节数、检测到流结束或引发异常为止。</span></span><br><span class="line"><span class="comment">// 返回数组的长度等于从流中读取的字节数。如果len为零，则不读取任何字节并返回空字节数组。否则，最多从流中读取len字节。如果遇到流末尾，则可能会读取少于len个字节。</span></span><br><span class="line"><span class="comment">// 当该流到达流末尾时，进一步调用该方法将返回一个空字节数组。</span></span><br><span class="line"><span class="comment">// 请注意，此方法适用于可以方便地将指定数量的字节读入字节数组的简单情况。此方法分配的内存总量与从len限制的流中读取的字节数成正比。因此，只要有足够的内存可用，就可以使用非常大的len值安全地调用该方法。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">byte</span>[] readNBytes(<span class="type">int</span> len) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="comment">// 参数检查</span></span><br><span class="line">    <span class="keyword">if</span> (len &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;len &lt; 0&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    List&lt;<span class="type">byte</span>[]&gt; bufs = <span class="literal">null</span>;</span><br><span class="line">    <span class="type">byte</span>[] result = <span class="literal">null</span>;</span><br><span class="line">    <span class="comment">// 已读取的字节数</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">total</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 待读取的字节数</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">remaining</span> <span class="operator">=</span> len;</span><br><span class="line">    <span class="type">int</span> n;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="comment">// 创建单次读取时所需的字节数组</span></span><br><span class="line">        <span class="type">byte</span>[] buf = <span class="keyword">new</span> <span class="title class_">byte</span>[Math.min(remaining, DEFAULT_BUFFER_SIZE)];</span><br><span class="line">        <span class="comment">// 本次读取字节数量</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">nread</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">        <span class="comment">// read to EOF which may read more or less than buffer size</span></span><br><span class="line">        <span class="keyword">while</span> ((n = read(buf, nread,</span><br><span class="line">                         Math.min(buf.length - nread, remaining))) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 更新本次读取字节数量</span></span><br><span class="line">            nread += n;</span><br><span class="line">            <span class="comment">// 更新剩余待读取的字节数</span></span><br><span class="line">            remaining -= n;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (nread &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 读取的字节数超过最大字节数组长度限制MAX_BUFFER_SIZE</span></span><br><span class="line">            <span class="keyword">if</span> (MAX_BUFFER_SIZE - total &lt; nread) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">OutOfMemoryError</span>(<span class="string">&quot;Required array size too large&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 更新已读取的字节数</span></span><br><span class="line">            total += nread;</span><br><span class="line">            <span class="comment">// result初始化</span></span><br><span class="line">            <span class="keyword">if</span> (result == <span class="literal">null</span>) &#123;</span><br><span class="line">                result = buf;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// bufs初始化</span></span><br><span class="line">                <span class="keyword">if</span> (bufs == <span class="literal">null</span>) &#123;</span><br><span class="line">                    bufs = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">                    bufs.add(result);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 添加分块的字节数组</span></span><br><span class="line">                bufs.add(buf);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// if the last call to read returned -1 or the number of bytes</span></span><br><span class="line">        <span class="comment">// requested have been read then break</span></span><br><span class="line">    &#125; <span class="keyword">while</span> (n &gt;= <span class="number">0</span> &amp;&amp; remaining &gt; <span class="number">0</span>);</span><br><span class="line">	<span class="comment">// 读取字节数len小于DEFAULT_BUFFER_SIZE时，不需要采用类似于分片传输的方案，result数组即可</span></span><br><span class="line">    <span class="keyword">if</span> (bufs == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (result == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">0</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result.length == total ?</span><br><span class="line">            result : Arrays.copyOf(result, total);</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// 类似于分片传输，需要组装字节数组形成一个大的总字节数组</span></span><br><span class="line">    result = <span class="keyword">new</span> <span class="title class_">byte</span>[total];</span><br><span class="line">    <span class="type">int</span> <span class="variable">offset</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    remaining = total;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">byte</span>[] b : bufs) &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">count</span> <span class="operator">=</span> Math.min(b.length, remaining);</span><br><span class="line">        System.arraycopy(b, <span class="number">0</span>, result, offset, count);</span><br><span class="line">        offset += count;</span><br><span class="line">        remaining -= count;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 从此输入流中读取所有字节，并按照读取顺序将字节写入给定的输出流。返回时，该输入流将位于流的末尾。此方法不会关闭任何一个流。</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">long</span> <span class="title function_">transferTo</span><span class="params">(OutputStream out)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="comment">// 字节输出流不能为空</span></span><br><span class="line">    Objects.requireNonNull(out, <span class="string">&quot;out&quot;</span>);</span><br><span class="line">    <span class="comment">// 转移的字节数</span></span><br><span class="line">    <span class="type">long</span> <span class="variable">transferred</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 转移时读写所需的字节数组</span></span><br><span class="line">    <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[DEFAULT_BUFFER_SIZE];</span><br><span class="line">    <span class="type">int</span> read;</span><br><span class="line">    <span class="comment">// 循环读取直至流末尾</span></span><br><span class="line">    <span class="keyword">while</span> ((read = <span class="built_in">this</span>.read(buffer, <span class="number">0</span>, DEFAULT_BUFFER_SIZE)) &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 写入输出流</span></span><br><span class="line">        out.write(buffer, <span class="number">0</span>, read);</span><br><span class="line">        <span class="comment">// 更新转移的字节数</span></span><br><span class="line">        transferred += read;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> transferred;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#InputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">InputStream类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81InputStream%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、InputStream类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81InputStream%E7%B1%BB%E7%9A%84%E5%AD%97%E6%AE%B5"><span class="toc-number">1.2.</span> <span class="toc-text">二、InputStream类的字段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81InputStream%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、InputStream类的方法</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=JavaIO之InputStream类源码剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=JavaIO之InputStream类源码剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JavaIO之InputStream类源码剖析&body=Check out this article: https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=JavaIO之InputStream类源码剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=JavaIO之InputStream类源码剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/12/JavaIO%E4%B9%8BInputStream%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=JavaIO之InputStream类源码剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

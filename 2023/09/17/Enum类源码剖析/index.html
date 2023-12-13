@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Enum类源码剖析一、Enum类的概述Java中的枚举类型默认都继承自Enum抽象类，因此了解Enum类的原理对于枚举类型的学习大有帮助。Enum的全写是Enumeration，这个词的翻译是列举、逐条陈述、细目。枚举类型是JDK 5之后引进的一种非常重要的引用类型，可以用来定义一系列枚举常量。在没有引入enum关键字之前，要表示可枚举的变量，只能使用以下的方式。 1234567891011121">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Enum类源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Enum类源码剖析一、Enum类的概述Java中的枚举类型默认都继承自Enum抽象类，因此了解Enum类的原理对于枚举类型的学习大有帮助。Enum的全写是Enumeration，这个词的翻译是列举、逐条陈述、细目。枚举类型是JDK 5之后引进的一种非常重要的引用类型，可以用来定义一系列枚举常量。在没有引入enum关键字之前，要表示可枚举的变量，只能使用以下的方式。 1234567891011121">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917164601976.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917165906678.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917173803325.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917174555134.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917175059670.png">
+<meta property="article:published_time" content="2023-09-17T08:16:57.886Z">
+<meta property="article:modified_time" content="2023-10-03T14:11:10.251Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="JDK源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917164601976.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Enum类源码剖析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/09/18/Throwable%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/09/14/Integer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=Enum类源码剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=Enum类源码剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Enum类源码剖析&body=Check out this article: https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=Enum类源码剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=Enum类源码剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">Enum类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81Enum%E7%B1%BB%E7%9A%84%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">一、Enum类的概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Enum%E7%B1%BB%E7%9A%84%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB"><span class="toc-number">1.2.</span> <span class="toc-text">二、Enum类的继承关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%AD%97%E6%AE%B5%E5%8F%8A%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、Enum类的字段及构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81Enum%E7%B1%BB%E7%9A%84%E9%87%8D%E8%A6%81%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、Enum类的重要方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%85%B6%E4%BB%96%E6%96%B9%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">五、Enum类的其他方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%8F%8D%E7%BC%96%E8%AF%911"><span class="toc-number">1.6.</span> <span class="toc-text">六、Enum类的反编译1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%8F%8D%E7%BC%96%E8%AF%912"><span class="toc-number">1.7.</span> <span class="toc-text">七、Enum类的反编译2</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Enum类源码剖析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-09-17T08:16:57.886Z" class="dt-published" itemprop="datePublished">2023-09-17</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/JDK%E6%BA%90%E7%A0%81/" rel="tag">JDK源码</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Enum类源码剖析"><a href="#Enum类源码剖析" class="headerlink" title="Enum类源码剖析"></a>Enum类源码剖析</h1><h2 id="一、Enum类的概述"><a href="#一、Enum类的概述" class="headerlink" title="一、Enum类的概述"></a>一、Enum类的概述</h2><p>Java中的枚举类型默认都继承自Enum抽象类，因此了解Enum类的原理对于枚举类型的学习大有帮助。<code>Enum</code>的全写是<code>Enumeration</code>，这个词的翻译是列举、逐条陈述、细目。枚举类型是<code>JDK 5</code>之后引进的一种非常重要的引用类型，可以用来定义一系列枚举常量。在没有引入<code>enum</code>关键字之前，要表示可枚举的变量，只能使用以下的方式。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SeasonDef</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">SPRING</span> <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">SUMMER</span> <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">AUTUMN</span> <span class="operator">=</span> <span class="number">3</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">WINTER</span> <span class="operator">=</span> <span class="number">4</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> String <span class="title function_">getSeason</span><span class="params">(<span class="type">int</span> type)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">season</span> <span class="operator">=</span> <span class="string">&quot;&quot;</span>;</span><br><span class="line">        <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">            <span class="keyword">case</span> SPRING:</span><br><span class="line">                season = <span class="string">&quot;春天&quot;</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> SUMMER:</span><br><span class="line">                season = <span class="string">&quot;夏天&quot;</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span>  AUTUMN:</span><br><span class="line">                season = <span class="string">&quot;秋天&quot;</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> WINTER:</span><br><span class="line">                season = <span class="string">&quot;冬天&quot;</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;type out of range!&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> season;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        System.out.println(SeasonDef.getSeason(SeasonDef.SPRING));</span><br><span class="line">        System.out.println(SeasonDef.getSeason(<span class="number">1</span>));</span><br><span class="line">        System.out.println(SeasonDef.getSeason(<span class="number">5</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917164601976.png" alt="image-20230917164601976"></p>
+<p>这种实现方式有几个<code>弊端</code>:</p>
+<ol>
+<li><code>类型不安全</code>。试想一下，有一个方法期待接受一个季节作为参数，那么只能将参数类型声明为<code>int</code>，但是传入的值可能是<code>5</code>。显然只能在运行时进行参数合理性的判断，无法在编译期间完成检查。</li>
+<li><code>指意性不强，含义不明确</code>。我们使用枚举，很多场合会用到该枚举的字串符表达，而上述的实现中只能得到一个数字，不能直观地表达该枚举常量的含义。当然也可用<code>String</code>常量，但是又会带来性能问题，因为比较要依赖<code>字符串的比较操作</code>。</li>
+</ol>
+<p>使用<code>enum</code>来表示枚举可以更好地保证程序的类型安全和可读性。</p>
+<ol>
+<li><code>enum</code>是类型安全的。除了预先定义的枚举常量，不能将其它的值赋给枚举变量。这和用<code>int</code>或<code>String</code>实现的枚举很不一样。</li>
+<li><code>enum</code>有自己的名称空间，且可读性强。在创建<code>enum</code>时，编译器会自动添加一些有用的特性。每个<code>enum</code>实例都有一个名字(<code>name</code>)和一个序号(<code>ordinal</code>)，可以通过<code>toString()</code>方法获取<code>enum</code>实例的字符串表示。还以通过<code>values()</code>方法获得一个由<code>enum</code>常量按顺序构成的数组。</li>
+</ol>
+<blockquote>
+<p><code>enum</code>还有一个特别实用的特性，可以在<code>switch</code>语句中使用，这也是<code>enum</code>最常用的使用方式了。</p>
+</blockquote>
+<h2 id="二、Enum类的继承关系"><a href="#二、Enum类的继承关系" class="headerlink" title="二、Enum类的继承关系"></a>二、Enum类的继承关系</h2><p>Enum抽象类实现了<code>Comparable</code>和<code>Serializable</code>接口，其中覆写的<code>compareTo</code>方法比较的是两个枚举类的<code>序号</code>即<code>ordinal</code>(后面会提到)。这里有意思的是泛型参数<code>E extends Enum&lt;E&gt;</code>，表明Enum类存放的是<code>Enum&lt;E&gt;自身及其子类</code>，例如声明一个枚举类型<code>enum Color</code>，编译器展开其实就是<code>class Color extends Enum&lt;Color&gt;</code>，这里的泛型参数起到了规定诸如<code>compareTo</code>方法中参数类型的作用，使其只能为<code>Enum&lt;E&gt;自身及其子类</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">Enum</span>&lt;E <span class="keyword">extends</span> <span class="title class_">Enum</span>&lt;E&gt;&gt;</span><br><span class="line">        <span class="keyword">implements</span> <span class="title class_">Comparable</span>&lt;E&gt;, Serializable</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917165906678.png" alt="image-20230917165906678"></p>
+<h2 id="三、Enum类的字段及构造方法"><a href="#三、Enum类的字段及构造方法" class="headerlink" title="三、Enum类的字段及构造方法"></a>三、Enum类的字段及构造方法</h2><p>Enum类的字段很简明，就是枚举常量名称<code>name</code>和枚举常量序号<code>oridinal</code>，后面分析枚举类型的反编译会看到具体细节。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 表示枚举常量的名称，在枚举类型声明中定义，开发者往往使用toString方法而不是直接访问该字段。</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String name;</span><br><span class="line"><span class="comment">// 表示枚举常量的序号（它在枚举声明中的位置，其中初始枚举常量序号为0）。大多数开发者几乎不会使用到这个字段。它被设计用于复杂的基于枚举的数据结构，如java.util.EnumSet和java.util.EnumMap。</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">int</span> ordinal;</span><br><span class="line"><span class="comment">// 相应的get方法</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> String <span class="title function_">name</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> name;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">ordinal</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> ordinal;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意到Enum类的构造方法是<code>protected</code>权限，因此子类可以直接使用(后面分析枚举类型的反编译会看到具体细节)。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="title function_">Enum</span><span class="params">(String name, <span class="type">int</span> ordinal)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">        <span class="built_in">this</span>.ordinal = ordinal;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、Enum类的重要方法"><a href="#四、Enum类的重要方法" class="headerlink" title="四、Enum类的重要方法"></a>四、Enum类的重要方法</h2><p><code>compareTo</code>方法将此枚举常量与指定的枚举常量比较<code>序号</code>。返回负整数、零或正整数，表明此对象小于、等于或大于指定对象。<code>枚举常量仅与相同枚举类型的其他枚举常量相比较</code>(这个正是泛型参数规定参数类型的具体表现，使得<code>Java API</code>更加健壮)。此方法比较的序号是<code>声明常量的顺序</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">compareTo</span><span class="params">(E o)</span> &#123;</span><br><span class="line">        Enum&lt;?&gt; other = (Enum&lt;?&gt;)o;</span><br><span class="line">        Enum&lt;E&gt; self = <span class="built_in">this</span>;</span><br><span class="line">        <span class="keyword">if</span> (self.getClass() != other.getClass() &amp;&amp; <span class="comment">// optimization</span></span><br><span class="line">            self.getDeclaringClass() != other.getDeclaringClass())</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ClassCastException</span>();</span><br><span class="line">        <span class="keyword">return</span> self.ordinal - other.ordinal;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意一下：compareTo方法里面的条件判断很有讲究，因为枚举类可以引入<code>抽象方法</code>并声明不同的枚举常量实例实现该方法，因此传入的参数可能是该枚举类的其中一个枚举常量（<code>本质是枚举类的子类</code>），此时调用getClass比较一定是不相等的，只能进一步调用<code>getDeclaringClass</code>解决这种情况。</p>
+</blockquote>
+<p><code>getDeclaringClass</code>返回与此枚举常量的枚举类型对应的Class对象。两个枚举常量e1和e2属于相同的枚举类型，当且仅当<code>e1.getDeclaringClass()==e2.getDeclaringClass()</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> Class&lt;E&gt; <span class="title function_">getDeclaringClass</span><span class="params">()</span> &#123;</span><br><span class="line">        Class&lt;?&gt; clazz = getClass();</span><br><span class="line">        Class&lt;?&gt; zuper = clazz.getSuperclass();</span><br><span class="line">        <span class="keyword">return</span> (zuper == Enum.class) ? (Class&lt;E&gt;)clazz : (Class&lt;E&gt;)zuper;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面我们举一个例子论证我们的观点：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> test.lang;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">Operation</span> &#123;</span><br><span class="line">    PLUS &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a + b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    MINUS &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a - b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    MULTI &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a * b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;, </span><br><span class="line">    DIVIDE &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a / b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//这个抽象方法由不一样的枚举常量提供实现</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917173803325.png" alt="image-20230917173803325"></p>
+<p><code>valueOf</code>是Enum类的静态方法，与具体的枚举实例无关，如果眼尖的话可以看到该方法的泛型参数变为<code>T extends Enum&lt;T&gt;</code>而不是之前的实例方法的<code>E</code>，因此enumType参数接受任何枚举类型的Class对象，<code>valueOf</code>方法的作用也就是返回指定枚举类的某个枚举常量(名称为参数<code>name</code>)。</p>
+<p><img src="/../../../../../../imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917174555134.png" alt="image-20230917174555134"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T <span class="keyword">extends</span> <span class="title class_">Enum</span>&lt;T&gt;&gt; T <span class="title function_">valueOf</span><span class="params">(Class&lt;T&gt; enumType,</span></span><br><span class="line"><span class="params">                                                String name)</span> &#123;</span><br><span class="line">        <span class="type">T</span> <span class="variable">result</span> <span class="operator">=</span> enumType.enumConstantDirectory().get(name);</span><br><span class="line">        <span class="keyword">if</span> (result != <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">        <span class="keyword">if</span> (name == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>(<span class="string">&quot;Name is null&quot;</span>);</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(</span><br><span class="line">            <span class="string">&quot;No enum constant &quot;</span> + enumType.getCanonicalName() + <span class="string">&quot;.&quot;</span> + name);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们再用两行代码验证<code>valueOf</code>方法的使用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Operation</span> <span class="variable">plus</span> <span class="operator">=</span> Operation.valueOf(<span class="string">&quot;PLUS&quot;</span>);</span><br><span class="line">System.out.println(plus == Operation.PLUS); <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="五、Enum类的其他方法"><a href="#五、Enum类的其他方法" class="headerlink" title="五、Enum类的其他方法"></a>五、Enum类的其他方法</h2><p><img src="/../../../../../../imgs/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230917175059670.png" alt="image-20230917175059670"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> name;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>以下是Enum类中一些不支持的方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 这保证了枚举永远不会被克隆，这对于保持其“单例”状态是必要的。</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> Object <span class="title function_">clone</span><span class="params">()</span> <span class="keyword">throws</span> CloneNotSupportedException &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">CloneNotSupportedException</span>();</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">// 枚举类不能有finalize方法。</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">finalize</span><span class="params">()</span> &#123; &#125;</span><br><span class="line"><span class="comment">// 阻止默认的反序列化方法</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">readObject</span><span class="params">(ObjectInputStream in)</span> <span class="keyword">throws</span> IOException,</span><br><span class="line">        ClassNotFoundException &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">InvalidObjectException</span>(<span class="string">&quot;can&#x27;t deserialize enum&quot;</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、Enum类的反编译1"><a href="#六、Enum类的反编译1" class="headerlink" title="六、Enum类的反编译1"></a>六、Enum类的反编译1</h2><p>首先，我们声明一个<code>Season</code>枚举类代表一年四季：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> test.lang;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">Season</span> &#123;</span><br><span class="line">    SPRING(<span class="number">1</span>, <span class="string">&quot;春天&quot;</span>),</span><br><span class="line">    SUMMER(<span class="number">2</span>, <span class="string">&quot;夏天&quot;</span>),</span><br><span class="line">    AUTUMN(<span class="number">3</span>, <span class="string">&quot;秋天&quot;</span>),</span><br><span class="line">    WINTER(<span class="number">4</span>, <span class="string">&quot;冬天&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 额外定义的字段</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> code;</span><br><span class="line">    <span class="keyword">public</span> String name;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 枚举类的构造方法默认是private权限</span></span><br><span class="line">    Season(<span class="type">int</span> code, String name) &#123;</span><br><span class="line">        <span class="built_in">this</span>.code = code;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Season <span class="title function_">getSeasonByCode</span><span class="params">(<span class="type">int</span> code)</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (Season season : Season.values()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (season.code == code) &#123;</span><br><span class="line">                <span class="keyword">return</span> season;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后，我们使用<code>javac</code>命令编译<code>Season.java</code>为<code>Season.class</code>字节码文件，接着使用<code>jad</code>工具反编译字节码文件得到<code>Season.jad</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.</span></span><br><span class="line"><span class="comment">// Jad home page: http://www.kpdus.com/jad.html</span></span><br><span class="line"><span class="comment">// Decompiler options: packimports(3) </span></span><br><span class="line"><span class="comment">// Source File Name:   Season.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">package</span> test.decompile;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Season</span> <span class="keyword">extends</span> <span class="title class_">Enum</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Season[] values()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> (Season[])$VALUES.clone();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Season <span class="title function_">valueOf</span><span class="params">(String name)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 调用父类Enum的valueOf方法并自动填充Class对象为test.lang.Season</span></span><br><span class="line">        <span class="keyword">return</span> (Season)Enum.valueOf(test/lang/Season, name);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">Season</span><span class="params">(String s, <span class="type">int</span> i, <span class="type">int</span> code, String name)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 调用父类Enum的protected构造方法</span></span><br><span class="line">        <span class="built_in">super</span>(s, i);</span><br><span class="line">        <span class="built_in">this</span>.code = code;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Season <span class="title function_">getSeasonByCode</span><span class="params">(<span class="type">int</span> code)</span></span><br><span class="line">    &#123;</span><br><span class="line">        Season aseason[] = values();</span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> aseason.length;</span><br><span class="line">        <span class="keyword">for</span>(<span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> <span class="number">0</span>; j &lt; i; j++)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">Season</span> <span class="variable">season</span> <span class="operator">=</span> aseason[j];</span><br><span class="line">            <span class="keyword">if</span>(season.code == code)</span><br><span class="line">                <span class="keyword">return</span> season;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Season SPRING;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Season SUMMER;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Season AUTUMN;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Season WINTER;</span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> code;</span><br><span class="line">    <span class="keyword">public</span> String name;</span><br><span class="line">    <span class="comment">// 编译器添加的枚举常量的数组</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Season $VALUES[];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> </span><br><span class="line">    &#123;</span><br><span class="line">        SPRING = <span class="keyword">new</span> <span class="title class_">Season</span>(<span class="string">&quot;SPRING&quot;</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="string">&quot;\u6625\u5929&quot;</span>);</span><br><span class="line">        SUMMER = <span class="keyword">new</span> <span class="title class_">Season</span>(<span class="string">&quot;SUMMER&quot;</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="string">&quot;\u590F\u5929&quot;</span>);</span><br><span class="line">        AUTUMN = <span class="keyword">new</span> <span class="title class_">Season</span>(<span class="string">&quot;AUTUMN&quot;</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="string">&quot;\u79CB\u5929&quot;</span>);</span><br><span class="line">        WINTER = <span class="keyword">new</span> <span class="title class_">Season</span>(<span class="string">&quot;WINTER&quot;</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="string">&quot;\u51AC\u5929&quot;</span>);</span><br><span class="line">        $VALUES = (<span class="keyword">new</span> <span class="title class_">Season</span>[] &#123;</span><br><span class="line">            SPRING, SUMMER, AUTUMN, WINTER</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><code>Season</code>在底层其实还是用<code>class</code>修饰的，说明枚举类本质上还是一个<code>Class</code>，而且<code>Season被</code>JVM隐式的用<code>final</code>关键字修饰起来，那么这个类不能被任何类继承，这也在一定程度上保证了类的安全。</li>
+<li><code>values</code>方法：默认生成了一个<code>values</code>方法，它返回了当前类型枚举的数组，这也解释了<code>ordinal</code>的来源。</li>
+<li><code>valueOf</code>方法：在具体的每个自定义枚举类里面生成了一个根据枚举名返回枚举实例的方法，这其实是对<code>java.lang.Enum</code>中<code>valueOf</code>方法的具体重写，它只限于<code>当前枚举类</code>。</li>
+<li>静态代码块：<code>Season</code>中所有的<code>enum</code>实例在这里初始化完成。</li>
+</ol>
+<blockquote>
+<p>注意：当一个<code>Java</code>类第一次被真正使用到的时候静态资源被初始化、<code>Java</code>类的加载和初始化过程都是线程安全的。所以创建一个<code>enum</code>类型是线程安全的。</p>
+</blockquote>
+<h2 id="七、Enum类的反编译2"><a href="#七、Enum类的反编译2" class="headerlink" title="七、Enum类的反编译2"></a>七、Enum类的反编译2</h2><p>我们再看一个枚举类型反编译的情况，第一步还是创建<code>Operation</code>枚举类(我们之前用过)：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> test.lang;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">Operation</span> &#123;</span><br><span class="line">    PLUS &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a + b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    MINUS &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a - b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    MULTI &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a * b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;, </span><br><span class="line">    DIVIDE &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a / b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//这个抽象方法由不一样的枚举常量提供实现</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后，我们使用<code>javac</code>命令编译<code>Operation.java</code>为<code>Operation.class</code>字节码文件，接着使用<code>jad</code>工具反编译字节码文件得到<code>Opeartion.jad</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.</span></span><br><span class="line"><span class="comment">// Jad home page: http://www.kpdus.com/jad.html</span></span><br><span class="line"><span class="comment">// Decompiler options: packimports(3) </span></span><br><span class="line"><span class="comment">// Source File Name:   Operation.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">package</span> test.lang;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">Operation</span> <span class="keyword">extends</span> <span class="title class_">Enum</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Operation[] values()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> (Operation[])$VALUES.clone();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Operation <span class="title function_">valueOf</span><span class="params">(String name)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> (Operation)Enum.valueOf(test/lang/Operation, name);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">Operation</span><span class="params">(String s, <span class="type">int</span> i)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">super</span>(s, i);</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 抽象方法，每个具体的枚举常量都会实现</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> d, <span class="type">double</span> d1)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Operation PLUS;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Operation MINUS;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Operation MULTI;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Operation DIVIDE;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Operation $VALUES[];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> </span><br><span class="line">    &#123;</span><br><span class="line">        PLUS = <span class="keyword">new</span> <span class="title class_">Operation</span>(<span class="string">&quot;PLUS&quot;</span>, <span class="number">0</span>) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> a + b;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;;</span><br><span class="line">        MINUS = <span class="keyword">new</span> <span class="title class_">Operation</span>(<span class="string">&quot;MINUS&quot;</span>, <span class="number">1</span>) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> a - b;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;;</span><br><span class="line">        MULTI = <span class="keyword">new</span> <span class="title class_">Operation</span>(<span class="string">&quot;MULTI&quot;</span>, <span class="number">2</span>) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> a * b;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;;</span><br><span class="line">        DIVIDE = <span class="keyword">new</span> <span class="title class_">Operation</span>(<span class="string">&quot;DIVIDE&quot;</span>, <span class="number">3</span>) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">eval</span><span class="params">(<span class="type">double</span> a, <span class="type">double</span> b)</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> a / b;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;;</span><br><span class="line">        $VALUES = (<span class="keyword">new</span> <span class="title class_">Operation</span>[] &#123;</span><br><span class="line">            PLUS, MINUS, MULTI, DIVIDE</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，枚举类型可以包含抽象方法，声明<code>enum</code>时不需要加<code>abstract</code>关键字，Java编译器默认会帮我们完成所有累活，这个例子告诉了我们枚举常量可能是所属枚举类的实现子类，因此进一步论证了我们之前谈到的Enum类的<code>getDeclaringClass</code>方法。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">Enum类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81Enum%E7%B1%BB%E7%9A%84%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">一、Enum类的概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Enum%E7%B1%BB%E7%9A%84%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB"><span class="toc-number">1.2.</span> <span class="toc-text">二、Enum类的继承关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%AD%97%E6%AE%B5%E5%8F%8A%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、Enum类的字段及构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81Enum%E7%B1%BB%E7%9A%84%E9%87%8D%E8%A6%81%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、Enum类的重要方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%85%B6%E4%BB%96%E6%96%B9%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">五、Enum类的其他方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%8F%8D%E7%BC%96%E8%AF%911"><span class="toc-number">1.6.</span> <span class="toc-text">六、Enum类的反编译1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81Enum%E7%B1%BB%E7%9A%84%E5%8F%8D%E7%BC%96%E8%AF%912"><span class="toc-number">1.7.</span> <span class="toc-text">七、Enum类的反编译2</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=Enum类源码剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=Enum类源码剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Enum类源码剖析&body=Check out this article: https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=Enum类源码剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=Enum类源码剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/09/17/Enum%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=Enum类源码剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="StringBuffer类源码剖析一、StringBuffer类的简介StringBuffer是线程安全、可变的字符序列。StringBuffer类似于String，但可以被修改。在任何时间点，它都包含一些特定的字符序列，但序列的长度和内容可以通过某些方法调用来更改。StringBuffer可由多个线程安全使用，必要时同步(synchronized)这些方法，以便任何StringBuffer实例上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="StringBuffer类源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="StringBuffer类源码剖析一、StringBuffer类的简介StringBuffer是线程安全、可变的字符序列。StringBuffer类似于String，但可以被修改。在任何时间点，它都包含一些特定的字符序列，但序列的长度和内容可以通过某些方法调用来更改。StringBuffer可由多个线程安全使用，必要时同步(synchronized)这些方法，以便任何StringBuffer实例上">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913152857119.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153134690.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153215277.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153239043.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153258980.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153525634.png">
+<meta property="article:published_time" content="2023-09-13T07:28:55.267Z">
+<meta property="article:modified_time" content="2023-10-03T14:10:28.458Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="JDK源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913152857119.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>StringBuffer类源码剖析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/09/14/Boolean%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/09/13/StringBuilder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=StringBuffer类源码剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=StringBuffer类源码剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=StringBuffer类源码剖析&body=Check out this article: https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=StringBuffer类源码剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=StringBuffer类源码剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">StringBuffer类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、StringBuffer类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">二、StringBuffer类的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、StringBuffer类的方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84toString%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、StringBuffer类的toString方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E5%BA%8F%E5%88%97%E5%8C%96-x2F-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-number">1.5.</span> <span class="toc-text">五、StringBuffer类的序列化&#x2F;反序列化</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        StringBuffer类源码剖析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-09-13T07:28:55.267Z" class="dt-published" itemprop="datePublished">2023-09-13</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/JDK%E6%BA%90%E7%A0%81/" rel="tag">JDK源码</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="StringBuffer类源码剖析"><a href="#StringBuffer类源码剖析" class="headerlink" title="StringBuffer类源码剖析"></a>StringBuffer类源码剖析</h1><h2 id="一、StringBuffer类的简介"><a href="#一、StringBuffer类的简介" class="headerlink" title="一、StringBuffer类的简介"></a>一、StringBuffer类的简介</h2><p><code>StringBuffer</code>是<code>线程安全</code>、<code>可变</code>的字符序列。StringBuffer类似于String，但可以被修改。在任何时间点，它都包含一些特定的字符序列，但序列的长度和内容可以通过某些方法调用来更改。StringBuffer可由多个线程安全使用，必要时同步(<code>synchronized</code>)这些方法，以便<code>任何StringBuffer实例</code>上的所有操作都表现得好像它们以某种<code>串行顺序</code>发生，这与所涉及的每个线程进行的方法调用的顺序一致。</p>
+<blockquote>
+<p>注意：每当发生涉及源序列的操作（例如从源序列append或insert）时，此类仅在执行操作的字符串缓冲区上同步，而不在源上同步。请注意，虽然StringBuffer设计为可以安全地从多个线程并发使用，但如果构造函数或追加或插入操作传递了跨线程共享的源序列，则调用代码必须确保操作在操作期间具有一致且不变的源序列视图。这可以通过<code>在操作调用期间保持锁</code>、<code>使用不可变的源序列</code>或<code>不跨线程共享源序列</code>来满足。</p>
+</blockquote>
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913152857119.png" alt="image-20230913152857119"></p>
+<h2 id="二、StringBuffer类的构造方法"><a href="#二、StringBuffer类的构造方法" class="headerlink" title="二、StringBuffer类的构造方法"></a>二、StringBuffer类的构造方法</h2><p>StringBuffer类的构造方法与StringBuilder类的构造方法如出一辙，就不过多解释了。</p>
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153134690.png" alt="image-20230913153134690"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(<span class="number">16</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153215277.png" alt="image-20230913153215277"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">(<span class="type">int</span> capacity)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(capacity);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153239043.png" alt="image-20230913153239043"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">(String str)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(str.length() + <span class="number">16</span>);</span><br><span class="line">        append(str);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153258980.png" alt="image-20230913153258980"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">StringBuffer</span><span class="params">(CharSequence seq)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>(seq.length() + <span class="number">16</span>);</span><br><span class="line">        append(seq);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、StringBuffer类的方法"><a href="#三、StringBuffer类的方法" class="headerlink" title="三、StringBuffer类的方法"></a>三、StringBuffer类的方法</h2><p>与构造函数类似，StringBuffer的所有方法基本都是通过调用父类的相应方法实现的，多出的仅仅是 <code>synchrinized</code>修饰符，重点功能实现在于父类<code>AbstractStringBuilder</code>，参考之前的<a href="https://hulingf.github.io/2023/09/09/AbstractStringBuilder%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><strong>AbstractStringBuilder类源码剖析</strong></a>。不过需要注意一点，StringBuffer类引入了一个新字段<code>toStringCache</code>，顾名思义该字段就是<code>toString</code>方法的缓存，一旦StringBuffer被修改了，该字段也就失效了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A cache of the last value returned by toString. Cleared</span></span><br><span class="line"><span class="comment"> * whenever the StringBuffer is modified.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> String toStringCache;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20230913153525634.png" alt="image-20230913153525634"></p>
+<h2 id="四、StringBuffer类的toString方法"><a href="#四、StringBuffer类的toString方法" class="headerlink" title="四、StringBuffer类的toString方法"></a>四、StringBuffer类的toString方法</h2><p><code>toString</code>方法会检查上一次调用<code>toString</code>的缓存字段是否失效，如果已经失效则重新创建一个字符串（<code>深拷贝</code>），并且<code>toStringCache</code>字段指向该字符串；否则直接返回<code>toStringCache</code>的一个副本(<code>浅拷贝</code>)。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (toStringCache == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="type">return</span> <span class="variable">toStringCache</span> <span class="operator">=</span></span><br><span class="line">                    isLatin1() ? StringLatin1.newString(value, <span class="number">0</span>, count)</span><br><span class="line">                               : StringUTF16.newString(value, <span class="number">0</span>, count);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">String</span>(toStringCache);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>之所以说<code>深拷贝</code>还是<code>浅拷贝</code>是有依据的，前者会拷贝底层的字节数组，后者只是引用的指向！</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// StringLatin1.newString，深拷贝</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title function_">newString</span><span class="params">(<span class="type">byte</span>[] val, <span class="type">int</span> index, <span class="type">int</span> len)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">String</span>(Arrays.copyOfRange(val, index, index + len),</span><br><span class="line">                          LATIN1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="type">byte</span>[] copyOfRange(<span class="type">byte</span>[] original, <span class="type">int</span> from, <span class="type">int</span> to) &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">newLength</span> <span class="operator">=</span> to - from;</span><br><span class="line">        <span class="keyword">if</span> (newLength &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(from + <span class="string">&quot; &gt; &quot;</span> + to);</span><br><span class="line">        <span class="type">byte</span>[] copy = <span class="keyword">new</span> <span class="title class_">byte</span>[newLength];</span><br><span class="line">        System.arraycopy(original, from, copy, <span class="number">0</span>,</span><br><span class="line">                         Math.min(original.length - from, newLength));</span><br><span class="line">        <span class="keyword">return</span> copy;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">arraycopy</span><span class="params">(Object src,  <span class="type">int</span>  srcPos,</span></span><br><span class="line"><span class="params">                                        Object dest, <span class="type">int</span> destPos,</span></span><br><span class="line"><span class="params">                                        <span class="type">int</span> length)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// String的构造方法，浅拷贝</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">String</span><span class="params">(String original)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.value = original.value;</span><br><span class="line">        <span class="built_in">this</span>.coder = original.coder;</span><br><span class="line">        <span class="built_in">this</span>.hash = original.hash;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、StringBuffer类的序列化-x2F-反序列化"><a href="#五、StringBuffer类的序列化-x2F-反序列化" class="headerlink" title="五、StringBuffer类的序列化&#x2F;反序列化"></a>五、StringBuffer类的序列化&#x2F;反序列化</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">writeObject</span><span class="params">(java.io.ObjectOutputStream s)</span></span><br><span class="line">        <span class="keyword">throws</span> java.io.IOException &#123;</span><br><span class="line">        java.io.ObjectOutputStream.<span class="type">PutField</span> <span class="variable">fields</span> <span class="operator">=</span> s.putFields();</span><br><span class="line">        <span class="type">char</span>[] val = <span class="keyword">new</span> <span class="title class_">char</span>[capacity()];</span><br><span class="line">        <span class="keyword">if</span> (isLatin1()) &#123;</span><br><span class="line">            StringLatin1.getChars(value, <span class="number">0</span>, count, val, <span class="number">0</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            StringUTF16.getChars(value, <span class="number">0</span>, count, val, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        fields.put(<span class="string">&quot;value&quot;</span>, val);</span><br><span class="line">        fields.put(<span class="string">&quot;count&quot;</span>, count);</span><br><span class="line">        fields.put(<span class="string">&quot;shared&quot;</span>, <span class="literal">false</span>);</span><br><span class="line">        s.writeFields();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">readObject</span><span class="params">(java.io.ObjectInputStream s)</span></span><br><span class="line">        <span class="keyword">throws</span> java.io.IOException, ClassNotFoundException &#123;</span><br><span class="line">        java.io.ObjectInputStream.<span class="type">GetField</span> <span class="variable">fields</span> <span class="operator">=</span> s.readFields();</span><br><span class="line">        <span class="type">char</span>[] val = (<span class="type">char</span>[])fields.get(<span class="string">&quot;value&quot;</span>, <span class="literal">null</span>);</span><br><span class="line">        initBytes(val, <span class="number">0</span>, val.length);</span><br><span class="line">        count = fields.get(<span class="string">&quot;count&quot;</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">StringBuffer类源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.</span> <span class="toc-text">一、StringBuffer类的简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">二、StringBuffer类的构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text">三、StringBuffer类的方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84toString%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">四、StringBuffer类的toString方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81StringBuffer%E7%B1%BB%E7%9A%84%E5%BA%8F%E5%88%97%E5%8C%96-x2F-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-number">1.5.</span> <span class="toc-text">五、StringBuffer类的序列化&#x2F;反序列化</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=StringBuffer类源码剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=StringBuffer类源码剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=StringBuffer类源码剖析&body=Check out this article: https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=StringBuffer类源码剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=StringBuffer类源码剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/09/13/StringBuffer%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=StringBuffer类源码剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

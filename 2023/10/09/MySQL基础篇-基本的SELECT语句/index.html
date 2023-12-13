@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="MySQL基础-SQL前要重点一、SQL概述SQL（Structured Query Language，结构化查询语言）是使用关系模型的数据库应用语言，与数据直接打交道，由IBM上世纪70年代开发出来。后由美国国家标准局（ANSI）开始着手制定SQL标准，先后有SQL-86，SQL-89，SQL-92，SQL-99等标准。不同的数据库生产厂商都支持SQL语句，但都有特有内容。  SQL语言在功能上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL基础-基本的SELECT语句">
+<meta property="og:url" content="https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="MySQL基础-SQL前要重点一、SQL概述SQL（Structured Query Language，结构化查询语言）是使用关系模型的数据库应用语言，与数据直接打交道，由IBM上世纪70年代开发出来。后由美国国家标准局（ANSI）开始着手制定SQL标准，先后有SQL-86，SQL-89，SQL-92，SQL-99等标准。不同的数据库生产厂商都支持SQL语句，但都有特有内容。  SQL语言在功能上">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009165202165.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009170440141.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009171121331.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009171332732.png">
+<meta property="article:published_time" content="2023-10-09T08:52:00.761Z">
+<meta property="article:modified_time" content="2023-10-09T13:04:55.467Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009165202165.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>MySQL基础-基本的SELECT语句</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/10/09/MySQL%E5%9F%BA%E7%A1%80-%E8%AF%A6%E8%A7%A3%E8%BF%90%E7%AE%97%E7%AC%A6/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/10/08/Servlet%E9%AB%98%E7%BA%A7%E4%B9%8B%E7%9B%91%E5%90%AC%E5%99%A8/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&text=MySQL基础-基本的SELECT语句"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&is_video=false&description=MySQL基础-基本的SELECT语句"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL基础-基本的SELECT语句&body=Check out this article: https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&name=MySQL基础-基本的SELECT语句&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&t=MySQL基础-基本的SELECT语句"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%9F%BA%E7%A1%80-SQL%E5%89%8D%E8%A6%81%E9%87%8D%E7%82%B9"><span class="toc-number">1.</span> <span class="toc-text">MySQL基础-SQL前要重点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81SQL%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">一、SQL概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81SQL%E8%A7%84%E8%8C%83"><span class="toc-number">1.2.</span> <span class="toc-text">二、SQL规范</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%AF%BE%E5%90%8E%E7%BB%83%E4%B9%A0"><span class="toc-number">1.3.</span> <span class="toc-text">三、课后练习</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#1-%E6%9F%A5%E8%AF%A2%E5%91%98%E5%B7%A512%E4%B8%AA%E6%9C%88%E7%9A%84%E5%B7%A5%E8%B5%84%E6%80%BB%E5%92%8C%EF%BC%8C%E5%B9%B6%E8%B5%B7%E5%88%AB%E5%90%8D%E4%B8%BAANNUAL-SALARY"><span class="toc-number">1.3.0.0.1.</span> <span class="toc-text">1.查询员工12个月的工资总和，并起别名为ANNUAL SALARY</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-%E6%9F%A5%E8%AF%A2employees%E8%A1%A8%E4%B8%AD%E5%8E%BB%E9%99%A4%E9%87%8D%E5%A4%8D%E7%9A%84job-id%E4%BB%A5%E5%90%8E%E7%9A%84%E6%95%B0%E6%8D%AE"><span class="toc-number">1.3.0.0.2.</span> <span class="toc-text">2.查询employees表中去除重复的job_id以后的数据</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-%E6%9F%A5%E8%AF%A2%E5%B7%A5%E8%B5%84%E5%A4%A7%E4%BA%8E12000%E7%9A%84%E5%91%98%E5%B7%A5%E5%A7%93%E5%90%8D%E5%92%8C%E5%B7%A5%E8%B5%84"><span class="toc-number">1.3.0.0.3.</span> <span class="toc-text">3.查询工资大于12000的员工姓名和工资</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MySQL基础-基本的SELECT语句
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-10-09T08:52:00.761Z" class="dt-published" itemprop="datePublished">2023-10-09</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/MySQL/" rel="tag">MySQL</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="MySQL基础-SQL前要重点"><a href="#MySQL基础-SQL前要重点" class="headerlink" title="MySQL基础-SQL前要重点"></a>MySQL基础-SQL前要重点</h1><h2 id="一、SQL概述"><a href="#一、SQL概述" class="headerlink" title="一、SQL概述"></a>一、SQL概述</h2><p>SQL（Structured Query Language，<code>结构化查询语言</code>）是使用关系模型的数据库应用语言，与数据直接打交道，由IBM上世纪70年代开发出来。后由美国国家标准局（ANSI）开始着手制定SQL标准，先后有SQL-86，SQL-89，SQL-92，<code>SQL-99</code>等标准。不同的数据库生产厂商都支持SQL语句，但都有特有内容。</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009165202165.png" alt="image-20231009165202165"></p>
+<p>SQL语言在功能上主要分为如下3大类：</p>
+<ul>
+<li><p>DDL（Data Definition Languages,<code>数据定义语言</code>），这些语句定义了不同的数据库、表、视图、索引等数据库对象，还可以用来创建、删除、修改数据库和数据表的结构。</p>
+<ul>
+<li>主要的语句关键字包括<code>CREATE</code>、<code>DROP</code>、<code>ALTER</code>等。</li>
+</ul>
+</li>
+<li><p>DML（Data Manipulation Language,<code>数据操作语言</code>），用于添加、删除、更新和查询数据库记录，并检查数据完整性。</p>
+<ul>
+<li>主要的语句关键字包括<code>INSERT</code>、<code>DELETE</code>、<code>UPDATE</code>、<code>SELECT</code>等。</li>
+</ul>
+</li>
+<li><p>DCL（Data Control Language,<code>数据控制语言</code>），用于定义数据库、表、字段、用户的访问权限和安全级别。</p>
+<ul>
+<li>主要的语句关键字包括<code>GRANT</code>、<code>REVOKE</code>、<code>COMMIT</code>、<code>ROLLBACK</code>、<code>SAVEPOINT</code>等。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>因为查询语句使用的非常的频繁，所以很多人把查询语句单拎出来一类：DQL（数据查询语言）。还有单独将COMMIT、ROLLBACK取出来称为TCL（Transaction Control Language，事务控制语言）。</p>
+</blockquote>
+<h2 id="二、SQL规范"><a href="#二、SQL规范" class="headerlink" title="二、SQL规范"></a>二、SQL规范</h2><ul>
+<li>SQL可以写在一行或者多行。为了提高可读性，各子句分行写，必要时使用缩进。</li>
+<li>每条命令以;或\g或\G结束。</li>
+<li>关键字不能被缩写也不能分行。</li>
+<li>关于标点符号：<ul>
+<li>必须保证所有的()、单引号、双引号是成对结束的。</li>
+<li>字符串和日期时间类型的数据可以使用单引号（’’）表示。</li>
+<li>列的别名尽量使用双引号（””），而且不建议省略AS关键字。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>推荐采用统一的SQL大小写书写规范：数据库名、表名、表别名、字段名、字段别名等都小写；SQL关键字、函数名、绑定变量等都大写。</p>
+</blockquote>
+<hr>
+<p>我们观察一下我们当前使用的数据库下面有哪些表，并重点观察<code>employees</code>表的结构：</p>
+<blockquote>
+<p>补充一个数据库命令DESCRIBE或者DESC，可以用来查看数据库表结构。</p>
+</blockquote>
+<p><img src="/../../../../../../imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009170440141.png" alt="image-20231009170440141"></p>
+<p>下面我们书写几个SQL语句表明前面谈到的SQL规范问题：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009171121331.png" alt="image-20231009171121331"></p>
+<p>不过需要注意的是，我们的数据库下面有一个奇怪的表名称为<code>order</code>，这与MySQL的关键字<code>ORDER</code>冲突，此时我们需要使用着重号(``)引用该表。</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/image-20231009171332732.png" alt="image-20231009171332732"></p>
+<h2 id="三、课后练习"><a href="#三、课后练习" class="headerlink" title="三、课后练习"></a>三、课后练习</h2><h5 id="1-查询员工12个月的工资总和，并起别名为ANNUAL-SALARY"><a href="#1-查询员工12个月的工资总和，并起别名为ANNUAL-SALARY" class="headerlink" title="1.查询员工12个月的工资总和，并起别名为ANNUAL SALARY"></a>1.查询员工12个月的工资总和，并起别名为ANNUAL SALARY</h5><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> employee_id, last_name, salary <span class="operator">*</span> <span class="number">12</span> <span class="keyword">AS</span> &quot;ANNUAL SALARY&quot;</span><br><span class="line"><span class="keyword">FROM</span> employees;</span><br><span class="line"><span class="keyword">SELECT</span> employee_id, last_name, salary <span class="operator">*</span> <span class="number">12</span> <span class="operator">*</span> (<span class="number">1</span> <span class="operator">+</span> IFNULL(commission_pct, <span class="number">0</span>)) <span class="keyword">AS</span> &quot;ANNUAL</span><br><span class="line">SALARY&quot;</span><br><span class="line"><span class="keyword">FROM</span> employees;</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-查询employees表中去除重复的job-id以后的数据"><a href="#2-查询employees表中去除重复的job-id以后的数据" class="headerlink" title="2.查询employees表中去除重复的job_id以后的数据"></a>2.查询employees表中去除重复的job_id以后的数据</h5><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span> job_id</span><br><span class="line"><span class="keyword">FROM</span> employees;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-查询工资大于12000的员工姓名和工资"><a href="#3-查询工资大于12000的员工姓名和工资" class="headerlink" title="3.查询工资大于12000的员工姓名和工资"></a>3.查询工资大于12000的员工姓名和工资</h5><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> last_name, salary</span><br><span class="line"><span class="keyword">FROM</span> employees</span><br><span class="line"><span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">12000</span>;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%9F%BA%E7%A1%80-SQL%E5%89%8D%E8%A6%81%E9%87%8D%E7%82%B9"><span class="toc-number">1.</span> <span class="toc-text">MySQL基础-SQL前要重点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81SQL%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">一、SQL概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81SQL%E8%A7%84%E8%8C%83"><span class="toc-number">1.2.</span> <span class="toc-text">二、SQL规范</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%AF%BE%E5%90%8E%E7%BB%83%E4%B9%A0"><span class="toc-number">1.3.</span> <span class="toc-text">三、课后练习</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#1-%E6%9F%A5%E8%AF%A2%E5%91%98%E5%B7%A512%E4%B8%AA%E6%9C%88%E7%9A%84%E5%B7%A5%E8%B5%84%E6%80%BB%E5%92%8C%EF%BC%8C%E5%B9%B6%E8%B5%B7%E5%88%AB%E5%90%8D%E4%B8%BAANNUAL-SALARY"><span class="toc-number">1.3.0.0.1.</span> <span class="toc-text">1.查询员工12个月的工资总和，并起别名为ANNUAL SALARY</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-%E6%9F%A5%E8%AF%A2employees%E8%A1%A8%E4%B8%AD%E5%8E%BB%E9%99%A4%E9%87%8D%E5%A4%8D%E7%9A%84job-id%E4%BB%A5%E5%90%8E%E7%9A%84%E6%95%B0%E6%8D%AE"><span class="toc-number">1.3.0.0.2.</span> <span class="toc-text">2.查询employees表中去除重复的job_id以后的数据</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-%E6%9F%A5%E8%AF%A2%E5%B7%A5%E8%B5%84%E5%A4%A7%E4%BA%8E12000%E7%9A%84%E5%91%98%E5%B7%A5%E5%A7%93%E5%90%8D%E5%92%8C%E5%B7%A5%E8%B5%84"><span class="toc-number">1.3.0.0.3.</span> <span class="toc-text">3.查询工资大于12000的员工姓名和工资</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&text=MySQL基础-基本的SELECT语句"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&is_video=false&description=MySQL基础-基本的SELECT语句"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL基础-基本的SELECT语句&body=Check out this article: https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&title=MySQL基础-基本的SELECT语句"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&name=MySQL基础-基本的SELECT语句&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/10/09/MySQL%E5%9F%BA%E7%A1%80%E7%AF%87-%E5%9F%BA%E6%9C%AC%E7%9A%84SELECT%E8%AF%AD%E5%8F%A5/&t=MySQL基础-基本的SELECT语句"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
