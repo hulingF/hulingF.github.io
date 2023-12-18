@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="MySQL原理之结构篇我们前边唠叨请求处理过程的时候提到过，MySQL服务器上负责对表中数据的读取和写入工作的部分是存储引擎，而服务器又支持不同类型的存储引擎，比如InnoDB、MyISAM、Memory啥的，不同的存储引擎一般是由不同的人为实现不同的特性而开发的，真实数据在不同存储引擎中存放的格式一般是不同的，甚至有的存储引擎比如Memory都不用磁盘来存储数据，也就是说关闭服务器后表中的数据就">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL原理之结构篇">
+<meta property="og:url" content="https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="MySQL原理之结构篇我们前边唠叨请求处理过程的时候提到过，MySQL服务器上负责对表中数据的读取和写入工作的部分是存储引擎，而服务器又支持不同类型的存储引擎，比如InnoDB、MyISAM、Memory啥的，不同的存储引擎一般是由不同的人为实现不同的特性而开发的，真实数据在不同存储引擎中存放的格式一般是不同的，甚至有的存储引擎比如Memory都不用磁盘来存储数据，也就是说关闭服务器后表中的数据就">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e8fafc21aatplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218113158389.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e8fb363bb4tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e8fe4ee6b0tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e985c8d9a7tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e973ff4fdetplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9018133f7tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e901669f45tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e901befeactplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e944a8af0ctplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e95903144ftplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e97718ef01tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218114224101.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/17075b82cb070959tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218114342708.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e973b70372tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e99a69ba3dtplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9a5b7c847tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218115233531.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9aab47ea5tplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9a5d5637atplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9b2c2b71etplv-t2oaga2asx-jj-mark2268000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16f13ee1e2dfac7ctplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218133746937.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0fe86555edtplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0feca77be3tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218135739238.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0ff1ae5364tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0ff83f9870tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c100ff0ccc2tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10773d8ceetplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c1084c440b4tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c108ee1da43tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c109f25d55dtplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10c57164a6tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10dac72472tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10f2e61ad5tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10e3449897tplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218142219789.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218142404971.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218142448730.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10eb9d61cetplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="article:published_time" content="2023-12-18T02:33:43.486Z">
+<meta property="article:modified_time" content="2023-12-18T06:28:14.002Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="MySQL原理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e8fafc21aatplv-t2oaga2asx-jj-mark2268000q75.webp">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>MySQL原理之结构篇</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&text=MySQL原理之结构篇"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&is_video=false&description=MySQL原理之结构篇"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL原理之结构篇&body=Check out this article: https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&name=MySQL原理之结构篇&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&t=MySQL原理之结构篇"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">MySQL原理之结构篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81InnoDB%E7%9A%84%E8%AE%B0%E5%BD%95%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">一、InnoDB的记录结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E5%89%8D%E7%BD%AE%E5%87%86%E5%A4%87"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1前置准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2COMPACT%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2COMPACT行格式</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-1%E5%8F%98%E9%95%BF%E5%AD%97%E6%AE%B5%E5%88%97%E8%A1%A8"><span class="toc-number">1.1.2.1.</span> <span class="toc-text">1.2.1变长字段列表</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-2NULL%E5%80%BC%E5%88%97%E8%A1%A8"><span class="toc-number">1.1.2.2.</span> <span class="toc-text">1.2.2NULL值列表</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-3%E8%AE%B0%E5%BD%95%E5%A4%B4%E4%BF%A1%E6%81%AF"><span class="toc-number">1.1.2.3.</span> <span class="toc-text">1.2.3记录头信息</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-4%E8%AE%B0%E5%BD%95%E7%9A%84%E7%9C%9F%E5%AE%9E%E6%95%B0%E6%8D%AE"><span class="toc-number">1.1.2.4.</span> <span class="toc-text">1.2.4记录的真实数据</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3Redundant%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3Redundant行格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4%E8%A1%8C%E6%BA%A2%E5%87%BA%E6%95%B0%E6%8D%AE"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.4行溢出数据</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4-1VARCHAR-M-%E6%9C%80%E5%A4%9A%E8%83%BD%E5%AD%98%E5%82%A8%E7%9A%84%E6%95%B0%E6%8D%AE"><span class="toc-number">1.1.4.1.</span> <span class="toc-text">1.4.1VARCHAR(M)最多能存储的数据</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4-2%E8%AE%B0%E5%BD%95%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%AA%E5%A4%9A%E4%BA%A7%E7%94%9F%E7%9A%84%E6%BA%A2%E5%87%BA"><span class="toc-number">1.1.4.2.</span> <span class="toc-text">1.4.2记录中的数据太多产生的溢出</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4-3%E8%A1%8C%E6%BA%A2%E5%87%BA%E7%9A%84%E4%B8%B4%E7%95%8C%E7%82%B9"><span class="toc-number">1.1.4.3.</span> <span class="toc-text">1.4.3行溢出的临界点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5Dynamic%E5%92%8CCompressed%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.1.5.</span> <span class="toc-text">1.5Dynamic和Compressed行格式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81InnoDB%E7%9A%84%E6%95%B0%E6%8D%AE%E9%A1%B5%E7%BB%93%E6%9E%84"><span class="toc-number">1.2.</span> <span class="toc-text">二、InnoDB的数据页结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E4%B8%8D%E5%90%8C%E7%B1%BB%E5%9E%8B%E7%9A%84%E9%A1%B5%E7%AE%80%E4%BB%8B"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1.不同类型的页简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E6%95%B0%E6%8D%AE%E9%A1%B5%E7%BB%93%E6%9E%84%E7%9A%84%E5%BF%AB%E9%80%9F%E6%B5%8F%E8%A7%88"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2数据页结构的快速浏览</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E8%AE%B0%E5%BD%95%E5%9C%A8%E9%A1%B5%E4%B8%AD%E7%9A%84%E5%AD%98%E5%82%A8"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3记录在页中的存储</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4Page-Directory"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4Page Directory</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5Page-Header"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5Page Header</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6File-Header"><span class="toc-number">1.2.6.</span> <span class="toc-text">2.6File Header</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-7File-Trailer"><span class="toc-number">1.2.7.</span> <span class="toc-text">2.7File Trailer</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MySQL原理之结构篇
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-18T02:33:43.486Z" class="dt-published" itemprop="datePublished">2023-12-18</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/MySQL%E5%8E%9F%E7%90%86/" rel="tag">MySQL原理</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="MySQL原理之结构篇"><a href="#MySQL原理之结构篇" class="headerlink" title="MySQL原理之结构篇"></a>MySQL原理之结构篇</h1><p>我们前边唠叨请求处理过程的时候提到过，<code>MySQL</code>服务器上负责对表中数据的读取和写入工作的部分是<code>存储引擎</code>，而服务器又支持不同类型的存储引擎，比如<code>InnoDB</code>、<code>MyISAM</code>、<code>Memory</code>啥的，不同的存储引擎一般是由不同的人为实现不同的特性而开发的，真实数据在不同存储引擎中存放的格式一般是不同的，甚至有的存储引擎比如<code>Memory</code>都不用磁盘来存储数据，也就是说关闭服务器后表中的数据就消失了。由于<code>InnoDB</code>是<code>MySQL</code>默认的存储引擎，也是我们最常用到的存储引擎，我们也没有那么多时间去把各个存储引擎的内部实现都看一遍，所以本集要唠叨的是使用<code>InnoDB</code>作为存储引擎的数据存储结构，了解了一个存储引擎的数据存储结构之后，其他的存储引擎都是依葫芦画瓢，等我们用到了再说哈～</p>
+<h2 id="一、InnoDB的记录结构"><a href="#一、InnoDB的记录结构" class="headerlink" title="一、InnoDB的记录结构"></a>一、InnoDB的记录结构</h2><p><code>InnoDB</code>是一个将表中的数据存储到磁盘上的存储引擎，所以即使关机后重启我们的数据还是存在的。而真正处理数据的过程是发生在内存中的，所以需要把磁盘中的数据加载到内存中，如果是处理写入或修改请求的话，还需要把内存中的内容刷新到磁盘上。而我们知道读写磁盘的速度非常慢，和内存读写差了几个数量级，所以当我们想从表中获取某些记录时，<code>InnoDB</code>存储引擎需要一条一条的把记录从磁盘上读出来么？不，那样会慢死，<code>InnoDB</code>采取的方式是：将数据划分为若干个页，以页作为磁盘和内存之间交互的基本单位，InnoDB中页的大小一般为 <em><strong>16</strong></em> KB。也就是在一般情况下，一次最少从磁盘中读取16KB的内容到内存中，一次最少把内存中的16KB内容刷新到磁盘中。</p>
+<p>我们平时是以记录为单位来向表中插入数据的，这些记录在磁盘上的存放方式也被称为<code>行格式</code>或者<code>记录格式</code>。设计<code>InnoDB</code>存储引擎的大叔们到现在为止设计了4种不同类型的<code>行格式</code>，分别是<code>Compact</code>、<code>Redundant</code>、<code>Dynamic</code>和<code>Compressed</code>行格式，随着时间的推移，他们可能会设计出更多的行格式，但是不管怎么变，在原理上大体都是相同的。</p>
+<h3 id="1-1前置准备"><a href="#1-1前置准备" class="headerlink" title="1.1前置准备"></a>1.1前置准备</h3><p>我们可以在创建或修改表的语句中指定<code>行格式</code>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE 表名 (列的信息) ROW_FORMAT=行格式名称</span><br><span class="line">ALTER TABLE 表名 ROW_FORMAT=行格式名称</span><br></pre></td></tr></table></figure>
+
+<p>比如我们在<code>xiaohaizi</code>数据库里创建一个演示用的表<code>record_format_demo</code>，可以这样指定它的<code>行格式</code>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">USE xiaohaizi;</span></span><br><span class="line">Database changed</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE record_format_demo (</span></span><br><span class="line">    -&gt;     c1 VARCHAR(10),</span><br><span class="line">    -&gt;     c2 VARCHAR(10) NOT NULL,</span><br><span class="line">    -&gt;     c3 CHAR(10),</span><br><span class="line">    -&gt;     c4 VARCHAR(10)</span><br><span class="line">    -&gt; ) CHARSET=ascii ROW_FORMAT=COMPACT;</span><br><span class="line">Query OK, 0 rows affected (0.03 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">INSERT INTO record_format_demo(c1, c2, c3, c4) VALUES(<span class="string">&#x27;aaaa&#x27;</span>, <span class="string">&#x27;bbb&#x27;</span>, <span class="string">&#x27;cc&#x27;</span>, <span class="string">&#x27;d&#x27;</span>), (<span class="string">&#x27;eeee&#x27;</span>, <span class="string">&#x27;fff&#x27;</span>, NULL, NULL);</span></span><br><span class="line">Query OK, 2 rows affected (0.02 sec)</span><br><span class="line">Records: 2  Duplicates: 0  Warnings: 0</span><br></pre></td></tr></table></figure>
+
+<p>现在表中的记录就是这个样子的：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SELECT * FROM record_format_demo;</span></span><br><span class="line">+------+-----+------+------+</span><br><span class="line">| c1   | c2  | c3   | c4   |</span><br><span class="line">+------+-----+------+------+</span><br><span class="line">| aaaa | bbb | cc   | d    |</span><br><span class="line">| eeee | fff | NULL | NULL |</span><br><span class="line">+------+-----+------+------+</span><br><span class="line">2 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>演示表的内容也填充好了，现在我们就来看看各个行格式下的存储方式到底有啥不同吧～</p>
+<h3 id="1-2COMPACT行格式"><a href="#1-2COMPACT行格式" class="headerlink" title="1.2COMPACT行格式"></a>1.2COMPACT行格式</h3><p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e8fafc21aatplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9g4t114n0j1gkro2r1h8h1d1t16.png">  </p>
+<h4 id="1-2-1变长字段列表"><a href="#1-2-1变长字段列表" class="headerlink" title="1.2.1变长字段列表"></a>1.2.1变长字段列表</h4><p>我们知道<code>MySQL</code>支持一些变长的数据类型，比如<code>VARCHAR(M)</code>、<code>VARBINARY(M)</code>、各种<code>TEXT</code>类型，各种<code>BLOB</code>类型，我们也可以把拥有这些数据类型的列称为<code>变长字段</code>，变长字段中存储多少字节的数据是不固定的，所以我们在存储真实数据的时候需要顺便把这些数据占用的字节数也存起来，这样才不至于把<code>MySQL</code>服务器搞懵，所以这些变长字段占用的存储空间分为两部分：</p>
+<ol>
+<li>真正的数据内容</li>
+<li>占用的字节数</li>
+</ol>
+<p>在<code>Compact</code>行格式中，把所有变长字段的真实数据占用的字节长度都存放在记录的开头部位，从而形成一个变长字段长度列表，各变长字段数据占用的字节数按照列的顺序逆序存放，我们再次强调一遍，是逆序存放！</p>
+<p>我们拿<code>record_format_demo</code>表中的第一条记录来举个例子。因为<code>record_format_demo</code>表的<code>c1</code>、<code>c2</code>、<code>c4</code>列都是<code>VARCHAR(10)</code>类型的，也就是变长的数据类型，所以这三个列的值的长度都需要保存在记录开头处，因为<code>record_format_demo</code>表中的各个列都使用的是<code>ascii</code>字符集，所以每个字符只需要1个字节来进行编码，来看一下第一条记录各变长字段内容的长度：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218113158389.png" alt="image-20231218113158389"> </p>
+<p>把这个字节串组成的<code>变长字段长度列表</code>填入上边的示意图中的效果就是：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e8fb363bb4tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9gbruvo504dlg1qsf19nbeu878.png"> </p>
+<p>由于第一行记录中<code>c1</code>、<code>c2</code>、<code>c4</code>列中的字符串都比较短，也就是说内容占用的字节数比较小，用1个字节就可以表示，但是如果变长列的内容占用的字节数比较多，可能就需要用2个字节来表示。具体用1个还是2个字节来表示真实数据占用的字节数，<code>InnoDB</code>有它的一套规则，我们首先声明一下<code>W</code>、<code>M</code>和<code>L</code>的意思：</p>
+<ol>
+<li>假设某个字符集中表示一个字符最多需要使用的字节数为<code>W</code>，也就是使用<code>SHOW CHARSET</code>语句的结果中的<code>Maxlen</code>列，比方说<code>utf8</code>字符集中的<code>W</code>就是<code>3</code>，<code>gbk</code>字符集中的<code>W</code>就是<code>2</code>，<code>ascii</code>字符集中的<code>W</code>就是<code>1</code>。</li>
+<li>对于变长类型<code>VARCHAR(M)</code>来说，这种类型表示能存储最多<code>M</code>个字符（注意是字符不是字节），所以这个类型能表示的字符串最多占用的字节数就是<code>M×W</code>。</li>
+<li>假设它实际存储的字符串占用的字节数是<code>L</code>。</li>
+</ol>
+<p>所以确定使用1个字节还是2个字节表示真正字符串占用的字节数的规则就是这样：</p>
+<ul>
+<li>如果<code>M×W &lt;= 255</code>，那么使用1个字节来表示真正字符串占用的字节数。</li>
+</ul>
+<blockquote>
+<p>也就是说InnoDB在读记录的变长字段长度列表时先查看表结构，如果某个变长字段允许存储的最大字节数不大于255时，可以认为只使用1个字节来表示真正字符串占用的字节数。</p>
+</blockquote>
+<ul>
+<li>如果<code>M×W &gt; 255</code>，则分为两种情况：<ul>
+<li>如果<code>L &lt;= 127</code>，则用1个字节来表示真正字符串占用的字节数。</li>
+<li>如果<code>L &gt; 127</code>，则用2个字节来表示真正字符串占用的字节数。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>InnoDB在读记录的变长字段长度列表时先查看表结构，如果某个变长字段允许存储的最大字节数大于255时，该怎么区分它正在读的某个字节是一个单独的字段长度还是半个字段长度呢？设计InnoDB的大叔使用该字节的第一个二进制位作为标志位：如果该字节的第一个位为0，那该字节就是一个单独的字段长度（使用一个字节表示不大于127的二进制的第一个位都为0），如果该字节的第一个位为1，那该字节就是半个字段长度。对于一些占用字节数非常多的字段，比方说某个字段长度大于了16KB，那么如果该记录在单个页面中无法存储时，InnoDB会把一部分数据存放到所谓的溢出页中（我们后边会唠叨），在变长字段长度列表处只存储留在本页面中的长度，所以使用两个字节也可以存放下来。</p>
+</blockquote>
+<p>总结一下就是说：如果该可变字段允许存储的最大字节数（<code>M×W</code>）超过255字节并且真实存储的字节数（<code>L</code>）超过127字节，则使用2个字节，否则使用1个字节。</p>
+<p>另外需要注意的一点是，变长字段长度列表中只存储值为 <strong>非NULL</strong> 的列内容占用的长度，值为 <strong>NULL</strong> 的列的长度是不储存的。也就是说对于第二条记录来说，因为<code>c4</code>列的值为<code>NULL</code>，所以第二条记录的<code>变长字段长度列表</code>只需要存储<code>c1</code>和<code>c2</code>列的长度即可。其中<code>c1</code>列存储的值为<code>&#39;eeee&#39;</code>，占用的字节数为<code>4</code>，<code>c2</code>列存储的值为<code>&#39;fff&#39;</code>，占用的字节数为<code>3</code>。数字<code>4</code>可以用1个字节表示，<code>3</code>也可以用1个字节表示，所以整个<code>变长字段长度列表</code>共需2个字节。填充完<code>变长字段长度列表</code>的两条记录的对比图如下：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e8fe4ee6b0tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9grq2b2jok1062t8tov21lqjbj.png"> </p>
+<blockquote>
+<p>并不是所有记录都有这个变长字段长度列表部分，比方说表中所有的列都不是变长的数据类型的话，这一部分就不需要有。</p>
+</blockquote>
+<p><code>record_format_demo</code>表的<code>c1</code>、<code>c2</code>、<code>c4</code>列的类型是<code>VARCHAR(10)</code>，而<code>c3</code>列的类型是<code>CHAR(10)</code>，我们说在<code>Compact</code>行格式下只会把变长类型的列的长度逆序存到<code>变长字段长度列表</code>中，就像这样：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e985c8d9a7tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9jdkga71kegkjs14o111ov1ce3kn.png-12.5kB"> </p>
+<p>但是这只是因为我们的<code>record_format_demo</code>表采用的是<code>ascii</code>字符集，这个字符集是一个定长字符集，也就是说表示一个字符采用固定的一个字节，如果采用变长的字符集（也就是表示一个字符需要的字节数不确定，比如<code>gbk</code>表示一个字符要1～2个字节、<code>utf8</code>表示一个字符要1~3个字节等）的话，<code>c3</code>列的长度也会被存储到<code>变长字段长度列表</code>中，比如我们修改一下<code>record_format_demo</code>表的字符集：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">ALTER TABLE record_format_demo MODIFY COLUMN c3 CHAR(10) CHARACTER SET utf8;</span></span><br><span class="line">Query OK, 2 rows affected (0.02 sec)</span><br><span class="line">Records: 2  Duplicates: 0  Warnings: 0</span><br></pre></td></tr></table></figure>
+
+<p>修改该列字符集后记录的<code>变长字段长度列表</code>也发生了变化，如图：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e973ff4fdetplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9jeb6defgf1o981lgfciokjl4.png-43.1kB"> </p>
+<blockquote>
+<p>这就意味着：对于 <em><strong>CHAR(M)</strong></em> 类型的列来说，当列采用的是定长字符集时，该列占用的字节数不会被加到变长字段长度列表，而如果采用变长字符集时，该列占用的字节数也会被加到变长字段长度列表。</p>
+</blockquote>
+<h4 id="1-2-2NULL值列表"><a href="#1-2-2NULL值列表" class="headerlink" title="1.2.2NULL值列表"></a>1.2.2NULL值列表</h4><p>我们知道表中的某些列可能存储<code>NULL</code>值，如果把这些<code>NULL</code>值都放到<code>记录的真实数据</code>中存储会很占地方，所以<code>Compact</code>行格式把这些值为<code>NULL</code>的列统一管理起来，存储到<code>NULL</code>值列表中，它的处理过程是这样的：</p>
+<ol>
+<li><p>首先统计表中允许存储<code>NULL</code>的列有哪些。</p>
+<p>我们前边说过，主键列、被<code>NOT NULL</code>修饰的列都是不可以存储<code>NULL</code>值的，所以在统计的时候不会把这些列算进去。比方说表<code>record_format_demo</code>的3个列<code>c1</code>、<code>c3</code>、<code>c4</code>都是允许存储<code>NULL</code>值的，而<code>c2</code>列是被<code>NOT NULL</code>修饰，不允许存储<code>NULL</code>值。</p>
+</li>
+<li><p>如果表中没有允许存储 <strong>NULL</strong> 的列，则 <em>NULL值列表</em> 也不存在了，否则将每个允许存储<code>NULL</code>的列对应一个二进制位，二进制位按照列的顺序逆序排列，二进制位表示的意义如下：</p>
+<ul>
+<li>二进制位的值为<code>1</code>时，代表该列的值为<code>NULL</code>。</li>
+<li>二进制位的值为<code>0</code>时，代表该列的值不为<code>NULL</code>。</li>
+</ul>
+</li>
+</ol>
+<p>因为表<code>record_format_demo</code>有3个值允许为<code>NULL</code>的列，所以这3个列和二进制位的对应关系就是这样：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9018133f7tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9g88mtt1tj51ua1qh51vjo12pg5k.png-10.4kB"> </p>
+<p>再一次强调，二进制位按照列的顺序逆序排列，所以第一个列<code>c1</code>和最后一个二进制位对应。</p>
+<ol start="3">
+<li><code>MySQL</code>规定<code>NULL值列表</code>必须用整数个字节的位表示，如果使用的二进制位个数不是整数个字节，则在字节的高位补<code>0</code>。表<code>record_format_demo</code>只有3个值允许为<code>NULL</code>的列，对应3个二进制位，不足一个字节，所以在字节的高位补<code>0</code>，效果就是这样：</li>
+</ol>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e901669f45tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9g8g27b1bdlu7t187emsc46s61.png-19.4kB"> </p>
+<p>以此类推，如果一个表中有9个允许为<code>NULL</code>，那这个记录的<code>NULL</code>值列表部分就需要2个字节来表示了。</p>
+<p>知道了规则之后，我们再返回头看表<code>record_format_demo</code>中的两条记录中的<code>NULL值列表</code>应该怎么储存。因为只有<code>c1</code>、<code>c3</code>、<code>c4</code>这3个列允许存储<code>NULL</code>值，所以所有记录的<code>NULL值列表</code>只需要一个字节。</p>
+<ul>
+<li>对于第一条记录来说，<code>c1</code>、<code>c3</code>、<code>c4</code>这3个列的值都不为<code>NULL</code>，所以它们对应的二进制位都是<code>0</code>，画个图就是这样：</li>
+</ul>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e901befeactplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9g8m05b19ge1c8v2bf163djre6e.png-21.5kB"> </p>
+<ul>
+<li>对于第二条记录来说，<code>c1</code>、<code>c3</code>、<code>c4</code>这3个列中<code>c3</code>和<code>c4</code>的值都为<code>NULL</code>，所以这3个列对应的二进制位的情况就是：</li>
+</ul>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e944a8af0ctplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9g8ps5c1snv1bhj3m48151sfl6r.png-20.6kB"> </p>
+<p>所以这两条记录在填充了<code>NULL值列表</code>后的示意图就是这样：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e95903144ftplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9grs9m4co8134u1t2rjhm1q6rc0.png-39kB"> </p>
+<h4 id="1-2-3记录头信息"><a href="#1-2-3记录头信息" class="headerlink" title="1.2.3记录头信息"></a>1.2.3记录头信息</h4><p>除了<code>变长字段长度列表</code>、<code>NULL值列表</code>之外，还有一个用于描述记录的<code>记录头信息</code>，它是由固定的<code>5</code>个字节组成。<code>5</code>个字节也就是<code>40</code>个二进制位，不同的位代表不同的意思，如图：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e97718ef01tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9geiglj1ah31meo80ci8n1eli8f.png-29.5kB"> </p>
+<p>这些二进制位代表的详细信息如下表：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218114224101.png" alt="image-20231218114224101"> </p>
+<p>因为我们并不清楚这些属性详细的用法，所以这里就不分析各个属性值是怎么产生的了，之后我们遇到会详细看的。所以我们现在直接看一下<code>record_format_demo</code>中的两条记录的<code>头信息</code>分别是什么：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/17075b82cb070959tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="img"> </p>
+<h4 id="1-2-4记录的真实数据"><a href="#1-2-4记录的真实数据" class="headerlink" title="1.2.4记录的真实数据"></a>1.2.4记录的真实数据</h4><p>对于<code>record_format_demo</code>表来说，<code>记录的真实数据</code>除了<code>c1</code>、<code>c2</code>、<code>c3</code>、<code>c4</code>这几个我们自己定义的列的数据以外，<code>MySQL</code>会为每个记录默认的添加一些列（也称为<code>隐藏列</code>），具体的列如下：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218114342708.png" alt="image-20231218114342708"> </p>
+<blockquote>
+<p>实际上这几个列的真正名称其实是：DB_ROW_ID、DB_TRX_ID、DB_ROLL_PTR，我们为了美观才写成了row_id、transaction_id和roll_pointer。</p>
+</blockquote>
+<p>这里需要提一下<code>InnoDB</code>表对主键的生成策略：优先使用用户自定义主键作为主键，如果用户没有定义主键，则选取一个<code>Unique</code>键作为主键，如果表中连<code>Unique</code>键都没有定义的话，则<code>InnoDB</code>会为表默认添加一个名为<code>row_id</code>的隐藏列作为主键。所以我们从上表中可以看出：InnoDB存储引擎会为每条记录都添加 <em><strong>transaction_id</strong></em> 和 <em><strong>roll_pointer</strong></em> 这两个列，但是 <em><strong>row_id</strong></em> 是可选的（在没有自定义主键以及Unique键的情况下才会添加该列）。这些隐藏列的值不用我们操心，<code>InnoDB</code>存储引擎会自己帮我们生成的。</p>
+<p>因为表<code>record_format_demo</code>并没有定义主键，所以<code>MySQL</code>服务器会为每条记录增加上述的3个列。现在看一下加上<code>记录的真实数据</code>的两个记录长什么样吧：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e973b70372tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9h256f9nke14311adhtu61ie2dn.png-92kB"> </p>
+<p>看这个图的时候我们需要注意几点：</p>
+<ol>
+<li>表<code>record_format_demo</code>使用的是<code>ascii</code>字符集，所以<code>0x61616161</code>就表示字符串<code>&#39;aaaa&#39;</code>，<code>0x626262</code>就表示字符串<code>&#39;bbb&#39;</code>，以此类推。</li>
+<li>注意第1条记录中<code>c3</code>列的值，它是<code>CHAR(10)</code>类型的，它实际存储的字符串是：<code>&#39;cc&#39;</code>，而<code>ascii</code>字符集中的字节表示是<code>&#39;0x6363&#39;</code>，虽然表示这个字符串只占用了2个字节，但整个<code>c3</code>列仍然占用了10个字节的空间，除真实数据以外的8个字节的统统都用空格字符填充，空格字符在<code>ascii</code>字符集的表示就是<code>0x20</code>。</li>
+<li>注意第2条记录中<code>c3</code>和<code>c4</code>列的值都为<code>NULL</code>，它们被存储在了前边的<code>NULL值列表</code>处，在记录的真实数据处就不再冗余存储，从而节省存储空间。</li>
+</ol>
+<p>另外有一点还需要注意，变长字符集的<code>CHAR(M)</code>类型的列要求至少占用<code>M</code>个字节，而<code>VARCHAR(M)</code>却没有这个要求。比方说对于使用<code>utf8</code>字符集的<code>CHAR(10)</code>的列来说，该列存储的数据字节长度的范围是10～30个字节。即使我们向该列中存储一个空字符串也会占用<code>10</code>个字节，这是怕将来更新该列的值的字节长度大于原有值的字节长度而小于10个字节时，可以在该记录处直接更新，而不是在存储空间中重新分配一个新的记录空间，导致原有的记录空间成为所谓的碎片。（这里你感受到设计<code>Compact</code>行格式的大叔既想节省存储空间，又不想更新<code>CHAR(M)</code>类型的列产生碎片时的纠结心情了吧。）</p>
+<h3 id="1-3Redundant行格式"><a href="#1-3Redundant行格式" class="headerlink" title="1.3Redundant行格式"></a>1.3Redundant行格式</h3><p>其实知道了<code>Compact</code>行格式之后，其他的行格式就是依葫芦画瓢了。我们现在要介绍的<code>Redundant</code>行格式是<code>MySQL5.0</code>之前用的一种行格式，也就是说它已经非常老了，但是本着知识完整性的角度还是要提一下，大家乐呵乐呵的看就好。</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e99a69ba3dtplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9h896lcuqi16081qub1v8c12jkft.png-36.2kB"> </p>
+<p>为了方便大家理解和节省篇幅，我们直接把表<code>record_format_demo</code>在<code>Redundant</code>行格式下的两条记录的真实存储数据提供出来，之后我们着重分析两种行格式的不同即可。</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9a5b7c847tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1c9h8tnav166c187m1nhap61153qgn.png-91.6kB"> </p>
+<p>下边我们从各个方面看一下<code>Redundant</code>行格式有什么不同的地方：</p>
+<ul>
+<li><p>字段长度偏移列表</p>
+<p>注意<code>Compact</code>行格式的开头是<code>变长字段长度列表</code>，而<code>Redundant</code>行格式的开头是<code>字段长度偏移列表</code>，与<code>变长字段长度列表</code>有两处不同：</p>
+<ul>
+<li>没有了变长两个字，意味着<code>Redundant</code>行格式会把该条记录中所有列（包括<code>隐藏列</code>）的长度信息都按照逆序存储到<code>字段长度偏移列表</code>。</li>
+<li>多了个偏移两个字，这意味着计算列值长度的方式不像<code>Compact</code>行格式那么直观，它是采用两个相邻数值的差值来计算各个列值的长度。</li>
+</ul>
+</li>
+<li><p>记录头信息</p>
+<p><code>Redundant</code>行格式的记录头信息占用<code>6</code>字节，<code>48</code>个二进制位，这些二进制位代表的意思如下：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218115233531.png" alt="image-20231218115233531"> </p>
+<p>第一条记录中的头信息是：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">00 00 10 0F 00 BC</span><br></pre></td></tr></table></figure>
+
+<p>根据这六个字节可以计算出各个属性的值，如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">预留位1：0x00</span><br><span class="line">预留位2：0x00</span><br><span class="line">delete_mask: 0x00</span><br><span class="line">min_rec_mask: 0x00</span><br><span class="line">n_owned: 0x00</span><br><span class="line">heap_no: 0x02</span><br><span class="line">n_field: 0x07</span><br><span class="line">1byte_offs_flag: 0x01</span><br><span class="line">next_record:0xBC</span><br></pre></td></tr></table></figure>
+
+<p>与<code>Compact</code>行格式的记录头信息对比来看，有两处不同：</p>
+<ul>
+<li><code>Redundant</code>行格式多了<code>n_field</code>和<code>1byte_offs_flag</code>这两个属性。</li>
+<li><code>Redundant</code>行格式没有<code>record_type</code>这个属性。</li>
+</ul>
+</li>
+<li><p><code>1byte_offs_flag</code>的值是怎么选择的</p>
+<p><code>字段长度偏移列表</code>实质上是存储每个列中的值占用的空间在<code>记录的真实数据</code>处结束的位置，还是拿<code>record_format_demo</code>第一条记录为例，<code>0x06</code>代表第一个列在<code>记录的真实数据</code>第6个字节处结束，<code>0x0C</code>代表第二个列在<code>记录的真实数据</code>第12个字节处结束，<code>0x13</code>代表第三个列在<code>记录的真实数据</code>第19个字节处结束，等等等等，最后一个列对应的偏移量值为<code>0x25</code>，也就意味着最后一个列在<code>记录的真实数据</code>第37个字节处结束，也就意味着整条记录的<code>真实数据</code>实际上占用<code>37</code>个字节。</p>
+<p>我们前边说过每个列对应的偏移量可以占用1个字节或者2个字节来存储，那到底什么时候用1个字节，什么时候用2个字节呢？其实是根据该条<code>Redundant</code>行格式<code>记录的真实数据</code>占用的总大小来判断的：</p>
+<ul>
+<li>当记录的真实数据占用的字节数不大于127（十六进制<code>0x7F</code>，二进制<code>01111111</code>）时，每个列对应的偏移量占用1个字节。</li>
+<li>当记录的真实数据占用的字节数大于127，但不大于32767（十六进制<code>0x7FFF</code>，二进制<code>0111111111111111</code>）时，每个列对应的偏移量占用2个字节。</li>
+<li>有没有记录的真实数据大于32767的情况呢？有，不过此时的记录已经存放到了溢出页中，在本页中只保留前<code>768</code>个字节和20个字节的溢出页面地址（当然这20个字节中还记录了一些别的信息）。因为<code>字段长度偏移列表</code>处只需要记录每个列在本页面中的偏移就好了，所以每个列使用2个字节来存储偏移量就够了。</li>
+</ul>
+<p>大家可以看出来，设计<code>Redundant</code>行格式的大叔还是比较简单粗暴的，直接使用整个<code>记录的真实数据</code>长度来决定使用1个字节还是2个字节存储列对应的偏移量。只要整条记录的真实数据占用的存储空间大小大于127，即使第一个列的值占用存储空间小于127，那对不起，也需要使用2个字节来表示该列对应的偏移量。简单粗暴，就是这么简单粗暴（所以这种行格式有些过时了～）。</p>
+<p>为了在解析记录时知道每个列的偏移量是使用1个字节还是2个字节表示的，设计<code>Redundant</code>行格式的大叔特意在<code>记录头信息</code>里放置了一个称之为<code>1byte_offs_flag</code>的属性：</p>
+<ul>
+<li>当它的值为1时，表明使用1个字节存储。</li>
+<li>当它的值为0时，表明使用2个字节存储。</li>
+</ul>
+</li>
+<li><p><code>Redundant</code>行格式中<code>NULL</code>值的处理</p>
+<p>因为<code>Redundant</code>行格式并没有<code>NULL值列表</code>，所以设计<code>Redundant</code>行格式的大叔在<code>字段长度偏移列表</code>中的各个列对应的偏移量处做了一些特殊处理 —— 将列对应的偏移量值的第一个比特位作为是否为<code>NULL</code>的依据，该比特位也可以被称之为<code>NULL比特位</code>。也就是说在解析一条记录的某个列时，首先看一下该列对应的偏移量的<code>NULL比特位</code>是不是为<code>1</code>，如果为<code>1</code>，那么该列的值就是<code>NULL</code>，否则不是<code>NULL</code>。</p>
+<p>这也就解释了上边介绍为什么只要记录的真实数据大于127（十六进制<code>0x7F</code>，二进制<code>01111111</code>）时，就采用2个字节来表示一个列对应的偏移量，主要是第一个比特位是所谓的<code>NULL比特位</code>，用来标记该列的值是否为<code>NULL</code>。</p>
+<p>但是还有一点要注意，对于值为<code>NULL</code>的列来说，该列的类型是否为定长类型决定了<code>NULL</code>值的实际存储方式，我们接下来分析一下<code>record_format_demo</code>表的第二条记录，它对应的<code>字段长度偏移列表</code>如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A4 A4 1A 17 13 0C 06</span><br></pre></td></tr></table></figure>
+
+<p>按照列的顺序排放就是：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">06 0C 13 17 1A A4 A4</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>我们分情况看一下：</p>
+<ul>
+<li><p>如果存储<code>NULL</code>值的字段是定长类型的，比方说<code>CHAR(M)</code>数据类型的，则<code>NULL</code>值也将占用记录的真实数据部分，并把该字段对应的数据使用<code>0x00</code>字节填充。</p>
+<p>如图第二条记录的<code>c3</code>列的值是<code>NULL</code>，而<code>c3</code>列的类型是<code>CHAR(10)</code>，占用记录的真实数据部分10字节，所以我们看到在<code>Redundant</code>行格式中使用<code>0x00000000000000000000</code>来表示<code>NULL</code>值。</p>
+<p>另外，<code>c3</code>列对应的偏移量为<code>0xA4</code>，它对应的二进制实际是：<code>10100100</code>，可以看到最高位为<code>1</code>，意味着该列的值是<code>NULL</code>。将最高位去掉后的值变成了<code>0100100</code>，对应的十进制值为<code>36</code>，而<code>c2</code>列对应的偏移量为<code>0x1A</code>，也就是十进制的<code>26</code>。<code>36 - 26 = 10</code>，也就是说最终<code>c3</code>列占用的存储空间为10个字节。</p>
+</li>
+<li><p>如果该存储<code>NULL</code>值的字段是变长数据类型的，则不在<code>记录的真实数据</code>处占用任何存储空间。</p>
+<p>比如<code>record_format_demo</code>表的<code>c4</code>列是<code>VARCHAR(10)</code>类型的，<code>VARCHAR(10)</code>是一个变长数据类型，<code>c4</code>列对应的偏移量为<code>0xA4</code>，与<code>c3</code>列对应的偏移量相同，这也就意味着它的值也为<code>NULL</code>，将<code>0xA4</code>的最高位去掉后对应的十进制值也是<code>36</code>，<code>36 - 36 = 0</code>，也就意味着<code>c4</code>列本身不占用任何<code>记录的实际数据</code>处的空间。</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>除了以上的几点之外，<code>Redundant</code>行格式和<code>Compact</code>行格式还是大致相同的。</p>
+</li>
+</ul>
+<blockquote>
+<p>我们知道<code>Compact</code>行格式在<code>CHAR(M)</code>类型的列中存储数据的时候还挺麻烦，分变长字符集和定长字符集的情况，而在<code>Redundant</code>行格式中十分干脆，不管该列使用的字符集是啥，只要是使用<code>CHAR(M)</code>类型，占用的真实数据空间就是该字符集表示一个字符最多需要的字节数和<code>M</code>的乘积。比方说使用<code>utf8</code>字符集的<code>CHAR(10)</code>类型的列占用的真实数据空间始终为<code>30</code>个字节，使用<code>gbk</code>字符集的<code>CHAR(10)</code>类型的列占用的真实数据空间始终为<code>20</code>个字节。由此可以看出来，使用<code>Redundant</code>行格式的<code>CHAR(M)</code>类型的列是不会产生碎片的。</p>
+</blockquote>
+<h3 id="1-4行溢出数据"><a href="#1-4行溢出数据" class="headerlink" title="1.4行溢出数据"></a>1.4行溢出数据</h3><h4 id="1-4-1VARCHAR-M-最多能存储的数据"><a href="#1-4-1VARCHAR-M-最多能存储的数据" class="headerlink" title="1.4.1VARCHAR(M)最多能存储的数据"></a>1.4.1VARCHAR(M)最多能存储的数据</h4><p>我们知道对于<code>VARCHAR(M)</code>类型的列最多可以占用<code>65535</code>个字节。其中的<code>M</code>代表该类型最多存储的字符数量，如果我们使用<code>ascii</code>字符集的话，一个字符就代表一个字节，我们看看<code>VARCHAR(65535)</code>是否可用：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE varchar_size_demo(</span></span><br><span class="line">    -&gt;     c VARCHAR(65535)</span><br><span class="line">    -&gt; ) CHARSET=ascii ROW_FORMAT=Compact;</span><br><span class="line">ERROR 1118 (42000): Row size too large. The maximum row size for the used table type, not counting BLOBs, is 65535. This includes storage overhead, check the manual. You have to change some columns to TEXT or BLOBs</span><br></pre></td></tr></table></figure>
+
+<p>从报错信息里可以看出，<code>MySQL</code>对一条记录占用的最大存储空间是有限制的，除了<code>BLOB</code>或者<code>TEXT</code>类型的列之外，其他所有的列（不包括隐藏列和记录头信息）占用的字节长度加起来不能超过<code>65535</code>个字节。所以<code>MySQL</code>服务器建议我们把存储类型改为<code>TEXT</code>或者<code>BLOB</code>的类型。这个<code>65535</code>个字节除了列本身的数据之外，还包括一些其他的数据（<code>storage overhead</code>），比如说我们为了存储一个<code>VARCHAR(M)</code>类型的列，其实需要占用3部分存储空间：</p>
+<ul>
+<li>真实数据</li>
+<li>真实数据占用字节的长度</li>
+<li><code>NULL</code>值标识，如果该列有<code>NOT NULL</code>属性则可以没有这部分存储空间</li>
+</ul>
+<p>如果该<code>VARCHAR</code>类型的列没有<code>NOT NULL</code>属性，那最多只能存储<code>65532</code>个字节的数据，因为真实数据的长度可能占用2个字节，<code>NULL</code>值标识需要占用1个字节：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE varchar_size_demo(</span></span><br><span class="line">    -&gt;      c VARCHAR(65532)</span><br><span class="line">    -&gt; ) CHARSET=ascii ROW_FORMAT=Compact;</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br></pre></td></tr></table></figure>
+
+<p>如果<code>VARCHAR</code>类型的列有<code>NOT NULL</code>属性，那最多只能存储<code>65533</code>个字节的数据，因为真实数据的长度可能占用2个字节，不需要<code>NULL</code>值标识：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">DROP TABLE varchar_size_demo;</span></span><br><span class="line">Query OK, 0 rows affected (0.01 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE varchar_size_demo(</span></span><br><span class="line">    -&gt;      c VARCHAR(65533) NOT NULL</span><br><span class="line">    -&gt; ) CHARSET=ascii ROW_FORMAT=Compact;</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br></pre></td></tr></table></figure>
+
+<p>如果<code>VARCHAR(M)</code>类型的列使用的不是<code>ascii</code>字符集，那会怎么样呢？来看一下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">DROP TABLE varchar_size_demo;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE varchar_size_demo(</span></span><br><span class="line">    -&gt;       c VARCHAR(65532)</span><br><span class="line">    -&gt; ) CHARSET=gbk ROW_FORMAT=Compact;</span><br><span class="line">ERROR 1074 (42000): Column length too big for column &#x27;c&#x27; (max = 32767); use BLOB or TEXT instead</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE varchar_size_demo(</span></span><br><span class="line">    -&gt;       c VARCHAR(65532)</span><br><span class="line">    -&gt; ) CHARSET=utf8 ROW_FORMAT=Compact;</span><br><span class="line">ERROR 1074 (42000): Column length too big for column &#x27;c&#x27; (max = 21845); use BLOB or TEXT instead</span><br></pre></td></tr></table></figure>
+
+<p>从执行结果中可以看出，如果<code>VARCHAR(M)</code>类型的列使用的不是<code>ascii</code>字符集，那<code>M</code>的最大取值取决于该字符集表示一个字符最多需要的字节数。在列的值允许为<code>NULL</code>的情况下，<code>gbk</code>字符集表示一个字符最多需要<code>2</code>个字节，那在该字符集下，<code>M</code>的最大取值就是<code>32766</code>（也就是：65532&#x2F;2），也就是说最多能存储<code>32766</code>个字符；<code>utf8</code>字符集表示一个字符最多需要<code>3</code>个字节，那在该字符集下，<code>M</code>的最大取值就是<code>21844</code>，就是说最多能存储<code>21844</code>（也就是：65532&#x2F;3）个字符。</p>
+<blockquote>
+<p>上述所言在列的值允许为NULL的情况下，gbk字符集下M的最大取值就是32766，utf8字符集下M的最大取值就是21844，这都是在表中只有一个字段的情况下说的，一定要记住一个行中的所有列（不包括隐藏列和记录头信息）占用的字节长度加起来不能超过65535个字节！</p>
+</blockquote>
+<h4 id="1-4-2记录中的数据太多产生的溢出"><a href="#1-4-2记录中的数据太多产生的溢出" class="headerlink" title="1.4.2记录中的数据太多产生的溢出"></a>1.4.2记录中的数据太多产生的溢出</h4><p>我们以<code>ascii</code>字符集下的<code>varchar_size_demo</code>表为例，插入一条记录：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE varchar_size_demo(</span></span><br><span class="line">    -&gt;       c VARCHAR(65532)</span><br><span class="line">    -&gt; ) CHARSET=ascii ROW_FORMAT=Compact;</span><br><span class="line">Query OK, 0 rows affected (0.01 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">INSERT INTO varchar_size_demo(c) VALUES(REPEAT(<span class="string">&#x27;a&#x27;</span>, 65532));</span></span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>其中的<code>REPEAT(&#39;a&#39;, 65532)</code>是一个函数调用，它表示生成一个把字符<code>&#39;a&#39;</code>重复<code>65532</code>次的字符串。前边说过，<code>MySQL</code>中磁盘和内存交互的基本单位是<code>页</code>，也就是说<code>MySQL</code>是以<code>页</code>为基本单位来管理存储空间的，我们的记录都会被分配到某个<code>页</code>中存储。而一个页的大小一般是<code>16KB</code>，也就是<code>16384</code>字节，而一个<code>VARCHAR(M)</code>类型的列就最多可以存储<code>65532</code>个字节，这样就可能造成一个页存放不了一条记录的尴尬情况。</p>
+<p>在<code>Compact</code>和<code>Redundant</code>行格式中，对于占用存储空间非常大的列，在<code>记录的真实数据</code>处只会存储该列的一部分数据，把剩余的数据分散存储在几个其他的页中，然后<code>记录的真实数据</code>处用20个字节存储指向这些页的地址（当然这20个字节中还包括这些分散在其他页面中的数据的占用的字节数），从而可以找到剩余数据所在的页，如图所示：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9aab47ea5tplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1d48e3imu1vcp5rsh8cg0b1o169.png-149kB"> </p>
+<p>从图中可以看出来，对于<code>Compact</code>和<code>Redundant</code>行格式来说，如果某一列中的数据非常多的话，在本记录的真实数据处只会存储该列的前<code>768</code>个字节的数据和一个指向其他页的地址，然后把剩下的数据存放到其他页中，这个过程也叫做<code>行溢出</code>，存储超出<code>768</code>字节的那些页面也被称为<code>溢出页</code>。画一个简图就是这样：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9a5d5637atplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1conbskr7apj19ns1d194vs1buo1t.png-35.8kB"> </p>
+<h4 id="1-4-3行溢出的临界点"><a href="#1-4-3行溢出的临界点" class="headerlink" title="1.4.3行溢出的临界点"></a>1.4.3行溢出的临界点</h4><p>那发生<code>行溢出</code>的临界点是什么呢？也就是说在列存储多少字节的数据时就会发生<code>行溢出</code>？</p>
+<p><code>MySQL</code>中规定一个页中至少存放两行记录，至于为什么这么规定我们之后再说(其实跟B+树索引有关，一个B+树的节点中最少包含两条记录，否则B+树层级过高甚至极端情况下根本无法构建起来)，现在看一下这个规定造成的影响。以上边的<code>varchar_size_demo</code>表为例，它只有一个列<code>c</code>，我们往这个表中插入两条记录，每条记录最少插入多少字节的数据才会<code>行溢出</code>的现象呢？这得分析一下页中的空间都是如何利用的。</p>
+<ul>
+<li><p>每个页除了存放我们的记录以外，也需要存储一些额外的信息，乱七八糟的额外信息加起来需要<code>132</code>个字节的空间（现在只要知道这个数字就好了），其他的空间都可以被用来存储记录。</p>
+</li>
+<li><p>每个记录需要的额外信息是<code>27</code>字节。</p>
+<p>这27个字节包括下边这些部分：</p>
+<ul>
+<li>2个字节用于存储真实数据的长度</li>
+<li>1个字节用于存储列是否是NULL值</li>
+<li>5个字节大小的头信息</li>
+<li>6个字节的<code>row_id</code>列</li>
+<li>6个字节的<code>transaction_id</code>列</li>
+<li>7个字节的<code>roll_pointer</code>列</li>
+</ul>
+</li>
+</ul>
+<p>假设一个列中存储的数据字节数为n，设计<code>MySQL</code>的大叔规定如果该列不发生溢出的现象，就需要满足下边这个式子：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">132 + 2×(27 + n) &lt; 16384</span><br></pre></td></tr></table></figure>
+
+<p>求解这个式子得出的解是：<code>n &lt; 8099</code>。也就是说如果一个列中存储的数据小于<code>8099</code>个字节，那么该列就不会成为<code>溢出列</code>，否则该列就需要成为<code>溢出列</code>。不过这个<code>8099</code>个字节的结论只是针对只有一个列的<code>varchar_size_demo</code>表来说的，如果表中有多个列，那上边的式子和结论都需要改一改了，所以重点就是：你不用关注这个临界点是什么，只要知道如果我们一条记录的某个列中存储的数据占用的字节数非常多时，该列就可能成为<code>溢出列</code>。</p>
+<h3 id="1-5Dynamic和Compressed行格式"><a href="#1-5Dynamic和Compressed行格式" class="headerlink" title="1.5Dynamic和Compressed行格式"></a>1.5Dynamic和Compressed行格式</h3><p>下边要介绍另外两个行格式，<code>Dynamic</code>和<code>Compressed</code>行格式，我现在使用的<code>MySQL</code>版本是<code>5.7</code>，它的默认行格式就是<code>Dynamic</code>，这俩行格式和<code>Compact</code>行格式挺像，只不过在处理<code>行溢出</code>数据时有点儿分歧，它们不会在记录的真实数据处存储字段真实数据的前<code>768</code>个字节，而是把所有的字节都存储到其他页面中，只在记录的真实数据处存储其他页面的地址，就像这样：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/169710e9b2c2b71etplv-t2oaga2asx-jj-mark2268000q75.webp" alt="image_1conbtnmr1sg1hao1nf41pi1eb72a.png-29.9kB"> </p>
+<p><code>Compressed</code>行格式和<code>Dynamic</code>不同的一点是，<code>Compressed</code>行格式会采用压缩算法对页面进行压缩，以节省空间。</p>
+<h2 id="二、InnoDB的数据页结构"><a href="#二、InnoDB的数据页结构" class="headerlink" title="二、InnoDB的数据页结构"></a>二、InnoDB的数据页结构</h2><h3 id="2-1-不同类型的页简介"><a href="#2-1-不同类型的页简介" class="headerlink" title="2.1.不同类型的页简介"></a>2.1.不同类型的页简介</h3><p>前边我们简单提了一下<code>页</code>的概念，它是<code>InnoDB</code>管理存储空间的基本单位，一个页的大小一般是<code>16KB</code>。<code>InnoDB</code>为了不同的目的而设计了许多种不同类型的<code>页</code>，比如存放<code>表空间头部信息</code>的页，存放<code>Insert Buffer</code>信息的页，存放<code>INODE</code>信息的页，存放<code>undo</code>日志信息的页等等等等。当然了，如果我说的这些名词你一个都没有听过，就当我放了个屁吧～ 不过这没有一毛钱关系，我们今儿个也不准备说这些类型的页，我们聚焦的是那些存放我们表中记录的那种类型的页，官方称这种存放记录的页为索引（<code>INDEX</code>）页，鉴于我们还没有了解过索引是个什么东西，而这些表中的记录就是我们日常口中所称的<code>数据</code>，所以目前还是叫这种存放记录的页为<code>数据页</code>吧。(对于InnoDB存储引擎来说，索引即数据，因此叫它数据页也没毛病)</p>
+<h3 id="2-2数据页结构的快速浏览"><a href="#2-2数据页结构的快速浏览" class="headerlink" title="2.2数据页结构的快速浏览"></a>2.2数据页结构的快速浏览</h3><p>数据页代表的这块<code>16KB</code>大小的存储空间可以被划分为多个部分，不同部分有不同的功能，各个部分如图所示：</p>
+<img src="/../../../../../../imgs/MySQL原理之结构篇/16f13ee1e2dfac7ctplv-t2oaga2asx-jj-mark1890000q75.webp" alt="img" style="zoom:33%;" /> 
+
+<p>从图中可以看出，一个<code>InnoDB</code>数据页的存储空间大致被划分成了<code>7</code>个部分，有的部分占用的字节数是确定的，有的部分占用的字节数是不确定的。下边我们用表格的方式来大致描述一下这7个部分都存储一些啥内容（快速的瞅一眼就行了，后边会详细唠叨的）：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218133746937.png" alt="image-20231218133746937">  </p>
+<h3 id="2-3记录在页中的存储"><a href="#2-3记录在页中的存储" class="headerlink" title="2.3记录在页中的存储"></a>2.3记录在页中的存储</h3><p>在页的7个组成部分中，我们自己存储的记录会按照我们指定的<code>行格式</code>存储到<code>User Records</code>部分。但是在一开始生成页的时候，其实并没有<code>User Records</code>这个部分，每当我们插入一条记录，都会从<code>Free Space</code>部分，也就是尚未使用的存储空间中申请一个记录大小的空间划分到<code>User Records</code>部分，当<code>Free Space</code>部分的空间全部被<code>User Records</code>部分替代掉之后，也就意味着这个页使用完了，如果还有新的记录插入的话，就需要去申请新的页了，这个过程的图示如下：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0fe86555edtplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cosvi1in9st476cdqfki1n39m.png-133.8kB"> </p>
+<p>为了更好的管理在<code>User Records</code>中的这些记录，<code>InnoDB</code>可费了一番力气呢，在哪费力气了呢？不就是把记录按照指定的行格式一条一条摆在<code>User Records</code>部分么？其实这话还得从记录行格式的<code>记录头信息</code>中说起。</p>
+<p>为了故事的顺利发展，我们先创建一个表：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">CREATE TABLE page_demo(</span></span><br><span class="line">    -&gt;     c1 INT,</span><br><span class="line">    -&gt;     c2 INT,</span><br><span class="line">    -&gt;     c3 VARCHAR(10000),</span><br><span class="line">    -&gt;     PRIMARY KEY (c1)</span><br><span class="line">    -&gt; ) CHARSET=ascii ROW_FORMAT=Compact;</span><br><span class="line">Query OK, 0 rows affected (0.03 sec)</span><br></pre></td></tr></table></figure>
+
+<p>这个新创建的<code>page_demo</code>表有3个列，其中<code>c1</code>和<code>c2</code>列是用来存储整数的，<code>c3</code>列是用来存储字符串的。需要注意的是，我们把 <em><strong>c1</strong></em> 列指定为主键，所以在具体的行格式中InnoDB就没必要为我们去创建那个所谓的 <em><strong>row_id</strong></em> 隐藏列了。而且我们为这个表指定了<code>ascii</code>字符集以及<code>Compact</code>的行格式。所以这个表中记录的行格式示意图就是这样的：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0feca77be3tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1c9o2eib2vl11qnf1dfl1d2lco313.png-76.4kB"> </p>
+<p>从图中可以看到，我们特意把<code>记录头信息</code>的5个字节的数据给标出来了，说明它很重要，我们再次先把这些<code>记录头信息</code>中各个属性的大体意思浏览一下（我们目前使用<code>Compact</code>行格式进行演示）：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218135739238.png" alt="image-20231218135739238"> </p>
+<p>由于我们现在主要在唠叨<code>记录头信息</code>的作用，所以为了大家理解上的方便，我们只在<code>page_demo</code>表的行格式演示图中画出有关的头信息属性以及<code>c1</code>、<code>c2</code>、<code>c3</code>列的信息（其他信息没画不代表它们不存在啊，只是为了理解上的方便在图中省略了～），简化后的行格式示意图就是这样：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0ff1ae5364tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1c9o52lt41v5c7vk1vm91fsm174b2d.png-49.5kB"> </p>
+<p>下边我们试着向<code>page_demo</code>表中插入几条记录：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">INSERT INTO page_demo VALUES(1, 100, <span class="string">&#x27;aaaa&#x27;</span>), (2, 200, <span class="string">&#x27;bbbb&#x27;</span>), (3, 300, <span class="string">&#x27;cccc&#x27;</span>), (4, 400, <span class="string">&#x27;dddd&#x27;</span>);</span></span><br><span class="line">Query OK, 4 rows affected (0.00 sec)</span><br><span class="line">Records: 4  Duplicates: 0  Warnings: 0</span><br></pre></td></tr></table></figure>
+
+<p>为了方便大家分析这些记录在<code>页</code>的<code>User Records</code>部分中是怎么表示的，我把记录中头信息和实际的列数据都用十进制表示出来了（其实是一堆二进制位），所以这些记录的示意图就是：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c0ff83f9870tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1c9qs0j281knc16hc1hqsgj01v0o2c.png-82.8kB"> </p>
+<p>看这个图的时候需要注意一下，各条记录在<code>User Records</code>中存储的时候并没有空隙，这里只是为了大家观看方便才把每条记录单独画在一行中。我们对照着这个图来看看记录头信息中的各个属性是啥意思：</p>
+<ul>
+<li><p><code>delete_mask</code></p>
+<p>这个属性标记着当前记录是否被删除，占用1个二进制位，值为<code>0</code>的时候代表记录并没有被删除，为<code>1</code>的时候代表记录被删除掉了。</p>
+<p>啥？被删除的记录还在<code>页</code>中么？是的，摆在台面上的和背地里做的可能大相径庭，你以为它删除了，可它还在真实的磁盘上[摊手]。这些被删除的记录之所以不立即从磁盘上移除，是因为移除它们之后把其他的记录在磁盘上重新排列需要性能消耗，所以只是打一个删除标记而已，所有被删除掉的记录都会组成一个所谓的<code>垃圾链表</code>，在这个链表中的记录占用的空间称之为所谓的<code>可重用空间</code>，之后如果有新记录插入到表中的话，可能把这些被删除的记录占用的存储空间覆盖掉。</p>
+</li>
+</ul>
+<blockquote>
+<p>将这个delete_mask位设置为1和将被删除的记录加入到垃圾链表中其实是两个阶段，我们后边在介绍事务的时候会详细唠叨删除操作的详细过程，稍安勿躁。</p>
+</blockquote>
+<ul>
+<li><p><code>min_rec_mask</code></p>
+<p>B+树的每层非叶子节点中的最小记录都会添加该标记，什么是个<code>B+</code>树？什么是个非叶子节点？好吧，等会再聊这个问题。反正我们自己插入的四条记录的<code>min_rec_mask</code>值都是<code>0</code>，意味着它们都不是<code>B+</code>树的非叶子节点中的最小记录。</p>
+</li>
+<li><p><code>n_owned</code></p>
+<p>这个暂时保密，稍后它是主角～</p>
+</li>
+<li><p><code>heap_no</code></p>
+<p>这个属性表示当前记录在本<code>页</code>中的位置，从图中可以看出来，我们插入的4条记录在本<code>页</code>中的位置分别是：<code>2</code>、<code>3</code>、<code>4</code>、<code>5</code>。是不是少了点啥？是的，怎么不见<code>heap_no</code>值为<code>0</code>和<code>1</code>的记录呢？</p>
+<p>这其实是设计<code>InnoDB</code>的大叔们玩的一个小把戏，他们自动给每个页里边儿加了两个记录，由于这两个记录并不是我们自己插入的，所以有时候也称为<code>伪记录</code>或者<code>虚拟记录</code>。这两个伪记录一个代表<code>最小记录</code>，一个代表<code>最大记录</code>，等一下哈~，记录可以比大小么？</p>
+<p>是的，记录也可以比大小，对于一条完整的记录来说，比较记录的大小就是比较<code>主键</code>的大小。比方说我们插入的4行记录的主键值分别是：<code>1</code>、<code>2</code>、<code>3</code>、<code>4</code>，这也就意味着这4条记录的大小从小到大依次递增。</p>
+</li>
+</ul>
+<blockquote>
+<p>请注意我强调了对于<code>一条完整的记录</code>来说，比较记录的大小就相当于比的是主键的大小（聚簇索引）。后边我们还会介绍只存储一条记录的部分列的情况，比较记录的大小就是索引列+主键（二级索引）。</p>
+</blockquote>
+<p>但是不管我们向<code>页</code>中插入了多少自己的记录，设计<code>InnoDB</code>的大叔们都规定他们定义的两条伪记录分别为最小记录与最大记录。这两条记录的构造十分简单，都是由5字节大小的<code>记录头信息</code>和8字节大小的一个固定的部分组成的，如图所示</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c100ff0ccc2tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1c9ra45eam7t1mil9o1h3ucqdhv.png-50.4kB"> </p>
+<p>由于这两条记录不是我们自己定义的记录，所以它们并不存放在<code>页</code>的<code>User Records</code>部分，他们被单独放在一个称为<code>Infimum + Supremum</code>的部分，如图所示：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10773d8ceetplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1c9qs1mn2t3j1nt344116nk15uf2p.png-119.7kB"> </p>
+<p>从图中我们可以看出来，最小记录和最大记录的<code>heap_no</code>值分别是<code>0</code>和<code>1</code>，也就是说它们的位置最靠前。</p>
+<ul>
+<li><p><code>record_type</code></p>
+<p>这个属性表示当前记录的类型，一共有4种类型的记录，<code>0</code>表示普通记录，<code>1</code>表示B+树非叶节点记录，<code>2</code>表示最小记录，<code>3</code>表示最大记录。从图中我们也可以看出来，我们自己插入的记录就是普通记录，它们的<code>record_type</code>值都是<code>0</code>，而最小记录和最大记录的<code>record_type</code>值分别为<code>2</code>和<code>3</code>。</p>
+<p>至于<code>record_type</code>为<code>1</code>的情况，我们之后在说索引的时候会重点强调的。</p>
+</li>
+<li><p><code>next_record</code></p>
+<p>这玩意儿非常重要，它表示从当前记录的真实数据到下一条记录的真实数据的地址偏移量。比方说第一条记录的<code>next_record</code>值为<code>32</code>，意味着从第一条记录的真实数据的地址处向后找<code>32</code>个字节便是下一条记录的真实数据。如果你熟悉数据结构的话，就立即明白了，这其实是个<code>链表</code>，可以通过一条记录找到它的下一条记录。但是需要注意注意再注意的一点是，<code>下一条记录</code>指得并不是按照我们插入顺序的下一条记录，而是按照主键值由小到大的顺序的下一条记录。而且规定 <em><strong>Infimum记录（也就是最小记录）</strong></em> 的下一条记录就是本页中主键值最小的用户记录，而本页中主键值最大的用户记录的下一条记录就是 <em><strong>Supremum记录（也就是最大记录）</strong></em> ，为了更形象的表示一下这个<code>next_record</code>起到的作用，我们用箭头来替代一下<code>next_record</code>中的地址偏移量：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c1084c440b4tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cot1r96210ph1jng1td41ouj85c13.png-120.5kB"> </p>
+<p>从图中可以看出来，我们的记录按照主键从小到大的顺序形成了一个单链表。<code>最大记录</code>的<code>next_record</code>的值为<code>0</code>，这也就是说最大记录是没有<code>下一条记录</code>了，它是这个单链表中的最后一个节点。如果从中删除掉一条记录，这个链表也是会跟着变化的，比如我们把第2条记录删掉：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">DELETE FROM page_demo WHERE c1 = 2;</span></span><br><span class="line">Query OK, 1 row affected (0.02 sec)</span><br></pre></td></tr></table></figure>
+
+<p>删掉第2条记录后的示意图就是：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c108ee1da43tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cul8slbp1om0p31b3u1be11gco9.png-119.6kB"> </p>
+<p>从图中可以看出来，删除第2条记录前后主要发生了这些变化：</p>
+<ul>
+<li>第2条记录并没有从存储空间中移除，而是把该条记录的<code>delete_mask</code>值设置为<code>1</code>。</li>
+<li>第2条记录的<code>next_record</code>值变为了0，意味着该记录没有下一条记录了。</li>
+<li>第1条记录的<code>next_record</code>指向了第3条记录。</li>
+<li>还有一点你可能忽略了，就是<code>最大记录</code>的<code>n_owned</code>值从<code>5</code>变成了<code>4</code>，关于这一点的变化我们稍后会详细说明的。</li>
+</ul>
+<p>所以，不论我们怎么对页中的记录做增删改操作，InnoDB始终会维护一条记录的单链表，链表中的各个节点是按照主键值由小到大的顺序连接起来的。</p>
+<blockquote>
+<p>你会不会觉得next_record这个指针有点儿怪，为啥要指向记录头信息和真实数据之间的位置呢？为啥不干脆指向整条记录的开头位置，也就是记录的额外信息开头的位置呢？因为这个位置刚刚好，向左读取就是记录头信息，向右读取就是真实数据。我们前边还说过变长字段长度列表、NULL值列表中的信息都是逆序存放，这样可以使记录中位置靠前的字段和它们对应的字段长度信息在内存中的距离更近，可能会提高高速缓存的命中率。</p>
+</blockquote>
+<p>再来看一个有意思的事情，因为主键值为<code>2</code>的记录被我们删掉了，但是存储空间却没有回收，如果我们再次把这条记录插入到表中，会发生什么事呢？</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> page_demo <span class="keyword">VALUES</span>(<span class="number">2</span>, <span class="number">200</span>, <span class="string">&#x27;bbbb&#x27;</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="type">row</span> affected (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>我们看一下记录的存储情况：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c109f25d55dtplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cot2j9n94a511jd15clrrfp6p1t.png-137.8kB"> </p>
+<p>从图中可以看到，<code>InnoDB</code>并没有因为新记录的插入而为它申请新的存储空间，而是直接复用了原来被删除记录的存储空间。</p>
+<blockquote>
+<p>当数据页中存在多条被删除掉的记录时，这些记录的next_record属性将会把这些被删除掉的记录组成一个垃圾链表，以备之后重用这部分存储空间。</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="2-4Page-Directory"><a href="#2-4Page-Directory" class="headerlink" title="2.4Page Directory"></a>2.4Page Directory</h3><p>现在我们了解了记录在页中按照主键值由小到大顺序串联成一个单链表，那如果我们想根据主键值查找页中的某条记录该咋办呢？比如说这样的查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> page_demo <span class="keyword">WHERE</span> c1 <span class="operator">=</span> <span class="number">3</span>;</span><br></pre></td></tr></table></figure>
+
+<p>最笨的办法：从<code>Infimum</code>记录（最小记录）开始，沿着链表一直往后找，总有一天会找到（或者找不到[摊手]），在找的时候还能投机取巧，因为链表中各个记录的值是按照从小到大顺序排列的，所以当链表的某个节点代表的记录的主键值大于你想要查找的主键值时，你就可以停止查找了，因为该节点后边的节点的主键值依次递增。</p>
+<p>这个方法在页中存储的记录数量比较少的情况用起来也没啥问题，比方说现在我们的表里只有<code>4</code>条自己插入的记录，所以最多找<code>4</code>次就可以把所有记录都遍历一遍，但是如果一个页中存储了非常多的记录，这么查找对性能来说还是有损耗的，所以我们说这种遍历查找这是一个<code>笨</code>办法。但是设计<code>InnoDB</code>的大叔们是什么人，他们能用这么笨的办法么，当然是要设计一种更6的查找方式喽，他们从书的目录中找到了灵感。</p>
+<p>我们平常想从一本书中查找某个内容的时候，一般会先看目录，找到需要查找的内容对应的书的页码，然后到对应的页码查看内容。设计<code>InnoDB</code>的大叔们为我们的记录也制作了一个类似的目录，他们的制作过程是这样的：</p>
+<ol>
+<li>将所有正常的记录（包括最大和最小记录，不包括标记为已删除的记录）划分为几个组。</li>
+<li>每个组的最后一条记录（也就是组内最大的那条记录）的头信息中的<code>n_owned</code>属性表示该记录拥有多少条记录，也就是该组内共有几条记录。</li>
+<li>将每个组的最后一条记录的地址偏移量单独提取出来按顺序存储到靠近<code>页</code>的尾部的地方，这个地方就是所谓的<code>Page Directory</code>，也就是<code>页目录</code>（此时应该返回头看看页面各个部分的图）。页面目录中的这些地址偏移量被称为<code>槽</code>（英文名：<code>Slot</code>），所以这个页面目录就是由<code>槽</code>组成的。</li>
+</ol>
+<p>比方说现在的<code>page_demo</code>表中正常的记录共有6条，<code>InnoDB</code>会把它们分成两组，第一组中只有一个最小记录，第二组中是剩余的5条记录，看下边的示意图：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10c57164a6tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1couapvdmb5mvm1i0l5m0vcb2a.png-128.2kB"> </p>
+<p>从这个图中我们需要注意这么几点：</p>
+<ul>
+<li>现在<code>页目录</code>部分中有两个槽，也就意味着我们的记录被分成了两个组，<code>槽1</code>中的值是<code>112</code>，代表最大记录的地址偏移量（就是从页面的0字节开始数，数112个字节）；<code>槽0</code>中的值是<code>99</code>，代表最小记录的地址偏移量。</li>
+<li>注意最小和最大记录的头信息中的<code>n_owned</code>属性<ul>
+<li>最小记录的<code>n_owned</code>值为<code>1</code>，这就代表着以最小记录结尾的这个分组中只有<code>1</code>条记录，也就是最小记录本身。</li>
+<li>最大记录的<code>n_owned</code>值为<code>5</code>，这就代表着以最大记录结尾的这个分组中只有<code>5</code>条记录，包括最大记录本身还有我们自己插入的<code>4</code>条记录。</li>
+</ul>
+</li>
+</ul>
+<p><code>99</code>和<code>112</code>这样的地址偏移量很不直观，我们用箭头指向的方式替代数字，这样更易于我们理解，所以修改后的示意图就是这样：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10dac72472tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1couarh4no6j1a8q9htilr13qc2n.png-105.1kB"></p>
+<p>哎呀，咋看上去怪怪的，这么乱的图对于我这个强迫症真是不能忍，那我们就暂时不管各条记录在存储设备上的排列方式了，单纯从逻辑上看一下这些记录和页目录的关系：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10f2e61ad5tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1couate3jr19gc18gl1cva1fcg34.png-100.8kB"> </p>
+<p>这样看就顺眼多了嘛！为什么最小记录的<code>n_owned</code>值为1，而最大记录的<code>n_owned</code>值为<code>5</code>呢，这里头有什么猫腻么？</p>
+<p>是的，设计<code>InnoDB</code>的大叔们对每个分组中的记录条数是有规定的：对于最小记录所在的分组只能有 <em><strong>1</strong></em> 条记录，最大记录所在的分组拥有的记录条数只能在 <em><strong>1~8</strong></em> 条之间，剩下的分组中记录的条数范围只能在是 <em><strong>4~8</strong></em> 条之间。所以分组是按照下边的步骤进行的：</p>
+<ul>
+<li>初始情况下一个数据页里只有最小记录和最大记录两条记录，它们分属于两个分组。</li>
+<li>之后每插入一条记录，都会从<code>页目录</code>中找到主键值比本记录的主键值大并且差值最小的槽，然后把该槽对应的记录的<code>n_owned</code>值加1，表示本组内又添加了一条记录，直到该组中的记录数等于8个。</li>
+<li>在一个组中的记录数等于8个后再插入一条记录时，会将组中的记录拆分成两个组，一个组中4条记录，另一个5条记录。这个过程会在<code>页目录</code>中新增一个<code>槽</code>来记录这个新增分组中最大的那条记录的偏移量。</li>
+</ul>
+<p>由于现在<code>page_demo</code>表中的记录太少，无法演示添加了<code>页目录</code>之后加快查找速度的过程，所以再往<code>page_demo</code>表中添加一些记录：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> page_demo <span class="keyword">VALUES</span>(<span class="number">5</span>, <span class="number">500</span>, <span class="string">&#x27;eeee&#x27;</span>), (<span class="number">6</span>, <span class="number">600</span>, <span class="string">&#x27;ffff&#x27;</span>), (<span class="number">7</span>, <span class="number">700</span>, <span class="string">&#x27;gggg&#x27;</span>), (<span class="number">8</span>, <span class="number">800</span>, <span class="string">&#x27;hhhh&#x27;</span>), (<span class="number">9</span>, <span class="number">900</span>, <span class="string">&#x27;iiii&#x27;</span>), (<span class="number">10</span>, <span class="number">1000</span>, <span class="string">&#x27;jjjj&#x27;</span>), (<span class="number">11</span>, <span class="number">1100</span>, <span class="string">&#x27;kkkk&#x27;</span>), (<span class="number">12</span>, <span class="number">1200</span>, <span class="string">&#x27;llll&#x27;</span>), (<span class="number">13</span>, <span class="number">1300</span>, <span class="string">&#x27;mmmm&#x27;</span>), (<span class="number">14</span>, <span class="number">1400</span>, <span class="string">&#x27;nnnn&#x27;</span>), (<span class="number">15</span>, <span class="number">1500</span>, <span class="string">&#x27;oooo&#x27;</span>), (<span class="number">16</span>, <span class="number">1600</span>, <span class="string">&#x27;pppp&#x27;</span>);</span><br><span class="line">Query OK, <span class="number">12</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line">Records: <span class="number">12</span>  Duplicates: <span class="number">0</span>  Warnings: <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p>哈，我们一口气又往表中添加了12条记录，现在页里边就一共有18条记录了（包括最小和最大记录），这些记录被分成了5个组，如图所示：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10e3449897tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1d6g64af2sgj1816ktl1q22dehp.png-189.1kB"> </p>
+<p>因为把16条记录的全部信息都画在一张图里太占地方，让人眼花缭乱的，所以只保留了用户记录头信息中的<code>n_owned</code>和<code>next_record</code>属性，也省略了各个记录之间的箭头，我没画不等于没有啊！现在看怎么从这个<code>页目录</code>中查找记录。因为各个槽代表的记录的主键值都是从小到大排序的，所以我们可以使用所谓的<code>二分法</code>来进行快速查找。5个槽的编号分别是：<code>0</code>、<code>1</code>、<code>2</code>、<code>3</code>、<code>4</code>，所以初始情况下最低的槽就是<code>low=0</code>，最高的槽就是<code>high=4</code>。比方说我们想找主键值为<code>6</code>的记录，过程是这样的：</p>
+<ol>
+<li>计算中间槽的位置：<code>(0+4)/2=2</code>，所以查看<code>槽2</code>对应记录的主键值为<code>8</code>，又因为<code>8 &gt; 6</code>，所以设置<code>high=2</code>，<code>low</code>保持不变。</li>
+<li>重新计算中间槽的位置：<code>(0+2)/2=1</code>，所以查看<code>槽1</code>对应的主键值为<code>4</code>，又因为<code>4 &lt; 6</code>，所以设置<code>low=1</code>，<code>high</code>保持不变。</li>
+<li>因为<code>high - low</code>的值为1，所以确定主键值为<code>6</code>的记录在<code>槽2</code>对应的组中。此刻我们需要找到<code>槽2</code>中主键值最小的那条记录，然后沿着单向链表遍历<code>槽2</code>中的记录。但是我们前边又说过，每个槽对应的记录都是该组中主键值最大的记录，这里<code>槽2</code>对应的记录是主键值为<code>8</code>的记录，怎么定位一个组中最小的记录呢？别忘了各个槽都是挨着的，我们可以很轻易的拿到<code>槽1</code>对应的记录（主键值为<code>4</code>），该条记录的下一条记录就是<code>槽2</code>中主键值最小的记录，该记录的主键值为<code>5</code>。所以我们可以从这条主键值为<code>5</code>的记录出发，遍历<code>槽2</code>中的各条记录，直到找到主键值为<code>6</code>的那条记录即可。由于一个组中包含的记录条数只能是1~8条，所以遍历一个组中的记录的代价是很小的。</li>
+</ol>
+<p>所以在一个数据页中查找指定主键值的记录的过程分为两步：</p>
+<ol>
+<li>通过二分法确定该记录所在的槽，并找到该槽所在分组中主键值最小的那条记录。</li>
+<li>通过记录的<code>next_record</code>属性遍历该槽所在的组中的各个记录。</li>
+</ol>
+<h3 id="2-5Page-Header"><a href="#2-5Page-Header" class="headerlink" title="2.5Page Header"></a>2.5Page Header</h3><p>设计<code>InnoDB</code>的大叔们为了能得到一个数据页中存储的记录的状态信息，比如本页中已经存储了多少条记录，第一条记录的地址是什么，页目录中存储了多少个槽等等，特意在页中定义了一个叫<code>Page Header</code>的部分，它是<code>页</code>结构的第二部分，这个部分占用固定的<code>56</code>个字节，专门存储各种状态信息，具体各个字节都是干嘛的看下表：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218142219789.png" alt="image-20231218142219789"> </p>
+<p>在这里我们先唠叨一下<code>PAGE_DIRECTION</code>和<code>PAGE_N_DIRECTION</code>的意思：</p>
+<ul>
+<li><p><code>PAGE_DIRECTION</code></p>
+<p>假如新插入的一条记录的主键值比上一条记录的主键值大，我们说这条记录的插入方向是右边，反之则是左边。用来表示最后一条记录插入方向的状态就是<code>PAGE_DIRECTION</code>。</p>
+</li>
+<li><p><code>PAGE_N_DIRECTION</code></p>
+<p>假设连续几次插入新记录的方向都是一致的，<code>InnoDB</code>会把沿着同一个方向插入记录的条数记下来，这个条数就用<code>PAGE_N_DIRECTION</code>这个状态表示。当然，如果最后一条记录的插入方向改变了的话，这个状态的值会被清零重新统计。</p>
+</li>
+</ul>
+<p>至于我们没提到的那些属性，我没说是因为现在不需要大家知道。不要着急，当我们学完了后边的内容，你再回头看，一切都是那么清晰。</p>
+<h3 id="2-6File-Header"><a href="#2-6File-Header" class="headerlink" title="2.6File Header"></a>2.6File Header</h3><p>上边唠叨的<code>Page Header</code>是专门针对<code>数据页</code>记录的各种状态信息，比方说页里头有多少个记录了呀，有多少个槽了呀。我们现在描述的<code>File Header</code>针对各种类型的页都通用，也就是说不同类型的页都会以<code>File Header</code>作为第一个组成部分，它描述了一些针对各种页都通用的一些信息，比方说这个页的编号是多少，它的上一个页、下一个页是谁啦吧啦吧啦～ 这个部分占用固定的<code>38</code>个字节，是由下边这些内容组成的：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/image-20231218142404971.png" alt="image-20231218142404971"> </p>
+<p>对照着这个表格，我们看几个目前比较重要的部分：</p>
+<ul>
+<li><p><code>FIL_PAGE_SPACE_OR_CHKSUM</code></p>
+<p>这个代表当前页面的校验和（checksum）。啥是个校验和？就是对于一个很长很长的字节串来说，我们会通过某种算法来计算一个比较短的值来代表这个很长的字节串，这个比较短的值就称为<code>校验和</code>。这样在比较两个很长的字节串之前先比较这两个长字节串的校验和，如果校验和都不一样两个长字节串肯定是不同的，所以省去了直接比较两个比较长的字节串的时间损耗。</p>
+</li>
+<li><p><code>FIL_PAGE_OFFSET</code></p>
+<p>每一个<code>页</code>都有一个单独的页号，就跟你的身份证号码一样，<code>InnoDB</code>通过页号来可以唯一定位一个<code>页</code>。</p>
+</li>
+<li><p><code>FIL_PAGE_TYPE</code></p>
+<p>这个代表当前<code>页</code>的类型，我们前边说过，<code>InnoDB</code>为了不同的目的而把页分为不同的类型，我们上边介绍的其实都是存储记录的<code>数据页</code>，其实还有很多别的类型的页，具体如下表：</p>
+<img src="/../../../../../../imgs/MySQL原理之结构篇/image-20231218142448730.png" alt="image-20231218142448730" style="zoom:80%;" /> 
+
+<p>我们存放记录的数据页的类型其实是<code>FIL_PAGE_INDEX</code>，也就是所谓的<code>索引页</code>。至于啥是个索引，且听下回分解～</p>
+</li>
+<li><p><code>FIL_PAGE_PREV</code>和<code>FIL_PAGE_NEXT</code></p>
+<p>我们前边强调过，<code>InnoDB</code>都是以页为单位存放数据的，有时候我们存放某种类型的数据占用的空间非常大（比方说一张表中可以有成千上万条记录），<code>InnoDB</code>可能不可以一次性为这么多数据分配一个非常大的存储空间，如果分散到多个不连续的页中存储的话需要把这些页关联起来，<code>FIL_PAGE_PREV</code>和<code>FIL_PAGE_NEXT</code>就分别代表本页的上一个和下一个页的页号。这样通过建立一个双向链表把许许多多的页就都串联起来了，而无需这些页在物理上真正连着。需要注意的是，并不是所有类型的页都有上一个和下一个页的属性，不过我们本集中唠叨的<code>数据页</code>（也就是类型为<code>FIL_PAGE_INDEX</code>的页）是有这两个属性的，所以所有的数据页其实是一个双链表，就像这样：</p>
+</li>
+</ul>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/16a95c10eb9d61cetplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1ca00fhg418pl1f1a1iav1uo3aou9.png-90.9kB"> </p>
+<p>关于<code>File Header</code>的其他属性我们暂时用不到，等用到的时候再提哈～</p>
+<h3 id="2-7File-Trailer"><a href="#2-7File-Trailer" class="headerlink" title="2.7File Trailer"></a>2.7File Trailer</h3><p>我们知道<code>InnoDB</code>存储引擎会把数据存储到磁盘上，但是磁盘速度太慢，需要以<code>页</code>为单位把数据加载到内存中处理，如果该页中的数据在内存中被修改了，那么在修改后的某个时间需要把数据同步到磁盘中。但是在同步了一半的时候中断电了咋办，这不是莫名尴尬么？为了检测一个页是否完整（也就是在同步的时候有没有发生只同步一半的尴尬情况），设计<code>InnoDB</code>的大叔们在每个页的尾部都加了一个<code>File Trailer</code>部分，这个部分由<code>8</code>个字节组成，可以分成2个小部分：</p>
+<ul>
+<li><p>前4个字节代表页的校验和</p>
+<p>这个部分是和<code>File Header</code>中的校验和相对应的。每当一个页面在内存中修改了，在同步之前就要把它的校验和算出来，因为<code>File Header</code>在页面的前边，所以校验和会被首先同步到磁盘，当完全写完时，校验和也会被写到页的尾部，如果完全同步成功，则页的首部和尾部的校验和应该是一致的。如果写了一半儿断电了，那么在<code>File Header</code>中的校验和就代表着已经修改过的页，而在<code>File Trailer</code>中的校验和代表着原先的页，二者不同则意味着同步中间出了错。</p>
+</li>
+<li><p>后4个字节代表页面被最后修改时对应的日志序列位置（LSN）</p>
+<p>这个部分也是为了校验页的完整性的，只不过我们目前还没说<code>LSN</code>是个什么意思，所以大家可以先不用管这个属性。</p>
+</li>
+</ul>
+<p>这个<code>File Trailer</code>与<code>File Header</code>类似，都是所有类型的页通用的。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">MySQL原理之结构篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81InnoDB%E7%9A%84%E8%AE%B0%E5%BD%95%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">一、InnoDB的记录结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E5%89%8D%E7%BD%AE%E5%87%86%E5%A4%87"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1前置准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2COMPACT%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2COMPACT行格式</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-1%E5%8F%98%E9%95%BF%E5%AD%97%E6%AE%B5%E5%88%97%E8%A1%A8"><span class="toc-number">1.1.2.1.</span> <span class="toc-text">1.2.1变长字段列表</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-2NULL%E5%80%BC%E5%88%97%E8%A1%A8"><span class="toc-number">1.1.2.2.</span> <span class="toc-text">1.2.2NULL值列表</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-3%E8%AE%B0%E5%BD%95%E5%A4%B4%E4%BF%A1%E6%81%AF"><span class="toc-number">1.1.2.3.</span> <span class="toc-text">1.2.3记录头信息</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-4%E8%AE%B0%E5%BD%95%E7%9A%84%E7%9C%9F%E5%AE%9E%E6%95%B0%E6%8D%AE"><span class="toc-number">1.1.2.4.</span> <span class="toc-text">1.2.4记录的真实数据</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3Redundant%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3Redundant行格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4%E8%A1%8C%E6%BA%A2%E5%87%BA%E6%95%B0%E6%8D%AE"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.4行溢出数据</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4-1VARCHAR-M-%E6%9C%80%E5%A4%9A%E8%83%BD%E5%AD%98%E5%82%A8%E7%9A%84%E6%95%B0%E6%8D%AE"><span class="toc-number">1.1.4.1.</span> <span class="toc-text">1.4.1VARCHAR(M)最多能存储的数据</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4-2%E8%AE%B0%E5%BD%95%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%AA%E5%A4%9A%E4%BA%A7%E7%94%9F%E7%9A%84%E6%BA%A2%E5%87%BA"><span class="toc-number">1.1.4.2.</span> <span class="toc-text">1.4.2记录中的数据太多产生的溢出</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4-3%E8%A1%8C%E6%BA%A2%E5%87%BA%E7%9A%84%E4%B8%B4%E7%95%8C%E7%82%B9"><span class="toc-number">1.1.4.3.</span> <span class="toc-text">1.4.3行溢出的临界点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5Dynamic%E5%92%8CCompressed%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.1.5.</span> <span class="toc-text">1.5Dynamic和Compressed行格式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81InnoDB%E7%9A%84%E6%95%B0%E6%8D%AE%E9%A1%B5%E7%BB%93%E6%9E%84"><span class="toc-number">1.2.</span> <span class="toc-text">二、InnoDB的数据页结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E4%B8%8D%E5%90%8C%E7%B1%BB%E5%9E%8B%E7%9A%84%E9%A1%B5%E7%AE%80%E4%BB%8B"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1.不同类型的页简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E6%95%B0%E6%8D%AE%E9%A1%B5%E7%BB%93%E6%9E%84%E7%9A%84%E5%BF%AB%E9%80%9F%E6%B5%8F%E8%A7%88"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2数据页结构的快速浏览</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E8%AE%B0%E5%BD%95%E5%9C%A8%E9%A1%B5%E4%B8%AD%E7%9A%84%E5%AD%98%E5%82%A8"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3记录在页中的存储</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4Page-Directory"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4Page Directory</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5Page-Header"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5Page Header</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6File-Header"><span class="toc-number">1.2.6.</span> <span class="toc-text">2.6File Header</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-7File-Trailer"><span class="toc-number">1.2.7.</span> <span class="toc-text">2.7File Trailer</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&text=MySQL原理之结构篇"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&is_video=false&description=MySQL原理之结构篇"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL原理之结构篇&body=Check out this article: https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&title=MySQL原理之结构篇"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&name=MySQL原理之结构篇&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/&t=MySQL原理之结构篇"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

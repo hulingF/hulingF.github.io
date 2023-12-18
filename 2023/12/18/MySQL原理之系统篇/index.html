@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="MySQL原理之系统篇一、MySQL的数据目录1.1数据库和文件系统的关系我们知道像InnoDB、MyISAM这样的存储引擎都是把表存储在磁盘上的，而操作系统用来管理磁盘的那个东东又被称为文件系统，所以用专业一点的话来表述就是：像 InnoDB 、 MyISAM 这样的存储引擎都是把表存储在文件系统上的。当我们想读取数据的时候，这些存储引擎会从文件系统中把数据读出来返回给我们，当我们想写入数据的时">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL原理之系统篇">
+<meta property="og:url" content="https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="MySQL原理之系统篇一、MySQL的数据目录1.1数据库和文件系统的关系我们知道像InnoDB、MyISAM这样的存储引擎都是把表存储在磁盘上的，而操作系统用来管理磁盘的那个东东又被称为文件系统，所以用专业一点的话来表述就是：像 InnoDB 、 MyISAM 这样的存储引擎都是把表存储在文件系统上的。当我们想读取数据的时候，这些存储引擎会从文件系统中把数据读出来返回给我们，当我们想写入数据的时">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172514225.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172546036.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173643577.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173711671.png">
+<meta property="article:published_time" content="2023-12-18T09:19:35.746Z">
+<meta property="article:modified_time" content="2023-12-18T09:38:11.346Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="MySQL原理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172514225.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>MySQL原理之系统篇</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&text=MySQL原理之系统篇"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&is_video=false&description=MySQL原理之系统篇"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL原理之系统篇&body=Check out this article: https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&name=MySQL原理之系统篇&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&t=MySQL原理之系统篇"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">MySQL原理之系统篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81MySQL%E7%9A%84%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">一、MySQL的数据目录</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E6%95%B0%E6%8D%AE%E5%BA%93%E5%92%8C%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1数据库和文件系统的关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2MySQL%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2MySQL数据目录</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-1%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95%E5%92%8C%E5%AE%89%E8%A3%85%E7%9B%AE%E5%BD%95%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.1.2.1.</span> <span class="toc-text">1.2.1数据目录和安装目录的区别</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-2%E5%A6%82%E4%BD%95%E7%A1%AE%E5%AE%9AMySQL%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.2.2.</span> <span class="toc-text">1.2.2如何确定MySQL中的数据目录</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95%E7%9A%84%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3数据目录的结构</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-1%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">1.1.3.1.</span> <span class="toc-text">1.3.1数据库在文件系统中的表示</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-2%E8%A1%A8%E5%9C%A8%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">1.1.3.2.</span> <span class="toc-text">1.3.2表在文件系统中的表示</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-3%E8%A7%86%E5%9B%BE%E5%9C%A8%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">1.1.3.3.</span> <span class="toc-text">1.3.3视图在文件系统中的表示</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-4%E5%85%B6%E4%BB%96%E7%9A%84%E6%96%87%E4%BB%B6"><span class="toc-number">1.1.3.4.</span> <span class="toc-text">1.3.4其他的文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%AF%B9%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.4文件系统对数据库的影响</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5MySQL%E7%B3%BB%E7%BB%9F%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.5.</span> <span class="toc-text">1.5MySQL系统数据库简介</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81InnoDB%E7%9A%84%E8%A1%A8%E7%A9%BA%E9%97%B4"><span class="toc-number">1.2.</span> <span class="toc-text">二、InnoDB的表空间</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MySQL原理之系统篇
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-18T09:19:35.746Z" class="dt-published" itemprop="datePublished">2023-12-18</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/MySQL%E5%8E%9F%E7%90%86/" rel="tag">MySQL原理</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="MySQL原理之系统篇"><a href="#MySQL原理之系统篇" class="headerlink" title="MySQL原理之系统篇"></a>MySQL原理之系统篇</h1><h2 id="一、MySQL的数据目录"><a href="#一、MySQL的数据目录" class="headerlink" title="一、MySQL的数据目录"></a>一、MySQL的数据目录</h2><h3 id="1-1数据库和文件系统的关系"><a href="#1-1数据库和文件系统的关系" class="headerlink" title="1.1数据库和文件系统的关系"></a>1.1数据库和文件系统的关系</h3><p>我们知道像<code>InnoDB</code>、<code>MyISAM</code>这样的存储引擎都是把表存储在磁盘上的，而操作系统用来管理磁盘的那个东东又被称为<code>文件系统</code>，所以用专业一点的话来表述就是：像 <em><strong>InnoDB</strong></em> 、 <em><strong>MyISAM</strong></em> 这样的存储引擎都是把表存储在文件系统上的。当我们想读取数据的时候，这些存储引擎会从文件系统中把数据读出来返回给我们，当我们想写入数据的时候，这些存储引擎会把这些数据又写回文件系统。本章就是要唠叨一下<code>InnoDB</code>和<code>MyISAM</code>这两个存储引擎的数据如何在文件系统中存储的。</p>
+<h3 id="1-2MySQL数据目录"><a href="#1-2MySQL数据目录" class="headerlink" title="1.2MySQL数据目录"></a>1.2MySQL数据目录</h3><p>MySQL服务器程序在启动时会到文件系统的某个目录下加载一些文件，之后在运行过程中产生的数据也都会存储到这个目录下的某些文件中，这个目录就称为<code>数据目录</code>，我们下边就要详细唠唠这个目录下具体都有哪些重要的东西。</p>
+<h4 id="1-2-1数据目录和安装目录的区别"><a href="#1-2-1数据目录和安装目录的区别" class="headerlink" title="1.2.1数据目录和安装目录的区别"></a>1.2.1数据目录和安装目录的区别</h4><p>我们之前只接触过<code>MySQL</code>的安装目录（在安装<code>MySQL</code>的时候我们可以自己指定），我们重点强调过这个<code>安装目录</code>下非常重要的<code>bin</code>目录，它里边存储了许多关于控制客户端程序和服务器程序的命令（许多可执行文件，比如<code>mysql</code>，<code>mysqld</code>，<code>mysqld_safe</code>等等等等好几十个）。而<code>数据目录</code>是用来存储<code>MySQL</code>在运行过程中产生的数据，一定要和本章要讨论的<code>安装目录</code>区别开！一定要区分开！一定要区分开！一定要区分开！</p>
+<h4 id="1-2-2如何确定MySQL中的数据目录"><a href="#1-2-2如何确定MySQL中的数据目录" class="headerlink" title="1.2.2如何确定MySQL中的数据目录"></a>1.2.2如何确定MySQL中的数据目录</h4><p>那说了半天，到底<code>MySQL</code>把数据都存到哪个路径下呢？其实<code>数据目录</code>对应着一个系统变量<code>datadir</code>，我们在使用客户端与服务器建立连接之后查看这个系统变量的值就可以了：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SHOW</span> VARIABLES <span class="keyword">LIKE</span> <span class="string">&#x27;datadir&#x27;</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+---------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name <span class="operator">|</span> <span class="keyword">Value</span>                                       <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+---------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> datadir       <span class="operator">|</span> C:\ProgramData\MySQL\MySQL Server <span class="number">8.0</span>\Data\ <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------+---------------------------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span>, <span class="number">1</span> warning (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-3数据目录的结构"><a href="#1-3数据目录的结构" class="headerlink" title="1.3数据目录的结构"></a>1.3数据目录的结构</h3><p><code>MySQL</code>在运行过程中都会产生哪些数据呢？当然会包含我们创建的数据库、表、视图和触发器吧啦吧啦的用户数据，除了这些用户数据，为了程序更好的运行，<code>MySQL</code>也会创建一些其他的额外数据，我们接下来细细的品味一下这个<code>数据目录</code>下的内容。</p>
+<h4 id="1-3-1数据库在文件系统中的表示"><a href="#1-3-1数据库在文件系统中的表示" class="headerlink" title="1.3.1数据库在文件系统中的表示"></a>1.3.1数据库在文件系统中的表示</h4><p>每当我们使用<code>CREATE DATABASE 数据库名</code>语句创建一个数据库的时候，在文件系统上实际发生了什么呢？其实很简单，每个数据库都对应数据目录下的一个子目录，或者说对应一个文件夹，我们每当我们新建一个数据库时，<code>MySQL</code>会帮我们做这两件事儿：</p>
+<ol>
+<li>在<code>数据目录</code>下创建一个和数据库名同名的子目录（或者说是文件夹）。</li>
+<li>在该与数据库名同名的子目录下创建一个名为<code>db.opt</code>的文件，这个文件中包含了该数据库的各种属性，比方说该数据库的字符集和比较规则是个啥。</li>
+</ol>
+<p>比方说我们查看一下在我的计算机上当前有哪些数据库：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SHOW</span> DATABASES;</span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+</span></span><br><span class="line"><span class="operator">|</span> Database           <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+</span></span><br><span class="line"><span class="operator">|</span> atguigudb          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> character_demo_db  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> huling             <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> information_schema <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> learnjdbc          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> mybatis            <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> mysql              <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> performance_schema <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> sys                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+</span></span><br><span class="line"><span class="number">9</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>可以看到在我的计算机上当前有9个数据库，其中<code>charset_demo_db</code>、<code>atguigudb</code>、<code>huling</code>、<code>learnjdbc</code>和<code>mybatis</code>数据库是我们自定义的，其余4个数据库是属于MySQL自带的系统数据库。我们再看一下我的计算机上的<code>数据目录</code>下的内容：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172514225.png" alt="image-20231218172514225"></p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172546036.png" alt="image-20231218172546036"></p>
+<p>当然这个数据目录下的文件和子目录比较多哈，但是如果仔细看的话，除了<code>information_schema</code>这个系统数据库外，其他的数据库在<code>数据目录</code>下都有对应的子目录。这个<code>information_schema</code>比较特殊，设计MySQL的大叔们对它的实现进行了特殊对待，没有使用相应的数据库目录，我们忽略它的存在就好了哈。</p>
+<h4 id="1-3-2表在文件系统中的表示"><a href="#1-3-2表在文件系统中的表示" class="headerlink" title="1.3.2表在文件系统中的表示"></a>1.3.2表在文件系统中的表示</h4><p>我们的数据其实都是以记录的形式插入到表中的，每个表的信息其实可以分为两种：</p>
+<ol>
+<li>表结构的定义</li>
+<li>表中的数据</li>
+</ol>
+<p><code>表结构</code>就是该表的名称是啥，表里边有多少列，每个列的数据类型是啥，有啥约束条件和索引，用的是啥字符集和比较规则吧啦吧啦的各种信息，这些信息都体现在了我们的建表语句中了。为了保存这些信息，<code>InnoDB</code>和<code>MyISAM</code>这两种存储引擎都在<code>数据目录</code>下对应的数据库子目录下创建了一个专门用于描述表结构的文件，文件名是<code>表名.frm</code>。</p>
+<p>描述表结构的文件我们知道怎么存储了，那表中的数据存到什么文件中了呢？在这个问题上，不同的存储引擎就产生了分歧了，下边我们分别看一下<code>InnoDB</code>和<code>MyISAM</code>是用什么文件来保存表中数据的。</p>
+<ul>
+<li><p>InnoDB是如何存储表数据的</p>
+<p>我们前边重点唠叨过<code>InnoDB</code>的一些实现原理，到现在为止我们应该熟悉下边这些东东：</p>
+<ul>
+<li><code>InnoDB</code>其实是使用<code>页</code>为基本单位来管理存储空间的，默认的<code>页</code>大小为<code>16KB</code>。</li>
+<li>对于<code>InnoDB</code>存储引擎来说，每个索引都对应着一棵<code>B+</code>树，该<code>B+</code>树的每个节点都是一个数据页，数据页之间不必要是物理连续的，因为数据页之间有<code>双向链表</code>来维护着这些页的顺序。</li>
+<li><code>InnoDB</code>的聚簇索引的叶子节点存储了完整的用户记录，也就是所谓的索引即数据，数据即索引。</li>
+</ul>
+<p>为了更好的管理这些页，设计<code>InnoDB</code>的大叔们提出了一个<code>表空间</code>或者<code>文件空间</code>（英文名：<code>table space</code>或者<code>file space</code>）的概念，这个表空间是一个抽象的概念，它可以对应文件系统上一个或多个真实文件（不同表空间对应的文件数量可能不同）。每一个<code>表空间</code>可以被划分为很多很多很多个<code>页</code>，我们的表数据就存放在某个<code>表空间</code>下的某些页里。设计<code>InnoDB</code>的大叔将表空间划分为几种不同的类型，我们一个一个看一下。</p>
+<p><strong>系统表空间（system tablespace）</strong></p>
+<p>这个所谓的<code>系统表空间</code>可以对应文件系统上一个或多个实际的文件，默认情况下，<code>InnoDB</code>会在<code>数据目录</code>下创建一个名为<code>ibdata1</code>（在你的数据目录下找找看有木有）、大小为<code>12M</code>的文件，这个文件就是对应的<code>系统表空间</code>在文件系统上的表示。怎么才<code>12M</code>？这么点儿还没插多少数据就用完了，哈哈，那是因为这个文件是所谓的<code>自扩展文件</code>，也就是当不够用的时候它会自己增加文件大小～</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173643577.png" alt="image-20231218173643577"></p>
+<p>当然，如果你想让系统表空间对应文件系统上多个实际文件，或者仅仅觉得原来的<code>ibdata1</code>这个文件名难听，那可以在<code>MySQL</code>启动时配置对应的文件路径以及它们的大小，比如我们这样修改一下配置文件：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[server]</span></span><br><span class="line"><span class="attr">innodb_data_file_path</span>=data1:<span class="number">512</span>M<span class="comment">;data2:512M:autoextend</span></span><br></pre></td></tr></table></figure>
+
+<p>这样在<code>MySQL</code>启动之后就会创建这两个512M大小的文件作为<code>系统表空间</code>，其中的<code>autoextend</code>表明这两个文件如果不够用会自动扩展<code>data2</code>文件的大小。</p>
+<p>需要注意的一点是，在一个MySQL服务器中，系统表空间只有一份。从MySQL5.5.7到MySQL5.6.6之间的各个版本中，我们表中的数据都会被默认存储到这个<strong>系统表空间</strong>。</p>
+<p><strong>独立表空间(file-per-table tablespace)</strong></p>
+<p>在MySQL5.6.6以及之后的版本中，<code>InnoDB</code>并不会默认的把各个表的数据存储到系统表空间中，而是为每一个表建立一个独立表空间，也就是说我们创建了多少个表，就有多少个独立表空间。使用<code>独立表空间</code>来存储表数据的话，会在该表所属数据库对应的子目录下创建一个表示该<code>独立表空间</code>的文件，文件名和表名相同，只不过添加了一个<code>.ibd</code>的扩展名而已，所以完整的文件名称为<code>表名.ibd</code>。</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173711671.png" alt="image-20231218173711671"></p>
+<p>当然我们也可以自己指定使用<code>系统表空间</code>还是<code>独立表空间</code>来存储数据，这个功能由启动参数<code>innodb_file_per_table</code>控制，比如说我们想刻意将表数据都存储到<code>系统表空间</code>时，可以在启动<code>MySQL</code>服务器的时候这样配置：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[server]</span></span><br><span class="line"><span class="attr">innodb_file_per_table</span>=<span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p>当<code>innodb_file_per_table</code>的值为<code>0</code>时，代表使用系统表空间；当<code>innodb_file_per_table</code>的值为<code>1</code>时，代表使用独立表空间。不过<code>innodb_file_per_table</code>参数只对新建的表起作用，对于已经分配了表空间的表并不起作用。如果我们想把已经存在系统表空间中的表转移到独立表空间，可以使用下边的语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> 表名 TABLESPACE [<span class="operator">=</span>] innodb_file_per_table;</span><br></pre></td></tr></table></figure>
+
+<p>或者把已经存在独立表空间的表转移到系统表空间，可以使用下边的语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> 表名 TABLESPACE [<span class="operator">=</span>] innodb_system;</span><br></pre></td></tr></table></figure>
+
+<p>其中中括号扩起来的<code>=</code>可有可无，比方说我们想把<code>test</code>表从独立表空间移动到系统表空间，可以这么写：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> test TABLESPACE innodb_system;</span><br></pre></td></tr></table></figure>
+
+<p><strong>其他类型的表空间</strong></p>
+<p>随着MySQL的发展，除了上述两种老牌表空间之外，现在还新提出了一些不同类型的表空间，比如通用表空间（general tablespace）、undo表空间（undo tablespace）、临时表空间（temporary tablespace）吧啦吧啦的，具体情况我们就不细唠叨了，等用到的时候再提。</p>
+</li>
+<li><p>MyISAM是如何存储表数据的</p>
+<p>好了，唠叨完了<code>InnoDB</code>的系统表空间和独立表空间，现在轮到<code>MyISAM</code>了。我们知道不像<code>InnoDB</code>的索引和数据是一个东东，在<code>MyISAM</code>中的索引全部都是<code>二级索引</code>，该存储引擎的数据和索引是分开存放的。所以在文件系统中也是使用不同的文件来存储数据文件和索引文件。而且和<code>InnoDB</code>不同的是，<code>MyISAM</code>并没有什么所谓的<code>表空间</code>一说，表数据都存放到对应的数据库子目录下。假如<code>test</code>表使用<code>MyISAM</code>存储引擎的话，那么在它所在数据库对应的<code>xiaohaizi</code>目录下会为<code>test</code>表创建这三个文件：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">test.frm</span><br><span class="line">test.MYD</span><br><span class="line">test.MYI</span><br></pre></td></tr></table></figure>
+
+<p>其中<code>test.MYD</code>代表表的数据文件，也就是我们插入的用户记录；<code>test.MYI</code>代表表的索引文件，我们为该表创建的索引都会放到这个文件中。</p>
+</li>
+</ul>
+<h4 id="1-3-3视图在文件系统中的表示"><a href="#1-3-3视图在文件系统中的表示" class="headerlink" title="1.3.3视图在文件系统中的表示"></a>1.3.3视图在文件系统中的表示</h4><p>我们知道<code>MySQL</code>中的视图其实是虚拟的表，也就是某个查询语句的一个别名而已，所以在存储<code>视图</code>的时候是不需要存储真实的数据的，只需要把它的结构存储起来就行了。和<code>表</code>一样，描述视图结构的文件也会被存储到所属数据库对应的子目录下边，只会存储一个<code>视图名.frm</code>的文件。</p>
+<h4 id="1-3-4其他的文件"><a href="#1-3-4其他的文件" class="headerlink" title="1.3.4其他的文件"></a>1.3.4其他的文件</h4><p>除了我们上边说的这些用户自己存储的数据以外，<code>数据目录</code>下还包括为了更好运行程序的一些额外文件，主要包括这几种类型的文件：</p>
+<ul>
+<li><p>服务器进程文件。</p>
+<p>我们知道每运行一个<code>MySQL</code>服务器程序，都意味着启动一个进程。<code>MySQL</code>服务器会把自己的进程ID写入到一个文件中。</p>
+</li>
+<li><p>服务器日志文件。</p>
+<p>在服务器运行过程中，会产生各种各样的日志，比如常规的查询日志、错误日志、二进制日志、redo日志吧啦吧啦各种日志，这些日志各有各的用途，我们之后会重点唠叨各种日志的用途，现在先了解一下就可以了。</p>
+</li>
+<li><p>默认&#x2F;自动生成的SSL和RSA证书和密钥文件。</p>
+<p>主要是为了客户端和服务器安全通信而创建的一些文件， 大家看不懂可以忽略～</p>
+</li>
+</ul>
+<h3 id="1-4文件系统对数据库的影响"><a href="#1-4文件系统对数据库的影响" class="headerlink" title="1.4文件系统对数据库的影响"></a>1.4文件系统对数据库的影响</h3><p>因为<code>MySQL</code>的数据都是存在文件系统中的，就不得不受到文件系统的一些制约，这在数据库和表的命名、表的大小和性能方面体现的比较明显，比如下边这些方面：</p>
+<ul>
+<li><p>数据库名称和表名称不得超过文件系统所允许的最大长度。</p>
+<p>每个数据库都对应<code>数据目录</code>的一个子目录，数据库名称就是这个子目录的名称；每个表都会在数据库子目录下产生一个和表名同名的<code>.frm</code>文件，如果是<code>InnoDB</code>的独立表空间或者使用<code>MyISAM</code>引擎还会有别的文件的名称与表名一致。这些目录或文件名的长度都受限于文件系统所允许的长度～</p>
+</li>
+<li><p>特殊字符的问题</p>
+<p>为了避免因为数据库名和表名出现某些特殊字符而造成文件系统不支持的情况，<code>MySQL</code>会把数据库名和表名中所有除数字和拉丁字母以外的所有字符在文件名里都映射成 <code>@+编码值</code>的形式作为文件名。比方说我们创建的表的名称为<code>&#39;test?&#39;</code>，由于<code>?</code>不属于数字或者拉丁字母，所以会被映射成编码值，所以这个表对应的<code>.frm</code>文件的名称就变成了<code>test@003f.frm</code>。</p>
+</li>
+<li><p>文件长度受文件系统最大长度限制</p>
+<p>对于<code>InnoDB</code>的独立表空间来说，每个表的数据都会被存储到一个与表名同名的<code>.ibd</code>文件中；对于<code>MyISAM</code>存储引擎来说，数据和索引会分别存放到与表同名的<code>.MYD</code>和<code>.MYI</code>文件中。这些文件会随着表中记录的增加而增大，它们的大小受限于文件系统支持的最大文件大小。</p>
+</li>
+</ul>
+<h3 id="1-5MySQL系统数据库简介"><a href="#1-5MySQL系统数据库简介" class="headerlink" title="1.5MySQL系统数据库简介"></a>1.5MySQL系统数据库简介</h3><p>我们前边提到了MySQL的几个系统数据库，这几个数据库包含了MySQL服务器运行过程中所需的一些信息以及一些运行状态信息，我们现在稍微了解一下。</p>
+<ul>
+<li><p><code>mysql</code></p>
+<p>这个数据库贼核心，它存储了MySQL的用户账户和权限信息，一些存储过程、事件的定义信息，一些运行过程中产生的日志信息，一些帮助信息以及时区信息等。</p>
+</li>
+<li><p><code>information_schema</code></p>
+<p>这个数据库保存着MySQL服务器维护的所有其他数据库的信息，比如有哪些表、哪些视图、哪些触发器、哪些列、哪些索引吧啦吧啦。这些信息并不是真实的用户数据，而是一些描述性信息，有时候也称之为元数据。</p>
+</li>
+<li><p><code>performance_schema</code></p>
+<p>这个数据库里主要保存MySQL服务器运行过程中的一些状态信息，算是对MySQL服务器的一个性能监控。包括统计最近执行了哪些语句，在执行过程的每个阶段都花费了多长时间，内存的使用情况等等信息。</p>
+</li>
+<li><p><code>sys</code></p>
+<p>这个数据库主要是通过视图的形式把<code>information_schema </code>和<code>performance_schema</code>结合起来，让程序员可以更方便的了解MySQL服务器的一些性能信息。</p>
+</li>
+</ul>
+<h2 id="二、InnoDB的表空间"><a href="#二、InnoDB的表空间" class="headerlink" title="二、InnoDB的表空间"></a>二、InnoDB的表空间</h2>
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">MySQL原理之系统篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81MySQL%E7%9A%84%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">一、MySQL的数据目录</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E6%95%B0%E6%8D%AE%E5%BA%93%E5%92%8C%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1数据库和文件系统的关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2MySQL%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2MySQL数据目录</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-1%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95%E5%92%8C%E5%AE%89%E8%A3%85%E7%9B%AE%E5%BD%95%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.1.2.1.</span> <span class="toc-text">1.2.1数据目录和安装目录的区别</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-2%E5%A6%82%E4%BD%95%E7%A1%AE%E5%AE%9AMySQL%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.2.2.</span> <span class="toc-text">1.2.2如何确定MySQL中的数据目录</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95%E7%9A%84%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3数据目录的结构</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-1%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">1.1.3.1.</span> <span class="toc-text">1.3.1数据库在文件系统中的表示</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-2%E8%A1%A8%E5%9C%A8%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">1.1.3.2.</span> <span class="toc-text">1.3.2表在文件系统中的表示</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-3%E8%A7%86%E5%9B%BE%E5%9C%A8%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">1.1.3.3.</span> <span class="toc-text">1.3.3视图在文件系统中的表示</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-4%E5%85%B6%E4%BB%96%E7%9A%84%E6%96%87%E4%BB%B6"><span class="toc-number">1.1.3.4.</span> <span class="toc-text">1.3.4其他的文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%AF%B9%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.4文件系统对数据库的影响</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5MySQL%E7%B3%BB%E7%BB%9F%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%80%E4%BB%8B"><span class="toc-number">1.1.5.</span> <span class="toc-text">1.5MySQL系统数据库简介</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81InnoDB%E7%9A%84%E8%A1%A8%E7%A9%BA%E9%97%B4"><span class="toc-number">1.2.</span> <span class="toc-text">二、InnoDB的表空间</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&text=MySQL原理之系统篇"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&is_video=false&description=MySQL原理之系统篇"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL原理之系统篇&body=Check out this article: https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&title=MySQL原理之系统篇"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&name=MySQL原理之系统篇&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/&t=MySQL原理之系统篇"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

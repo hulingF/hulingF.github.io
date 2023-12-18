@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="MySQL原理之启蒙篇一、MySQL的CS架构1.客户端&#x2F;服务器架构我们平时都会使用微信，MySQL的使用过程跟这个是一样的，它的服务器程序直接和我们存储的数据打交道，然后可以有好多客户端程序连接到这个服务器程序，发送增删改查的请求，然后服务器就响应这些请求，从而操作它维护的数据。和微信一样，MySQL的每个客户端都需要提供用户名密码才能登录，登录之后才能给服务器发请求来操作某些数据。我">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL原理之启蒙篇">
+<meta property="og:url" content="https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="MySQL原理之启蒙篇一、MySQL的CS架构1.客户端&#x2F;服务器架构我们平时都会使用微信，MySQL的使用过程跟这个是一样的，它的服务器程序直接和我们存储的数据打交道，然后可以有好多客户端程序连接到这个服务器程序，发送增删改查的请求，然后服务器就响应这些请求，从而操作它维护的数据。和微信一样，MySQL的每个客户端都需要提供用户名密码才能登录，登录之后才能给服务器发请求来操作某些数据。我">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231217210043424.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231217211453443.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/167f4c7b99f87e1ctplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231217214315348.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231218094006229.png">
+<meta property="article:published_time" content="2023-12-17T12:43:28.437Z">
+<meta property="article:modified_time" content="2023-12-18T02:27:21.159Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="MySQL原理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231217210043424.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>MySQL原理之启蒙篇</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2023/12/18/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BB%93%E6%9E%84%E7%AF%87/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/12/JavaIO%E4%B9%8B%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&text=MySQL原理之启蒙篇"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&is_video=false&description=MySQL原理之启蒙篇"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL原理之启蒙篇&body=Check out this article: https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&name=MySQL原理之启蒙篇&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&t=MySQL原理之启蒙篇"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">MySQL原理之启蒙篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81MySQL%E7%9A%84CS%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">一、MySQL的CS架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%A2%E6%88%B7%E7%AB%AF-x2F-%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.客户端&#x2F;服务器架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%B8%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%BF%9E%E6%8E%A5%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="toc-number">1.1.2.</span> <span class="toc-text">2.客户端与服务器连接的过程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1TCP-x2F-IP"><span class="toc-number">1.1.2.1.</span> <span class="toc-text">2.1TCP&#x2F;IP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E5%91%BD%E5%90%8D%E7%AE%A1%E9%81%93%E5%92%8C%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98"><span class="toc-number">1.1.2.2.</span> <span class="toc-text">2.2命名管道和共享内存</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3Unix%E5%9F%9F%E5%A5%97%E6%8E%A5%E5%AD%97%E6%96%87%E4%BB%B6"><span class="toc-number">1.1.2.3.</span> <span class="toc-text">2.3Unix域套接字文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%A4%84%E7%90%86%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AF%B7%E6%B1%82"><span class="toc-number">1.1.3.</span> <span class="toc-text">3.服务器处理客户端请求</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E8%BF%9E%E6%8E%A5%E7%AE%A1%E7%90%86"><span class="toc-number">1.1.3.1.</span> <span class="toc-text">3.1连接管理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E8%A7%A3%E6%9E%90%E4%B8%8E%E4%BC%98%E5%8C%96"><span class="toc-number">1.1.3.2.</span> <span class="toc-text">3.2解析与优化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E"><span class="toc-number">1.1.3.3.</span> <span class="toc-text">3.3存储引擎</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E7%9A%84%E7%A7%8D%E7%B1%BB"><span class="toc-number">1.1.4.</span> <span class="toc-text">4.存储引擎的种类</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81MySQL%E7%9A%84%E8%B0%83%E6%8E%A7%E6%8C%89%E9%92%AE"><span class="toc-number">1.2.</span> <span class="toc-text">二、MySQL的调控按钮</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E7%9A%84%E7%94%A8%E5%A4%84"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.启动选项的用处</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%91%BD%E4%BB%A4%E8%A1%8C%E4%B8%8A%E4%BD%BF%E7%94%A8%E9%80%89%E9%A1%B9"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.命令行上使用选项</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%B8%AD%E4%BD%BF%E7%94%A8%E9%80%89%E9%A1%B9"><span class="toc-number">1.2.3.</span> <span class="toc-text">3.配置文件中使用选项</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E8%B7%AF%E5%BE%84"><span class="toc-number">1.2.3.1.</span> <span class="toc-text">3.1.配置文件的路径</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E5%86%85%E5%AE%B9"><span class="toc-number">1.2.3.2.</span> <span class="toc-text">3.2配置文件的内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E4%BC%98%E5%85%88%E7%BA%A7"><span class="toc-number">1.2.3.3.</span> <span class="toc-text">3.3配置文件的优先级</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%92%8C%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%B8%AD%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.2.3.4.</span> <span class="toc-text">3.4命令行和配置文件中启动选项的区别</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.4.</span> <span class="toc-text">4.系统变量</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-%E6%9F%A5%E7%9C%8B%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.4.1.</span> <span class="toc-text">4.1.查看系统变量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2%E8%AE%BE%E7%BD%AE%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.4.2.</span> <span class="toc-text">4.2设置系统变量</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#4-2-1%E9%80%9A%E8%BF%87%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E8%AE%BE%E7%BD%AE"><span class="toc-number">1.2.4.2.1.</span> <span class="toc-text">4.2.1通过启动选项设置</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#4-2-2%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%A8%8B%E5%BA%8F%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B%E4%B8%AD%E8%AE%BE%E7%BD%AE"><span class="toc-number">1.2.4.2.2.</span> <span class="toc-text">4.2.2服务器程序运行过程中设置</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-3%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E5%92%8C%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.2.4.3.</span> <span class="toc-text">4.3启动选项和系统变量的区别</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E7%8A%B6%E6%80%81%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.5.</span> <span class="toc-text">5.状态变量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E6%AF%94%E8%BE%83%E8%A7%84%E5%88%99"><span class="toc-number">1.3.</span> <span class="toc-text">三、字符集和比较规则</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%B8%8D%E5%90%8C%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E6%AF%94%E8%BE%83%E8%A7%84%E5%88%99"><span class="toc-number">1.3.1.</span> <span class="toc-text">1.不同级别的字符集和比较规则</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MySQL原理之启蒙篇
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-17T12:43:28.437Z" class="dt-published" itemprop="datePublished">2023-12-17</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/MySQL%E5%8E%9F%E7%90%86/" rel="tag">MySQL原理</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="MySQL原理之启蒙篇"><a href="#MySQL原理之启蒙篇" class="headerlink" title="MySQL原理之启蒙篇"></a>MySQL原理之启蒙篇</h1><h2 id="一、MySQL的CS架构"><a href="#一、MySQL的CS架构" class="headerlink" title="一、MySQL的CS架构"></a>一、MySQL的CS架构</h2><h3 id="1-客户端-x2F-服务器架构"><a href="#1-客户端-x2F-服务器架构" class="headerlink" title="1.客户端&#x2F;服务器架构"></a>1.客户端&#x2F;服务器架构</h3><p>我们平时都会使用微信，<code>MySQL</code>的使用过程跟这个是一样的，它的服务器程序直接和我们存储的数据打交道，然后可以有好多客户端程序连接到这个服务器程序，发送增删改查的请求，然后服务器就响应这些请求，从而操作它维护的数据。和微信一样，<code>MySQL</code>的每个客户端都需要提供用户名密码才能登录，登录之后才能给服务器发请求来操作某些数据。我们日常使用<code>MySQL</code>的情景一般是这样的：</p>
+<ol>
+<li>启动<code>MySQL</code>服务器程序。</li>
+<li>启动<code>MySQL</code>客户端程序并连接到服务器程序。</li>
+<li>在客户端程序中输入一些命令语句作为请求发送到服务器程序，服务器程序收到这些请求后，会根据请求的内容来操作具体的数据并向客户端返回操作结果。</li>
+</ol>
+<img src="/../../../../../../imgs/MySQL原理之启蒙篇/image-20231217210043424.png" alt="image-20231217210043424" style="zoom:67%;" /> 
+
+<p>安装好MySQL后我们需要重点关注MySQL的安装目录和数据目录，在我的本机Windows系统上的安装目录是<code>C:\Program Files\MySQL\MySQL Server 8.0</code>，数据目录是<code>C:\ProgramData\MySQL\MySQL Server 8.0</code>,其中安装目录下的<code>bin</code>目录里就包含了很多有用的客户端程序和服务器程序：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231217211453443.png" alt="image-20231217211453443"></p>
+<h3 id="2-客户端与服务器连接的过程"><a href="#2-客户端与服务器连接的过程" class="headerlink" title="2.客户端与服务器连接的过程"></a>2.客户端与服务器连接的过程</h3><p>运行着的服务器程序和客户端程序本质上都是计算机上的一个进程，所以客户端进程向服务器进程发送请求并得到回复的过程本质上是一个<code>进程间通信</code>的过程！<code>MySQL</code>支持下边三种客户端进程和服务器进程的通信方式。</p>
+<h4 id="2-1TCP-x2F-IP"><a href="#2-1TCP-x2F-IP" class="headerlink" title="2.1TCP&#x2F;IP"></a>2.1TCP&#x2F;IP</h4><p>真实环境中，数据库服务器进程和客户端进程可能运行在不同的主机中，它们之间必须通过网络来进行通讯。<code>MySQL</code>采用<code>TCP</code>作为服务器和客户端之间的网络通信协议。在网络环境下，每台计算机都有一个唯一的<code>IP地址</code>，如果某个进程有需要采用<code>TCP</code>协议进行网络通信方面的需求，可以向操作系统申请一个<code>端口号</code>，这是一个整数值，它的取值范围是<code>0~65535</code>。这样在网络中的其他进程就可以通过<code>IP地址 + 端口号</code>的方式来与这个进程连接，这样进程之间就可以通过网络进行通信了。</p>
+<p><code>MySQL</code>服务器启动的时候会默认申请<code>3306</code>端口号，之后就在这个端口号上等待客户端进程进行连接，用书面一点的话来说，<code>MySQL</code>服务器会默认监听<code>3306</code>端口。</p>
+<p>如果<code>3306</code>端口号已经被别的进程占用了或者我们单纯的想自定义该数据库实例监听的端口号，那我们可以在启动服务器程序的命令行里添加<code>-P</code>参数来明确指定一下端口号，比如这样：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld -P3307</span><br></pre></td></tr></table></figure>
+
+<p>如果客户端进程想要使用<code>TCP/IP</code>网络来连接到服务器进程，比如我们在使用<code>mysql</code>来启动客户端程序时，在<code>-h</code>参数后必须跟随<code>IP地址</code>来作为需要连接的服务器进程所在主机的主机名，如果客户端进程和服务器进程在一台计算机中的话，我们可以使用<code>127.0.0.1</code>来代表本机的<code>IP地址</code>。另外，如果服务器进程监听的端口号不是默认的<code>3306</code>，我们也可以在使用<code>mysql</code>启动客户端程序时使用<code>-P</code>参数（大写的<code>P</code>，小写的<code>p</code>是用来指定密码的）来指定需要连接到的端口号。比如我们现在已经在本机启动了服务器进程，监听的端口号为<code>3307</code>，那我们启动客户端程序时可以这样写：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -h127.0.0.1 -uroot -P3307 -p</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-2命名管道和共享内存"><a href="#2-2命名管道和共享内存" class="headerlink" title="2.2命名管道和共享内存"></a>2.2命名管道和共享内存</h4><p>如果你是一个<code>Windows</code>用户，那么客户端进程和服务器进程之间可以考虑使用<code>命名管道</code>或<code>共享内存</code>进行通信。不过启用这些通信方式的时候需要在启动服务器程序和客户端程序时添加一些参数：</p>
+<ul>
+<li>使用<code>命名管道</code>来进行进程间通信</li>
+</ul>
+<p>需要在启动服务器程序的命令中加上<code>--enable-named-pipe</code>参数，然后在启动客户端程序的命令中加入<code>--pipe</code>或者<code>--protocol=pipe</code>参数。</p>
+<ul>
+<li>使用<code>共享内存</code>来进行进程间通信</li>
+</ul>
+<p>需要在启动服务器程序的命令中加上<code>--shared-memory</code>参数，在成功启动服务器后，<code>共享内存</code>便成为本地客户端程序的默认连接方式，不过我们也可以在启动客户端程序的命令中加入<code>--protocol=memory</code>参数来显式的指定使用共享内存进行通信。</p>
+<blockquote>
+<p>不过需要注意的是，使用<code>共享内存</code>的方式进行通信的服务器进程和客户端进程必须在同一台<code>Windows</code>主机中。</p>
+</blockquote>
+<h4 id="2-3Unix域套接字文件"><a href="#2-3Unix域套接字文件" class="headerlink" title="2.3Unix域套接字文件"></a>2.3Unix域套接字文件</h4><p>如果我们的服务器进程和客户端进程都运行在同一台操作系统为类<code>Unix</code>的机器上的话，我们可以使用<code>Unix域套接字文件</code>来进行进程间通信。如果我们在启动客户端程序的时候指定的主机名为<code>localhost</code>，或者指定了<code>--protocol=socket</code>的启动参数，那服务器程序和客户端程序之间就可以通过<code>Unix</code>域套接字文件来进行通信了。<code>MySQL</code>服务器程序默认监听的<code>Unix</code>域套接字文件路径为<code>/tmp/mysql.sock</code>，客户端程序也默认连接到这个<code>Unix</code>域套接字文件。如果我们想改变这个默认路径，可以在启动服务器程序时指定<code>socket</code>参数，就像这样：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld --socket=/tmp/a.txt</span><br></pre></td></tr></table></figure>
+
+<p>这样服务器启动后便会监听<code>/tmp/a.txt</code>。在服务器改变了默认的<code>UNIX</code>域套接字文件后，如果客户端程序想通过<code>UNIX</code>域套接字文件进行通信的话，也需要显式的指定连接到的<code>UNIX</code>域套接字文件路径，就像这样：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -hlocalhost -uroot --socket=/tmp/a.txt -p</span><br></pre></td></tr></table></figure>
+
+<p>这样该客户端进程和服务器进程就可以通过路径为<code>/tmp/a.txt</code>的<code>Unix</code>域套接字文件进行通信了。</p>
+<h3 id="3-服务器处理客户端请求"><a href="#3-服务器处理客户端请求" class="headerlink" title="3.服务器处理客户端请求"></a>3.服务器处理客户端请求</h3><p>其实不论客户端进程和服务器进程是采用哪种方式进行通信，最后实现的效果都是：客户端进程向服务器进程发送一段文本（<code>MySQL语句</code>），服务器进程处理后再向客户端进程发送一段文本（<code>处理结果</code>）。那服务器进程对客户端进程发送的请求做了什么处理，才能产生最后的处理结果呢？客户端可以向服务器发送增删改查各类请求，我们这里以比较复杂的查询请求为例来画个图展示一下大致的过程：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/167f4c7b99f87e1ctplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1c8d26fmg1af0ms81cpc7gm8lv39.png-97.9kB"> </p>
+<h4 id="3-1连接管理"><a href="#3-1连接管理" class="headerlink" title="3.1连接管理"></a>3.1连接管理</h4><p>客户端进程可以采用我们上边介绍的<code>TCP/IP</code>、<code>命名管道或共享内存</code>、<code>Unix域套接字</code>这几种方式之一来与服务器进程建立连接，每当有一个客户端进程连接到服务器进程时，服务器进程都会创建一个线程来专门处理与这个客户端的交互，当该客户端退出时会与服务器断开连接，服务器并不会立即把与该客户端交互的线程销毁掉，而是把它<code>缓存起来</code>，在另一个新的客户端再进行连接时，把这个缓存的线程分配给该新客户端。这样就起到了不频繁创建和销毁线程的效果，从而节省开销。从这一点大家也能看出，<code>MySQL</code>服务器会为每一个连接进来的客户端分配一个线程，但是线程分配的太多了会严重影响系统性能，所以我们也需要限制一下可以同时连接到服务器的客户端数量。</p>
+<p>在客户端程序发起连接的时候，需要携带主机信息、用户名、密码，服务器程序会对客户端程序提供的这些信息进行认证，如果认证失败，服务器程序会拒绝连接。另外，如果客户端程序和服务器程序不运行在一台计算机上，我们还可以采用使用了<code>SSL</code>（安全套接字）的网络连接进行通信，来保证数据传输的安全性。</p>
+<p>当连接建立后，与该客户端关联的服务器线程会一直等待客户端发送过来的请求，<code>MySQL</code>服务器接收到的请求只是一个文本消息，该文本消息还要经过后续各种处理。</p>
+<h4 id="3-2解析与优化"><a href="#3-2解析与优化" class="headerlink" title="3.2解析与优化"></a>3.2解析与优化</h4><p>到现在为止，<code>MySQL</code>服务器已经获得了文本形式的请求，接着 还要经过九九八十一难的处理，其中的几个比较重要的部分分别是<code>查询缓存</code>、<code>语法解析</code>和<code>查询优化</code>，下边我们详细来看。</p>
+<p><strong>查询缓存</strong></p>
+<p><code>MySQL</code>服务器程序处理查询请求时，会把刚刚处理过的查询请求和结果<code>缓存</code>起来，如果下一次有<code>一模一样</code>的请求过来，直接从缓存中查找结果就好了，就不用再傻呵呵的去底层的表中查找了。这个查询缓存可以在<code>不同客户端之间共享</code>，也就是说如果客户端A刚刚查询了一个语句，而客户端B之后发送了同样的查询请求，那么客户端B的这次查询就可以直接使用查询缓存中的数据。</p>
+<p>当然，<code>MySQL</code>服务器并没有人聪明，如果两个查询请求在任何字符上的不同（例如：空格、注释、大小写），都会导致缓存不会命中。另外，如果查询请求中包含&#x3D;&#x3D;某些系统函数、用户自定义变量和函数、一些系统表&#x3D;&#x3D;，如 mysql、information_schema、 performance_schema 数据库中的表，那这个请求就不会被缓存。以某些系统函数举例，可能同样的函数的两次调用会产生不一样的结果，比如函数<code>NOW</code>，每次调用都会产生最新的当前时间，如果在一个查询请求中调用了这个函数，那即使查询请求的文本信息都一样，那不同时间的两次查询也应该得到不同的结果，如果在第一次查询时就缓存了，那第二次查询的时候直接使用第一次查询的结果就是错误的！</p>
+<p>不过既然是缓存，那就有它缓存失效的时候。MySQL的缓存系统会监测涉及到的每张表，只要该表的结构或者数据被修改，如对该表使用了<code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code>、<code>TRUNCATE TABLE</code>、<code>ALTER TABLE</code>、<code>DROP TABLE</code> 或 <code>DROP DATABASE</code> 语句，那使用该表的所有高速缓存查询都将变为无效并从高速缓存中删除！</p>
+<blockquote>
+<p>虽然查询缓存有时可以提升系统性能，但也不得不因维护这块缓存而造成一些开销，比如每次都要去查询缓存中检索，查询请求处理完需要更新查询缓存，维护该查询缓存对应的内存区域。从MySQL 5.7.20开始，不推荐使用查询缓存，并在MySQL 8.0中删除。</p>
+</blockquote>
+<p><strong>语法解析</strong></p>
+<p>如果查询缓存没有命中，接下来就需要进入正式的查询阶段了。因为客户端程序发送过来的请求只是一段文本而已，所以<code>MySQL</code>服务器程序首先要对这段文本做分析，判断请求的语法是否正确，然后从文本中将要查询的表、各种查询条件都提取出来放到<code>MySQL</code>服务器内部使用的一些数据结构上来。</p>
+<blockquote>
+<p>这个从指定的文本中提取出我们需要的信息本质上算是一个编译过程，涉及词法解析、语法分析、语义分析等阶段，这些问题不属于我们讨论的范畴。</p>
+</blockquote>
+<p><strong>查询优化</strong></p>
+<p>语法解析之后，服务器程序获得到了需要的信息，比如要查询的列是哪些，表是哪个，搜索条件是什么等等，但光有这些是不够的，因为我们写的<code>MySQL</code>语句执行起来效率可能并不是很高，<code>MySQL</code>的优化程序会对我们的语句做一些优化，如&#x3D;&#x3D;外连接转换为内连接、表达式简化、子查询转为连接&#x3D;&#x3D;吧啦吧啦的一堆东西。优化的结果就是生成一个<code>执行计划</code>，这个执行计划表明了应该使用哪些索引进行查询，表之间的连接顺序是啥样的等等。</p>
+<h4 id="3-3存储引擎"><a href="#3-3存储引擎" class="headerlink" title="3.3存储引擎"></a>3.3存储引擎</h4><p>截止到服务器程序完成了查询优化为止，还没有真正的去访问真实的数据表，<code>MySQL</code>服务器把数据的存储和提取操作都封装到了一个叫<code>存储引擎</code>的模块里。我们知道<code>表</code>是由一行一行的记录组成的，但这只是一个逻辑上的概念，物理上如何表示记录，怎么从表中读取数据，怎么把数据写入具体的物理存储器上，这都是<code>存储引擎</code>负责的事情。为了实现不同的功能，<code>MySQL</code>提供了各式各样的<code>存储引擎</code>，不同<code>存储引擎</code>管理的表具体的存储结构可能不同，采用的存取算法也可能不同。</p>
+<blockquote>
+<p>为什么叫<code>引擎</code>呢？因为这个名字更拉风～ 其实这个存储引擎以前叫做<code>表处理器</code>，后来可能人们觉得太土，就改成了<code>存储引擎</code>的叫法，它的功能就是接收上层传下来的指令，然后对表中的数据进行提取或写入操作。</p>
+</blockquote>
+<p>为了管理方便，人们把<code>连接管理</code>、<code>查询缓存</code>、<code>语法解析</code>、<code>查询优化</code>这些并不涉及真实数据存储的功能划分为<code>MySQL server</code>的功能，把真实存取数据的功能划分为<code>存储引擎</code>的功能。各种不同的存储引擎向上边的<code>MySQL server</code>层提供统一的调用接口（也就是存储引擎API），包含了几十个底层函数，像”读取索引第一条内容”、”读取索引下一条内容”、”插入记录”等等。</p>
+<p>所以在<code>MySQL server</code>完成了查询优化后，只需按照生成的执行计划调用底层存储引擎提供的API，获取到数据后返回给客户端就好了。</p>
+<h3 id="4-存储引擎的种类"><a href="#4-存储引擎的种类" class="headerlink" title="4.存储引擎的种类"></a>4.存储引擎的种类</h3><p>我们可以用下边这个命令来查看当前服务器程序支持的存储引擎：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SHOW ENGINES;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231217214315348.png" alt="image-20231217214315348"></p>
+<p>其中的<code>Support</code>列表示该存储引擎是否可用，<code>DEFAULT</code>值代表是当前服务器程序的默认存储引擎。<code>Comment</code>列是对存储引擎的一个描述，英文的，将就着看吧。<code>Transactions</code>列代表该存储引擎是否支持事务处理。<code>XA</code>列代表着该存储引擎是否支持分布式事务。<code>Savepoints</code>代表着该存储引擎是否支持部分事务回滚。</p>
+<p>我们前边说过，存储引擎是负责对表中的数据进行提取和写入工作的，我们可以为不同的表设置不同的存储引擎，也就是说不同的表可以有不同的物理存储结构，不同的提取和写入方式。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建表时指定存储引擎</span></span><br><span class="line">CREATE TABLE 表名(</span><br><span class="line">    建表语句;</span><br><span class="line">) ENGINE = 存储引擎名称;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">修改表的存储引擎</span></span><br><span class="line">ALTER TABLE 表名 ENGINE = 存储引擎名称;</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、MySQL的调控按钮"><a href="#二、MySQL的调控按钮" class="headerlink" title="二、MySQL的调控按钮"></a>二、MySQL的调控按钮</h2><h3 id="1-启动选项的用处"><a href="#1-启动选项的用处" class="headerlink" title="1.启动选项的用处"></a>1.启动选项的用处</h3><p><code>MySQL</code>的服务器程序和客户端程序有很多设置项，比如对于<code>MySQL</code>服务器程序，我们可以指定诸如允许同时连入的客户端数量、客户端和服务器通信方式、表的默认存储引擎、查询缓存的大小吧啦吧啦的设置项。对于<code>MySQL</code>客户端程序，我们之前已经见识过了，可以指定需要连接的服务器程序所在主机的主机名或IP地址、用户名及密码等信息。</p>
+<p>这些设置项一般都有各自的默认值，比方说服务器允许同时连入的客户端的默认数量是<code>151</code>，表的默认存储引擎是<code>InnoDB</code>，我们可以在程序启动的时候去修改这些默认值，对于这种在程序启动时指定的设置项也称之为启动选项（startup options），这些选项控制着程序启动后的行为。</p>
+<h3 id="2-命令行上使用选项"><a href="#2-命令行上使用选项" class="headerlink" title="2.命令行上使用选项"></a>2.命令行上使用选项</h3><p>如果我们在启动客户端程序时在<code>-h</code>参数后边紧跟服务器的IP地址，这就意味着客户端和服务器之间需要通过<code>TCP/IP</code>网络进行通信。因为我的客户端程序和服务器程序都装在一台计算机上，所以在使用客户端程序连接服务器程序时指定的主机名是<code>127.0.0.1</code>的情况下，客户端进程和服务器进程之间会使用<code>TCP/IP</code>网络进行通信。如果我们在启动服务器程序的时候就禁止各客户端使用<code>TCP/IP</code>网络进行通信，可以在启动服务器程序的命令行里添加<code>skip-networking</code>启动选项，就像这样：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld --skip-networking</span><br></pre></td></tr></table></figure>
+
+<p>再举一个例子，我们前边说过如果在创建表的语句中没有显式指定表的存储引擎的话，那就会默认使用<code>InnoDB</code>作为表的存储引擎。如果我们想改变表的默认存储引擎的话，可以这样写启动服务器的命令行：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld --default-storage-engine=MyISAM</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在命令行上使用启动选项有两种形式：长选项和短选项，以长选项为例格式为–启动选项1[&#x3D;值1] –启动选项2[&#x3D;值2] … –启动选项n[&#x3D;值n]</p>
+</blockquote>
+<h3 id="3-配置文件中使用选项"><a href="#3-配置文件中使用选项" class="headerlink" title="3.配置文件中使用选项"></a>3.配置文件中使用选项</h3><p>在命令行中设置启动选项只对当次启动生效，也就是说如果下一次重启程序的时候我们还想保留这些启动选项的话，还得重复把这些选项写到启动命令行中，这样真的神烦唉！于是设计<code>MySQL</code>的大叔们提出一种<code>配置文件</code>（也称为<code>选项文件</code>）的概念，我们把需要设置的启动选项都写在这个配置文件中，每次启动服务器的时候都从这个文件里加载相应的启动选项。由于这个配置文件可以长久的保存在计算机的硬盘里，所以只需我们配置一次，以后就都不用显式的把启动选项都写在启动命令行中了，所以我们推荐使用配置文件的方式来设置启动选项。</p>
+<h4 id="3-1-配置文件的路径"><a href="#3-1-配置文件的路径" class="headerlink" title="3.1.配置文件的路径"></a>3.1.配置文件的路径</h4><p>在<code>Windows</code>操作系统中，<code>MySQL</code>会按照下列路径来寻找配置文件：</p>
+<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/image-20231218094006229.png" alt="image-20231218094006229"> </p>
+<p>在阅读这些<code>Windows</code>操作系统下配置文件路径的时候需要注意一些事情：</p>
+<ul>
+<li>在给定的前三个路径中，配置文件可以使用<code>.ini</code>的扩展名，也可以使用<code>.cnf</code>的扩展名。</li>
+<li><code>%WINDIR%</code>指的是你机器上<code>Windows</code>目录的位置，通常是<code>C:\WINDOWS</code>。</li>
+<li><code>BASEDIR</code>指的是<code>MySQL</code>安装目录的路径。</li>
+<li>第四个路径指的是我们在启动程序时可以通过在命令行中指定<code>defaults-extra-file</code>参数的值来添加额外的配置文件路径。</li>
+<li><code>%APPDATA%</code>表示<code>Windows</code>应用程序数据目录的值。</li>
+<li>列表中最后一个名为<code>.mylogin.cnf</code>配置文件有点儿特殊，它不是一个纯文本文件（其他的配置文件都是纯文本文件），而是使用<code>mysql_config_editor</code>实用程序创建的加密文件。文件中只能包含一些用于启动客户端软件时连接服务器的一些选项，包括 <code>host</code>、<code>user</code>、<code>password</code>、<code>port</code>和 <code>socket</code>。而且它只能被客户端程序所使用。</li>
+</ul>
+<h4 id="3-2配置文件的内容"><a href="#3-2配置文件的内容" class="headerlink" title="3.2配置文件的内容"></a>3.2配置文件的内容</h4><p>与在命令行中指定启动选项不同的是，配置文件中的启动选项被划分为若干个组，每个组有一个组名，用中括号<code>[]</code>扩起来，像这样：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[server]</span></span><br><span class="line">(具体的启动选项...)</span><br><span class="line"></span><br><span class="line"><span class="section">[mysqld]</span></span><br><span class="line">(具体的启动选项...)</span><br><span class="line"></span><br><span class="line"><span class="section">[mysqld_safe]</span></span><br><span class="line">(具体的启动选项...)</span><br><span class="line"></span><br><span class="line"><span class="section">[client]</span></span><br><span class="line">(具体的启动选项...)</span><br><span class="line"></span><br><span class="line"><span class="section">[mysql]</span></span><br><span class="line">(具体的启动选项...)</span><br><span class="line"></span><br><span class="line"><span class="section">[mysqladmin]</span></span><br><span class="line">(具体的启动选项...)</span><br></pre></td></tr></table></figure>
+
+<p>像这个配置文件里就定义了许多个组，组名分别是<code>server</code>、<code>mysqld</code>、<code>mysqld_safe</code>、<code>client</code>、<code>mysql</code>、<code>mysqladmin</code>。每个组下边可以定义若干个启动选项，我们以<code>[server]</code>组为例来看一下填写启动选项的形式（其他组中启动选项的形式是一样的）：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[server]</span></span><br><span class="line"><span class="comment">#这是option1，该选项不需要选项值</span></span><br><span class="line">option1     </span><br><span class="line"><span class="comment">#这是option2，该选项需要选项值</span></span><br><span class="line"><span class="attr">option2</span> = value2      </span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>配置文件中不同的选项组是给不同的启动命令使用的，如果选项组名称与程序名称相同，则组中的选项将专门应用于该程序。例如， <code>[mysqld]</code>和<code>[mysql]</code>组分别应用于<code>mysqld</code>服务器程序和<code>mysql</code>客户端程序。不过有两个选项组比较特别：</p>
+<ul>
+<li><code>[server]</code>组下边的启动选项将作用于所有的服务器程序。</li>
+<li><code>[client]</code>组下边的启动选项将作用于所有的客户端程序。</li>
+</ul>
+<h4 id="3-3配置文件的优先级"><a href="#3-3配置文件的优先级" class="headerlink" title="3.3配置文件的优先级"></a>3.3配置文件的优先级</h4><p>我们前边唠叨过<code>MySQL</code>将在某些固定的路径下搜索配置文件，我们也可以通过在命令行上指定<code>defaults-extra-file</code>启动选项来指定额外的配置文件路径。<code>MySQL</code>将按照我们在上表中给定的顺序依次读取各个配置文件，如果该文件不存在则忽略。值得注意的是，如果我们在多个配置文件中设置了相同的启动选项，那以最后一个配置文件中的为准。</p>
+<p>我们说同一个命令可以访问配置文件中的多个组，比如<code>mysqld</code>可以访问<code>[mysqld]</code>、<code>[server]</code>组，如果在同一个配置文件中，在这些组里出现了同样的配置项，比如这样：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[server]</span></span><br><span class="line"><span class="attr">default-storage-engine</span>=InnoDB</span><br><span class="line"></span><br><span class="line"><span class="section">[mysqld]</span></span><br><span class="line"><span class="attr">default-storage-engine</span>=MyISAM</span><br></pre></td></tr></table></figure>
+
+<p>那么，将以最后一个出现的组中的启动选项为准，比方说例子中<code>default-storage-engine</code>既出现在<code>[mysqld]</code>组也出现在<code>[server]</code>组，因为<code>[mysqld]</code>组在<code>[server]</code>组后边，就以<code>[mysqld]</code>组中的配置项为准。</p>
+<p>如果我们不想让<code>MySQL</code>到默认的路径下搜索配置文件（就是上表中列出的那些），可以在命令行指定<code>defaults-file</code>选项，比如这样（以<code>UNIX</code>系统为例）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld --defaults-file=/tmp/myconfig.txt</span><br></pre></td></tr></table></figure>
+
+<p>这样，在程序启动的时候将只在<code>/tmp/myconfig.txt</code>路径下搜索配置文件。如果文件不存在或无法访问，则会发生错误。</p>
+<blockquote>
+<p>注意<code>defaults-extra-file</code>和<code>defaults-file</code>的区别，使用<code>defaults-extra-file</code>可以指定额外的配置文件搜索路径（也就是说那些固定的配置文件路径也会被搜索）。</p>
+</blockquote>
+<h4 id="3-4命令行和配置文件中启动选项的区别"><a href="#3-4命令行和配置文件中启动选项的区别" class="headerlink" title="3.4命令行和配置文件中启动选项的区别"></a>3.4命令行和配置文件中启动选项的区别</h4><p>在命令行上指定的绝大部分启动选项都可以放到配置文件中，但是有一些选项是专门为命令行设计的，比方说<code>defaults-extra-file</code>、<code>defaults-file</code>这样的选项本身就是为了指定配置文件路径的，再放在配置文件中使用就没啥意义了。</p>
+<p>另外有一点需要特别注意，如果同一个启动选项既出现在命令行中，又出现在配置文件中，那么以命令行中的启动选项为准！</p>
+<h3 id="4-系统变量"><a href="#4-系统变量" class="headerlink" title="4.系统变量"></a>4.系统变量</h3><p><code>MySQL</code>服务器程序运行过程中会用到许多影响程序行为的变量，它们被称为<code>MySQL</code>系统变量，比如允许同时连入的客户端数量用系统变量<code>max_connections</code>表示，表的默认存储引擎用系统变量<code>default_storage_engine</code>表示，查询缓存的大小用系统变量<code>query_cache_size</code>表示，<code>MySQL</code>服务器程序的系统变量有好几百条，我们就不一一列举了。每个系统变量都有一个默认值，我们可以使用命令行或者配置文件中的选项在启动服务器时改变一些系统变量的值。大多数的系统变量的值也可以在程序运行过程中修改，而无需停止并重新启动它。</p>
+<h4 id="4-1-查看系统变量"><a href="#4-1-查看系统变量" class="headerlink" title="4.1.查看系统变量"></a>4.1.查看系统变量</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SHOW VARIABLES LIKE <span class="string">&#x27;default_storage_engine&#x27;</span>;</span></span><br><span class="line">+------------------------+--------+</span><br><span class="line">| Variable_name          | Value  |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">| default_storage_engine | InnoDB |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">1 row in set (0.01 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SHOW VARIABLES like <span class="string">&#x27;max_connections&#x27;</span>;</span></span><br><span class="line">+-----------------+-------+</span><br><span class="line">| Variable_name   | Value |</span><br><span class="line">+-----------------+-------+</span><br><span class="line">| max_connections | 151   |</span><br><span class="line">+-----------------+-------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-2设置系统变量"><a href="#4-2设置系统变量" class="headerlink" title="4.2设置系统变量"></a>4.2设置系统变量</h4><h5 id="4-2-1通过启动选项设置"><a href="#4-2-1通过启动选项设置" class="headerlink" title="4.2.1通过启动选项设置"></a>4.2.1通过启动选项设置</h5><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">通过命令行添加启动选项</span></span><br><span class="line">mysqld --default-storage-engine=MyISAM --max-connections=10</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">通过配置文件添加启动选项</span></span><br><span class="line">[server]</span><br><span class="line">default-storage-engine=MyISAM</span><br><span class="line">max-connections=10</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-2-2服务器程序运行过程中设置"><a href="#4-2-2服务器程序运行过程中设置" class="headerlink" title="4.2.2服务器程序运行过程中设置"></a>4.2.2服务器程序运行过程中设置</h5><p><code>系统变量</code>比较牛逼的一点就是，对于大部分系统变量来说，它们的值可以在服务器程序运行过程中进行动态修改而无需停止并重启服务器。不过系统变量有作用范围之分，下边详细唠叨下。</p>
+<p>我们前边说过，多个客户端程序可以同时连接到一个服务器程序。对于同一个系统变量，我们有时想让不同的客户端有不同的值。比方说狗哥使用客户端A，他想让当前客户端对应的默认存储引擎为<code>InnoDB</code>，所以他可以把系统变量<code>default_storage_engine</code>的值设置为<code>InnoDB</code>；猫爷使用客户端B，他想让当前客户端对应的默认存储引擎为<code>MyISAM</code>，所以他可以把系统变量<code>default_storage_engine</code>的值设置为<code>MyISAM</code>。这样可以使狗哥和猫爷的的客户端拥有不同的默认存储引擎，使用时互不影响，十分方便。但是这样各个客户端都私有一份系统变量会产生这么两个问题：</p>
+<ul>
+<li>有一些系统变量并不是针对单个客户端的，比如允许同时连接到服务器的客户端数量<code>max_connections</code>，查询缓存的大小<code>query_cache_size</code>，这些公有的系统变量让某个客户端私有显然不合适。</li>
+<li>一个新连接到服务器的客户端对应的系统变量的值该怎么设置？</li>
+</ul>
+<p>为了解决这两个问题，设计<code>MySQL</code>的大叔提出了系统变量的<code>作用范围</code>的概念，具体来说<code>作用范围</code>分为这两种：</p>
+<ul>
+<li><code>GLOBAL</code>：全局变量，影响服务器的整体操作。</li>
+<li><code>SESSION</code>：会话变量，影响某个客户端连接的操作。（注：<code>SESSION</code>有个别名叫<code>LOCAL</code>）</li>
+</ul>
+<p>在服务器启动时，会将每个全局变量初始化为其默认值（可以通过命令行或选项文件中指定的选项更改这些默认值）。然后服务器还为每个连接的客户端维护一组会话变量，客户端的会话变量在连接时使用相应全局变量的当前值初始化。</p>
+<p>这话有点儿绕，还是以<code>default_storage_engine</code>举例，在服务器启动时会初始化一个名为<code>default_storage_engine</code>，作用范围为<code>GLOBAL</code>的系统变量。之后每当有一个客户端连接到该服务器时，服务器都会单独为该客户端分配一个名为<code>default_storage_engine</code>，作用范围为<code>SESSION</code>的系统变量，该作用范围为<code>SESSION</code>的系统变量值按照当前作用范围为<code>GLOBAL</code>的同名系统变量值进行初始化。</p>
+<p>很显然，通过启动选项设置的系统变量的作用范围都是<code>GLOBAL</code>的，也就是对所有客户端都有效的，因为在系统启动的时候还没有客户端程序连接进来呢。了解了系统变量的<code>GLOBAL</code>和<code>SESSION</code>作用范围之后，我们再看一下在服务器程序运行期间通过客户端程序设置系统变量的语法：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SET [GLOBAL|SESSION] 系统变量名 = 值;</span><br><span class="line">SET [@@(GLOBAL|SESSION).]var_name = XXX;</span><br></pre></td></tr></table></figure>
+
+<p>比如我们想在服务器运行过程中把作用范围为<code>GLOBAL</code>的系统变量<code>default_storage_engine</code>的值修改为<code>MyISAM</code>，也就是想让之后新连接到服务器的客户端都用<code>MyISAM</code>作为默认的存储引擎，那我们可以选择下边两条语句中的任意一条来进行设置：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">语句一：SET GLOBAL default_storage_engine = MyISAM;</span><br><span class="line">语句二：SET @@GLOBAL.default_storage_engine = MyISAM;</span><br></pre></td></tr></table></figure>
+
+<p>如果只想对本客户端生效，也可以选择下边三条语句中的任意一条来进行设置：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">语句一：SET SESSION default_storage_engine = MyISAM;</span><br><span class="line">语句二：SET @@SESSION.default_storage_engine = MyISAM;</span><br><span class="line">语句三：SET default_storage_engine = MyISAM;</span><br></pre></td></tr></table></figure>
+
+<p>从上边的<code>语句三</code>也可以看出，如果在设置系统变量的语句中省略了作用范围，默认的作用范围就是<code>SESSION</code>。也就是说<code>SET 系统变量名 = 值</code>和<code>SET SESSION 系统变量名 = 值</code>是等价的。</p>
+<p>既然<code>系统变量</code>有<code>作用范围</code>之分，那我们的<code>SHOW VARIABLES</code>语句查看的是什么<code>作用范围</code>的<code>系统变量</code>呢？</p>
+<p>答：默认查看的是<code>SESSION</code>作用范围的系统变量。</p>
+<p>当然我们也可以在查看系统变量的语句上加上要查看哪个<code>作用范围</code>的系统变量，就像这样：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SHOW [GLOBAL|SESSION] VARIABLES [LIKE 匹配的模式];</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SHOW SESSION VARIABLES LIKE <span class="string">&#x27;default_storage_engine&#x27;</span>;</span></span><br><span class="line">+------------------------+--------+</span><br><span class="line">| Variable_name          | Value  |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">| default_storage_engine | InnoDB |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SHOW GLOBAL VARIABLES LIKE <span class="string">&#x27;default_storage_engine&#x27;</span>;</span></span><br><span class="line">+------------------------+--------+</span><br><span class="line">| Variable_name          | Value  |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">| default_storage_engine | InnoDB |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SET SESSION default_storage_engine = MyISAM;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SHOW SESSION VARIABLES LIKE <span class="string">&#x27;default_storage_engine&#x27;</span>;</span></span><br><span class="line">+------------------------+--------+</span><br><span class="line">| Variable_name          | Value  |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">| default_storage_engine | MyISAM |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SHOW GLOBAL VARIABLES LIKE <span class="string">&#x27;default_storage_engine&#x27;</span>;</span></span><br><span class="line">+------------------------+--------+</span><br><span class="line">| Variable_name          | Value  |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">| default_storage_engine | InnoDB |</span><br><span class="line">+------------------------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果某个客户端改变了某个系统变量在<code>GLOBAL</code>作用范围的值，并不会影响该系统变量在当前已经连接的客户端作用范围为<code>SESSION</code>的值，只会影响后续连入的客户端在作用范围为<code>SESSION</code>的值。</p>
+</blockquote>
+<ul>
+<li><p>并不是所有系统变量都具有<code>GLOBAL</code>和<code>SESSION</code>的作用范围。</p>
+<ul>
+<li>有一些系统变量只具有<code>GLOBAL</code>作用范围，比方说<code>max_connections</code>，表示服务器程序支持同时最多有多少个客户端程序进行连接。</li>
+<li>有一些系统变量只具有<code>SESSION</code>作用范围，比如<code>insert_id</code>，表示在对某个包含<code>AUTO_INCREMENT</code>列的表进行插入时，该列初始的值。</li>
+<li>有一些系统变量的值既具有<code>GLOBAL</code>作用范围，也具有<code>SESSION</code>作用范围，比如我们前边用到的<code>default_storage_engine</code>，而且其实大部分的系统变量都是这样的，</li>
+</ul>
+</li>
+<li><p>有些系统变量是只读的，并不能设置值。</p>
+<p>比方说<code>version</code>，表示当前<code>MySQL</code>的版本，我们客户端是不能设置它的值的，只能在<code>SHOW VARIABLES</code>语句里查看。</p>
+</li>
+</ul>
+<h4 id="4-3启动选项和系统变量的区别"><a href="#4-3启动选项和系统变量的区别" class="headerlink" title="4.3启动选项和系统变量的区别"></a>4.3启动选项和系统变量的区别</h4><p><code>启动选项</code>是在程序启动时我们程序员传递的一些参数，而<code>系统变量</code>是影响服务器程序运行行为的变量，它们之间的关系如下：</p>
+<ul>
+<li>大部分的系统变量都可以被当作启动选项传入。</li>
+<li>有些系统变量是在程序运行过程中自动生成的，是不可以当作启动选项来设置，比如<code>auto_increment_offset</code>、<code>character_set_client</code>啥的。</li>
+<li>有些启动选项也不是系统变量，比如<code>defaults-file</code>。</li>
+</ul>
+<h3 id="5-状态变量"><a href="#5-状态变量" class="headerlink" title="5.状态变量"></a>5.状态变量</h3><p>为了让我们更好的了解服务器程序的运行情况，<code>MySQL</code>服务器程序中维护了好多关于程序运行状态的变量，它们被称为<code>状态变量</code>。比方说<code>Threads_connected</code>表示当前有多少客户端与服务器建立了连接，<code>Handler_update</code>表示已经更新了多少行记录吧啦吧啦。</p>
+<p>由于<code>状态变量</code>是用来显示服务器程序运行状况的，所以它们的值只能由服务器程序自己来设置，我们程序员是不能设置的。与<code>系统变量</code>类似，<code>状态变量</code>也有<code>GLOBAL</code>和<code>SESSION</code>两个作用范围的，所以查看<code>状态变量</code>的语句可以这么写：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SHOW [GLOBAL|SESSION] STATUS [LIKE 匹配的模式];</span><br></pre></td></tr></table></figure>
+
+<p>类似的，如果我们不写明作用范围，默认的作用范围是<code>SESSION</code>，比方说这样：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">mysql&gt; </span><span class="language-bash">SHOW STATUS LIKE <span class="string">&#x27;thread%&#x27;</span>;</span></span><br><span class="line">+-------------------+-------+</span><br><span class="line">| Variable_name     | Value |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| Threads_cached    | 0     |</span><br><span class="line">| Threads_connected | 1     |</span><br><span class="line">| Threads_created   | 1     |</span><br><span class="line">| Threads_running   | 1     |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">mysql&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="三、字符集和比较规则"><a href="#三、字符集和比较规则" class="headerlink" title="三、字符集和比较规则"></a>三、字符集和比较规则</h2><h3 id="1-不同级别的字符集和比较规则"><a href="#1-不同级别的字符集和比较规则" class="headerlink" title="1.不同级别的字符集和比较规则"></a>1.不同级别的字符集和比较规则</h3><p><code>MySQL</code>有4个级别的字符集和比较规则，分别是：</p>
+<ul>
+<li><p>服务器级别</p>
+<ul>
+<li><code>character_set_server</code>表示服务器级别的字符集，<code>collation_server</code>表示服务器级别的比较规则。</li>
+</ul>
+</li>
+<li><p>数据库级别</p>
+<ul>
+<li><pre><code class="shell">CREATE DATABASE 数据库名
+    [[DEFAULT] CHARACTER SET 字符集名称]
+    [[DEFAULT] COLLATE 比较规则名称];
+
+ALTER DATABASE 数据库名
+    [[DEFAULT] CHARACTER SET 字符集名称]
+    [[DEFAULT] COLLATE 比较规则名称];
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">  - `character_set_database`表示当前数据库的字符集，`collation_database`表示当前默认数据库的比较规则，这两个系统变量是只读的，不能修改。如果没有指定当前默认数据库，则变量与相应的服务器级系统变量具有相同的值。</span><br><span class="line"></span><br><span class="line">- 表级别</span><br><span class="line"></span><br><span class="line">  - ```shell</span><br><span class="line">    CREATE TABLE 表名 (列的信息)</span><br><span class="line">        [[DEFAULT] CHARACTER SET 字符集名称]</span><br><span class="line">        [COLLATE 比较规则名称]];</span><br><span class="line">    </span><br><span class="line">    ALTER TABLE 表名</span><br><span class="line">        [[DEFAULT] CHARACTER SET 字符集名称]</span><br><span class="line">        [COLLATE 比较规则名称];</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+</ul>
+</li>
+<li><p>列级别</p>
+<ul>
+<li><pre><code class="shell">CREATE TABLE 表名(
+    列名 字符串类型 [CHARACTER SET 字符集名称] [COLLATE 比较规则名称],
+    其他列...
+);
+
+ALTER TABLE 表名 MODIFY 列名 字符串类型 [CHARACTER SET 字符集名称] [COLLATE 比较规则名称];
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">由于字符集和比较规则是互相有联系的，如果我们只修改了字符集，比较规则也会跟着变化，如果只修改了比较规则，字符集也会跟着变化，具体规则如下：</span><br><span class="line"></span><br><span class="line">- 只修改字符集，则比较规则将变为修改后的字符集默认的比较规则。</span><br><span class="line">- 只修改比较规则，则字符集将变为修改后的比较规则对应的字符集。</span><br><span class="line"></span><br><span class="line">我们介绍的这4个级别字符集和比较规则的联系如下：</span><br><span class="line"></span><br><span class="line">- 如果创建或修改列时没有显式的指定字符集和比较规则，则该列默认用表的字符集和比较规则</span><br><span class="line">- 如果创建表时没有显式的指定字符集和比较规则，则该表默认用数据库的字符集和比较规则</span><br><span class="line">- 如果创建数据库时没有显式的指定字符集和比较规则，则该数据库默认用服务器的字符集和比较规则</span><br><span class="line"></span><br><span class="line">### 2.客户端和服务器通信中的字符集</span><br><span class="line"></span><br><span class="line">![image_1d6dfk4orjaj1ra8536aijb99.png-112.4kB](/../../../../../../imgs/MySQL原理之启蒙篇/f87857b928f84edca6a6cf127b3fda5atplv-k3u1fbpfcp-jj-mark2268000q75.webp) </span><br><span class="line"></span><br><span class="line">从这个分析中我们可以得出这么几点需要注意的地方：</span><br><span class="line"></span><br><span class="line">- 服务器认为客户端发送过来的请求是用`character_set_client`编码的。</span><br><span class="line"></span><br><span class="line">  假设你的客户端采用的字符集和 ***character_set_client*** 不一样的话，这就会出现意想不到的情况。比如我的客户端使用的是`utf8`字符集，如果把系统变量`character_set_client`的值设置为`ascii`的话，服务器可能无法理解我们发送的请求，更别谈处理这个请求了。</span><br><span class="line"></span><br><span class="line">- 服务器将把得到的结果集使用`character_set_results`编码后发送给客户端。</span><br><span class="line"></span><br><span class="line">  假设你的客户端采用的字符集和 ***character_set_results*** 不一样的话，这就可能会出现客户端无法解码结果集的情况，结果就是在你的屏幕上出现乱码。比如我的客户端使用的是`utf8`字符集，如果把系统变量`character_set_results`的值设置为`ascii`的话，可能会产生乱码。</span><br><span class="line"></span><br><span class="line">- `character_set_connection`只是服务器在将请求的字节串从`character_set_client`转换为`character_set_connection`时使用，它是什么其实没多重要，但是一定要注意，该字符集包含的字符范围一定涵盖请求中的字符，要不然会导致有的字符无法使用`character_set_connection`代表的字符集进行编码。比如你把`character_set_client`设置为`utf8`，把`character_set_connection`设置成`ascii`，那么此时你如果从客户端发送一个汉字到服务器，那么服务器无法使用`ascii`字符集来编码这个汉字，就会向用户发出一个警告。</span><br><span class="line"></span><br><span class="line">知道了在`MySQL`中从发送请求到返回结果过程里发生的各种字符集转换，但是为啥要转来转去的呢？不晕么？</span><br><span class="line"></span><br><span class="line">答：是的，很头晕，所以我们通常都把 ***character_set_client*** 、***character_set_connection***、***character_set_results*** 这三个系统变量设置成和客户端使用的字符集一致的情况，这样减少了很多无谓的字符集转换。为了方便我们设置，`MySQL`提供了一条非常简便的语句：</span><br><span class="line"></span><br><span class="line">```shell</span><br><span class="line">SET NAMES 字符集名;</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<p>这一条语句产生的效果和我们执行这3条的效果是一样的：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">SET character_set_client = 字符集名;</span><br><span class="line">SET character_set_connection = 字符集名;</span><br><span class="line">SET character_set_results = 字符集名;</span><br></pre></td></tr></table></figure>
+
+<p>另外，如果你想在启动客户端的时候就把<code>character_set_client</code>、<code>character_set_connection</code>、<code>character_set_results</code>这三个系统变量的值设置成一样的，那我们可以在启动客户端的时候指定一个叫<code>default-character-set</code>的启动选项，比如在配置文件里可以这么写：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[client]</span></span><br><span class="line"><span class="attr">default-character-set</span>=utf8</span><br></pre></td></tr></table></figure>
+
+<p>它起到的效果和执行一遍<code>SET NAMES utf8</code>是一样一样的，都会将那三个系统变量的值设置成<code>utf8</code>。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">MySQL原理之启蒙篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81MySQL%E7%9A%84CS%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">一、MySQL的CS架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%A2%E6%88%B7%E7%AB%AF-x2F-%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.客户端&#x2F;服务器架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%B8%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%BF%9E%E6%8E%A5%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="toc-number">1.1.2.</span> <span class="toc-text">2.客户端与服务器连接的过程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1TCP-x2F-IP"><span class="toc-number">1.1.2.1.</span> <span class="toc-text">2.1TCP&#x2F;IP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E5%91%BD%E5%90%8D%E7%AE%A1%E9%81%93%E5%92%8C%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98"><span class="toc-number">1.1.2.2.</span> <span class="toc-text">2.2命名管道和共享内存</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3Unix%E5%9F%9F%E5%A5%97%E6%8E%A5%E5%AD%97%E6%96%87%E4%BB%B6"><span class="toc-number">1.1.2.3.</span> <span class="toc-text">2.3Unix域套接字文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%A4%84%E7%90%86%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AF%B7%E6%B1%82"><span class="toc-number">1.1.3.</span> <span class="toc-text">3.服务器处理客户端请求</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E8%BF%9E%E6%8E%A5%E7%AE%A1%E7%90%86"><span class="toc-number">1.1.3.1.</span> <span class="toc-text">3.1连接管理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E8%A7%A3%E6%9E%90%E4%B8%8E%E4%BC%98%E5%8C%96"><span class="toc-number">1.1.3.2.</span> <span class="toc-text">3.2解析与优化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E"><span class="toc-number">1.1.3.3.</span> <span class="toc-text">3.3存储引擎</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E7%9A%84%E7%A7%8D%E7%B1%BB"><span class="toc-number">1.1.4.</span> <span class="toc-text">4.存储引擎的种类</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81MySQL%E7%9A%84%E8%B0%83%E6%8E%A7%E6%8C%89%E9%92%AE"><span class="toc-number">1.2.</span> <span class="toc-text">二、MySQL的调控按钮</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E7%9A%84%E7%94%A8%E5%A4%84"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.启动选项的用处</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%91%BD%E4%BB%A4%E8%A1%8C%E4%B8%8A%E4%BD%BF%E7%94%A8%E9%80%89%E9%A1%B9"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.命令行上使用选项</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%B8%AD%E4%BD%BF%E7%94%A8%E9%80%89%E9%A1%B9"><span class="toc-number">1.2.3.</span> <span class="toc-text">3.配置文件中使用选项</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E8%B7%AF%E5%BE%84"><span class="toc-number">1.2.3.1.</span> <span class="toc-text">3.1.配置文件的路径</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E5%86%85%E5%AE%B9"><span class="toc-number">1.2.3.2.</span> <span class="toc-text">3.2配置文件的内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E4%BC%98%E5%85%88%E7%BA%A7"><span class="toc-number">1.2.3.3.</span> <span class="toc-text">3.3配置文件的优先级</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%92%8C%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%B8%AD%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.2.3.4.</span> <span class="toc-text">3.4命令行和配置文件中启动选项的区别</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.4.</span> <span class="toc-text">4.系统变量</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-%E6%9F%A5%E7%9C%8B%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.4.1.</span> <span class="toc-text">4.1.查看系统变量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2%E8%AE%BE%E7%BD%AE%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.4.2.</span> <span class="toc-text">4.2设置系统变量</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#4-2-1%E9%80%9A%E8%BF%87%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E8%AE%BE%E7%BD%AE"><span class="toc-number">1.2.4.2.1.</span> <span class="toc-text">4.2.1通过启动选项设置</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#4-2-2%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%A8%8B%E5%BA%8F%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B%E4%B8%AD%E8%AE%BE%E7%BD%AE"><span class="toc-number">1.2.4.2.2.</span> <span class="toc-text">4.2.2服务器程序运行过程中设置</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-3%E5%90%AF%E5%8A%A8%E9%80%89%E9%A1%B9%E5%92%8C%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.2.4.3.</span> <span class="toc-text">4.3启动选项和系统变量的区别</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E7%8A%B6%E6%80%81%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.5.</span> <span class="toc-text">5.状态变量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E6%AF%94%E8%BE%83%E8%A7%84%E5%88%99"><span class="toc-number">1.3.</span> <span class="toc-text">三、字符集和比较规则</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%B8%8D%E5%90%8C%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E6%AF%94%E8%BE%83%E8%A7%84%E5%88%99"><span class="toc-number">1.3.1.</span> <span class="toc-text">1.不同级别的字符集和比较规则</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&text=MySQL原理之启蒙篇"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&is_video=false&description=MySQL原理之启蒙篇"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL原理之启蒙篇&body=Check out this article: https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&title=MySQL原理之启蒙篇"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&name=MySQL原理之启蒙篇&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2023/12/17/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E5%90%AF%E8%92%99%E7%AF%87/&t=MySQL原理之启蒙篇"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2023
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
