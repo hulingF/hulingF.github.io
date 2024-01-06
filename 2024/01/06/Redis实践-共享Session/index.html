@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis实践-共享Session1.项目背景经典的黑马点评项目背景，其中包含大量的Redis应用场景，我们后续Redis的实践也是以此为项目背景的，废话不多说，先来看看用到了那些表吧：  项目还是采用经典的单体前后端分离项目，不过单体项目集群部署，因此需要考虑很多分布式的场景：  2.基于Session实现登录登录功能需要输入手机号和验证码(或密码)，传统的基于Session实现的登录功能一般包">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis实践-共享Session">
+<meta property="og:url" content="https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis实践-共享Session1.项目背景经典的黑马点评项目背景，其中包含大量的Redis应用场景，我们后续Redis的实践也是以此为项目背景的，废话不多说，先来看看用到了那些表吧：  项目还是采用经典的单体前后端分离项目，不过单体项目集群部署，因此需要考虑很多分布式的场景：  2.基于Session实现登录登录功能需要输入手机号和验证码(或密码)，传统的基于Session实现的登录功能一般包">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106135130979.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106135643378.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106140841142.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106140942917.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106141017108-1704521418358-1.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106141346640.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106144436237.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106145454105.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106145703123.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106151326450.png">
+<meta property="article:published_time" content="2024-01-06T04:22:53.503Z">
+<meta property="article:modified_time" content="2024-01-06T07:22:47.897Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106135130979.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis实践-共享Session</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%95%86%E6%88%B7%E6%9F%A5%E8%AF%A2%E7%BC%93%E5%AD%98/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/12/25/%E6%8E%A5%E9%9B%A8%E6%B0%B4-%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E8%A7%A3%E6%B3%95%E8%AE%B0%E5%BD%95/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&text=Redis实践-共享Session"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&is_video=false&description=Redis实践-共享Session"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践-共享Session&body=Check out this article: https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&name=Redis实践-共享Session&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&t=Redis实践-共享Session"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession"><span class="toc-number">1.</span> <span class="toc-text">Redis实践-共享Session</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">1.项目背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%9F%BA%E4%BA%8ESession%E5%AE%9E%E7%8E%B0%E7%99%BB%E5%BD%95"><span class="toc-number">1.2.</span> <span class="toc-text">2.基于Session实现登录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%9B%86%E7%BE%A4%E7%9A%84Session%E5%85%B1%E4%BA%AB%E9%97%AE%E9%A2%98"><span class="toc-number">1.3.</span> <span class="toc-text">3.集群的Session共享问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E7%B2%98%E6%80%A7%E4%BC%9A%E8%AF%9D%EF%BC%88Sticky-Sessions%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1. 粘性会话（Sticky Sessions）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E4%BC%9A%E8%AF%9D%E5%A4%8D%E5%88%B6%EF%BC%88Session-Replication%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2. 会话复制（Session Replication）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E9%9B%86%E4%B8%AD%E5%BC%8F%E4%BC%9A%E8%AF%9D%E5%AD%98%E5%82%A8"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3. 集中式会话存储</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%AD%98%E5%82%A8"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4. 客户端存储</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%9F%BA%E4%BA%8ERedis%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%ABSession%E7%99%BB%E5%BD%95"><span class="toc-number">1.4.</span> <span class="toc-text">4.基于Redis实现共享Session登录</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis实践-共享Session
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-06T04:22:53.503Z" class="dt-published" itemprop="datePublished">2024-01-06</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis实践-共享Session"><a href="#Redis实践-共享Session" class="headerlink" title="Redis实践-共享Session"></a>Redis实践-共享Session</h1><h2 id="1-项目背景"><a href="#1-项目背景" class="headerlink" title="1.项目背景"></a>1.项目背景</h2><p>经典的黑马点评项目背景，其中包含大量的Redis应用场景，我们后续Redis的实践也是以此为项目背景的，废话不多说，先来看看用到了那些表吧：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106135130979.png" alt="image-20240106135130979"></p>
+<p>项目还是采用经典的单体前后端分离项目，不过单体项目集群部署，因此需要考虑很多分布式的场景：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106135643378.png" alt="image-20240106135643378"></p>
+<h2 id="2-基于Session实现登录"><a href="#2-基于Session实现登录" class="headerlink" title="2.基于Session实现登录"></a>2.基于Session实现登录</h2><p>登录功能需要输入手机号和验证码(或密码)，传统的基于Session实现的登录功能一般包括三个部分：发送短信验证码、短信验证码登录或注册、校验登录状态。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106140841142.png" alt="image-20240106140841142"></p>
+<p>发送短信验证码的请求路径和参数信息如下图，代码实现的重点就是设置Session的属性如<code>session.setAttribute(&quot;code&quot;, &quot;470332&quot;)</code>，Session的实现本质还是基于Cookie的，服务器内部维护了不同会话的Session信息，当用户请求第一次使用Session时服务器会创建一个新的Session对象，并生成一个唯一的会话标识符如<code>JSESSIONID</code>，然后通过响应头的<code>Set-Cookie</code>字段发送给用户，保存在Cookie中。服务器利用该会话ID来识别来自同一用户的后续请求，并访问与该会话ID关联的Session数据。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106140942917.png" alt="image-20240106140942917"></p>
+<p>短信验证码登录的请求路径和参数如下图所示，应用服务器会比较用户传入的验证码与Session中保存的验证码(通过<code>session.getAttribute(&quot;code&quot;)</code>)是否一致，通过校验后查询数据库用户是否存在，如果不存在证明是新用户，需要注册一条新用户纪录，最终将用户信息保存在Session中。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106141017108-1704521418358-1.png" alt="image-20240106141017108"></p>
+<p>登录状态验证功能是项目中大部分功能的普通前置条件，因此放入<code>拦截器</code>中实现，并通过<code>MVC配置类</code>定义<code>拦截规则</code>和<code>过滤规则</code>，为了方便使用，我们还将Session中保存的用户信息转移到统一的<code>ThreadLocal</code>变量，并且请求线程使用完后立即<code>销毁</code>防止内存泄漏。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106141346640.png" alt="image-20240106141346640"></p>
+<h2 id="3-集群的Session共享问题"><a href="#3-集群的Session共享问题" class="headerlink" title="3.集群的Session共享问题"></a>3.集群的Session共享问题</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106144436237.png" alt="image-20240106144436237"></p>
+<p>Tomcat集群中的Session共享是一个重要的问题，尤其是在负载均衡环境下，确保用户在多个服务器实例之间无缝切换而保持会话状态是至关重要的。以下是几种常见的解决Tomcat集群中Session共享问题的方法：</p>
+<h3 id="3-1-粘性会话（Sticky-Sessions）"><a href="#3-1-粘性会话（Sticky-Sessions）" class="headerlink" title="3.1. 粘性会话（Sticky Sessions）"></a>3.1. 粘性会话（Sticky Sessions）</h3><ul>
+<li><strong>原理</strong>：用户的所有请求都被路由到他们最初用于创建会话的同一个 Tomcat 实例。</li>
+<li><strong>实现</strong>：通过负载均衡器配置，如 Apache HTTPD 或 Nginx。</li>
+<li><strong>优点</strong>：实现简单，无需在 Tomcat 实例之间同步会话数据。</li>
+<li><strong>缺点</strong>：如果一个节点失败，用户会话信息可能丢失。</li>
+</ul>
+<h3 id="3-2-会话复制（Session-Replication）"><a href="#3-2-会话复制（Session-Replication）" class="headerlink" title="3.2. 会话复制（Session Replication）"></a>3.2. 会话复制（Session Replication）</h3><ul>
+<li><strong>原理</strong>：会话数据在所有节点间复制和同步。</li>
+<li><strong>实现</strong>：使用 Tomcat 提供的集群功能，如 DeltaManager（适用于小型集群）或 BackupManager（适用于较大集群）。</li>
+<li><strong>优点</strong>：即使某个节点失败，用户会话信息仍然可以从其他节点获得。</li>
+<li><strong>缺点</strong>：随着集群规模的增大，数据复制的开销也增加。</li>
+</ul>
+<h3 id="3-3-集中式会话存储"><a href="#3-3-集中式会话存储" class="headerlink" title="3.3. 集中式会话存储"></a>3.3. 集中式会话存储</h3><ul>
+<li><strong>原理</strong>：所有会话数据存储在集中的存储系统中，如 Redis、Memcached 或数据库。</li>
+<li><strong>实现</strong>：使用 Spring Session 或自定义的存储解决方案。</li>
+<li><strong>优点</strong>：提高了系统的可伸缩性和可靠性，不依赖于单个 Tomcat 实例。</li>
+<li><strong>缺点</strong>：可能需要额外的存储系统管理和配置。</li>
+</ul>
+<h3 id="3-4-客户端存储"><a href="#3-4-客户端存储" class="headerlink" title="3.4. 客户端存储"></a>3.4. 客户端存储</h3><ul>
+<li><strong>原理</strong>：将会话数据存储在客户端，例如使用 Cookie。</li>
+<li><strong>实现</strong>：在应用程序中实现会话数据的序列化和反序列化。</li>
+<li><strong>优点</strong>：减轻了服务器端的存储压力。</li>
+<li><strong>缺点</strong>：受限于客户端存储的大小，且可能存在安全隐患。</li>
+</ul>
+<h2 id="4-基于Redis实现共享Session登录"><a href="#4-基于Redis实现共享Session登录" class="headerlink" title="4.基于Redis实现共享Session登录"></a>4.基于Redis实现共享Session登录</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106145454105.png" alt="image-20240106145454105"></p>
+<p>使用Redis实现共享Session登录，其中涉及Session的地方都使用Redis加以改造。其中需要关注Redis的Key名称，建议使用<code>业务名:实体名:ID</code>的形式，如<code>login:code:13233456638</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">sendCode</span><span class="params">(String phone)</span> &#123;</span><br><span class="line">    <span class="comment">// 校验手机号码格式</span></span><br><span class="line">    <span class="keyword">if</span> (RegexUtils.isPhoneInvalid(phone)) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.fail(SystemConstants.PHONE_NUMBER_FORMAT_MESSAGE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 生成短信验证码</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">code</span> <span class="operator">=</span> RandomUtil.randomNumbers(<span class="number">6</span>);</span><br><span class="line">    <span class="comment">// Redis存入短信验证码</span></span><br><span class="line">    stringRedisTemplate.opsForValue().set(RedisConstants.LOGIN_CODE_KEY + phone, code, RedisConstants.LOGIN_CODE_TTL, TimeUnit.MINUTES);</span><br><span class="line">    <span class="comment">// 模拟发送短信验证码</span></span><br><span class="line">    log.info(<span class="string">&quot;发生短信验证码：&#123;&#125;&quot;</span>, code);</span><br><span class="line">    <span class="keyword">return</span> Result.ok();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">login</span><span class="params">(LoginFormDTO loginForm)</span> &#123;</span><br><span class="line">    <span class="comment">// 校验手机号码格式</span></span><br><span class="line">    <span class="keyword">if</span> (RegexUtils.isPhoneInvalid(loginForm.getPhone())) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.fail(SystemConstants.PHONE_NUMBER_FORMAT_MESSAGE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Redis中获取短信验证码</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">cacheCode</span> <span class="operator">=</span> stringRedisTemplate.opsForValue().get(RedisConstants.LOGIN_CODE_KEY + loginForm.getPhone());</span><br><span class="line">    <span class="keyword">if</span> (cacheCode == <span class="literal">null</span> || !cacheCode.equals(loginForm.getCode())) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.fail(SystemConstants.PHONE_CODE_FAIL_MESSAGE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 数据库中查看用户是否已存在</span></span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> query().eq(<span class="string">&quot;phone&quot;</span>, loginForm.getPhone()).one();</span><br><span class="line">    <span class="keyword">if</span> (user == <span class="literal">null</span>) &#123;</span><br><span class="line">        user = <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line">        user.setPhone(loginForm.getPhone());</span><br><span class="line">        user.setNickName(SystemConstants.USER_NICK_NAME_PREFIX + loginForm.getPhone());</span><br><span class="line">        save(user);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 生成用户Token</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">token</span> <span class="operator">=</span> UUID.randomUUID().toString(<span class="literal">true</span>);</span><br><span class="line">    <span class="comment">// UserDTO是User的属性子集，只保留基础信息，不包含敏感数据如密码等</span></span><br><span class="line">    <span class="type">UserDTO</span> <span class="variable">userDTO</span> <span class="operator">=</span> BeanUtil.copyProperties(user, UserDTO.class);</span><br><span class="line">    Map&lt;String, Object&gt; map = BeanUtil.beanToMap(userDTO, <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;(),</span><br><span class="line">                                           CopyOptions.create().setIgnoreNullValue(<span class="literal">true</span>).setFieldValueEditor((fieldName, fieldValue) -&gt; fieldValue.toString()));</span><br><span class="line">    <span class="comment">// Redis存入用户信息，设置用户信息过期时间为30分钟</span></span><br><span class="line">    stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_USER_KEY + token, map);</span><br><span class="line">    stringRedisTemplate.expire(RedisConstants.LOGIN_USER_KEY + token, RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);</span><br><span class="line">    <span class="keyword">return</span> Result.ok(token);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106145703123.png" alt="image-20240106145703123"></p>
+<p>校验登录状态的逻辑没有任何变化，仅仅改动为Redis实现，不过有一点需要注意：之前的登录拦截器只会拦截部分接口，如果用户登录后一直访问这些接口例如查看商铺列表，由于Redis的自动过期机制用户会突然下线，因此我们需要一个用户保活的办法。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/image-20240106151326450.png" alt="image-20240106151326450"></p>
+<p>拦截器链上的第一个就是<code>RefreshTokenInterceptor</code>，用于刷新用户token的有效期，对所有请求路径开放。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RefreshTokenInterceptor</span> <span class="keyword">implements</span> <span class="title class_">HandlerInterceptor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> StringRedisTemplate stringRedisTemplate;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RefreshTokenInterceptor</span><span class="params">(StringRedisTemplate stringRedisTemplate)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.stringRedisTemplate = stringRedisTemplate;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">preHandle</span><span class="params">(HttpServletRequest request, HttpServletResponse response, Object handler)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// 获取请求头中的用户Token</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">token</span> <span class="operator">=</span> request.getHeader(<span class="string">&quot;authorization&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (StrUtil.isBlank(token)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 根据Token获取Redis中的用户信息</span></span><br><span class="line">        Map&lt;Object, Object&gt; entries = stringRedisTemplate.opsForHash().entries(RedisConstants.LOGIN_USER_KEY + token);</span><br><span class="line">        <span class="keyword">if</span> (entries == <span class="literal">null</span> || entries.isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 用户信息保存在ThreadLocal变量保证线程安全和方便读取</span></span><br><span class="line">        <span class="type">UserDTO</span> <span class="variable">userDTO</span> <span class="operator">=</span> BeanUtil.fillBeanWithMap(entries, <span class="keyword">new</span> <span class="title class_">UserDTO</span>(), <span class="literal">false</span>);</span><br><span class="line">        UserHolder.saveUser(userDTO);</span><br><span class="line">        <span class="comment">// 刷新用户信息的过期时间，保活机制</span></span><br><span class="line">        stringRedisTemplate.expire(RedisConstants.LOGIN_USER_KEY + token, RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">afterCompletion</span><span class="params">(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// 请求线程使用完ThreadLocal变量就立刻销毁，防止内存泄漏</span></span><br><span class="line">        UserHolder.removeUser();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>拦截器链上的第二个就是<code>UserInterceptor</code>，用于拦截不合法的请求，作用在需要登录的路径如查看个人信息等。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserInterceptor</span> <span class="keyword">implements</span> <span class="title class_">HandlerInterceptor</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">preHandle</span><span class="params">(HttpServletRequest request, HttpServletResponse response, Object handler)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// 根据ThreadLocal变量是否存值，判断请求是否携带正确的用户Token</span></span><br><span class="line">        <span class="keyword">if</span> (UserHolder.getUser() == <span class="literal">null</span>) &#123;</span><br><span class="line">            response.setStatus(<span class="number">401</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserHolder</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ThreadLocal&lt;UserDTO&gt; tl = <span class="keyword">new</span> <span class="title class_">ThreadLocal</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">saveUser</span><span class="params">(UserDTO user)</span>&#123;</span><br><span class="line">        tl.set(user);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> UserDTO <span class="title function_">getUser</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> tl.get();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">removeUser</span><span class="params">()</span>&#123;</span><br><span class="line">        tl.remove();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>除了拦截器的代码，我们还需要编写拦截器配置类的策略，如每个拦截器的拦截路径、过滤路径、优先级等，这是通过配置类完成的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MvcConfig</span> <span class="keyword">implements</span> <span class="title class_">WebMvcConfigurer</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> StringRedisTemplate stringRedisTemplate;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addInterceptors</span><span class="params">(InterceptorRegistry registry)</span> &#123;</span><br><span class="line">        registry.addInterceptor(<span class="keyword">new</span> <span class="title class_">UserInterceptor</span>()).excludePathPatterns(</span><br><span class="line">                <span class="string">&quot;/user/code&quot;</span>,</span><br><span class="line">                <span class="string">&quot;/user/login&quot;</span>,</span><br><span class="line">                <span class="string">&quot;/blog/hot&quot;</span>,</span><br><span class="line">                <span class="string">&quot;/shop/**&quot;</span>,</span><br><span class="line">                <span class="string">&quot;/shop-type/**&quot;</span>,</span><br><span class="line">                <span class="string">&quot;/upload/**&quot;</span>,</span><br><span class="line">                <span class="string">&quot;/voucher/**&quot;</span></span><br><span class="line">        ).order(<span class="number">1</span>);</span><br><span class="line">        registry.addInterceptor(<span class="keyword">new</span> <span class="title class_">RefreshTokenInterceptor</span>(stringRedisTemplate))</span><br><span class="line">                .addPathPatterns(<span class="string">&quot;/**&quot;</span>).order(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession"><span class="toc-number">1.</span> <span class="toc-text">Redis实践-共享Session</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">1.项目背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%9F%BA%E4%BA%8ESession%E5%AE%9E%E7%8E%B0%E7%99%BB%E5%BD%95"><span class="toc-number">1.2.</span> <span class="toc-text">2.基于Session实现登录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%9B%86%E7%BE%A4%E7%9A%84Session%E5%85%B1%E4%BA%AB%E9%97%AE%E9%A2%98"><span class="toc-number">1.3.</span> <span class="toc-text">3.集群的Session共享问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E7%B2%98%E6%80%A7%E4%BC%9A%E8%AF%9D%EF%BC%88Sticky-Sessions%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1. 粘性会话（Sticky Sessions）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E4%BC%9A%E8%AF%9D%E5%A4%8D%E5%88%B6%EF%BC%88Session-Replication%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2. 会话复制（Session Replication）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E9%9B%86%E4%B8%AD%E5%BC%8F%E4%BC%9A%E8%AF%9D%E5%AD%98%E5%82%A8"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3. 集中式会话存储</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%AD%98%E5%82%A8"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4. 客户端存储</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%9F%BA%E4%BA%8ERedis%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%ABSession%E7%99%BB%E5%BD%95"><span class="toc-number">1.4.</span> <span class="toc-text">4.基于Redis实现共享Session登录</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&text=Redis实践-共享Session"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&is_video=false&description=Redis实践-共享Session"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践-共享Session&body=Check out this article: https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&title=Redis实践-共享Session"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&name=Redis实践-共享Session&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%85%B1%E4%BA%ABSession/&t=Redis实践-共享Session"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

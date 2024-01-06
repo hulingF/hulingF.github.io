@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="LRU缓存–链表算法解析请你设计并实现一个满足 LRU (最近最少使用) 缓存约束的数据结构。 实现 LRUCache 类：  LRUCache(int capacity) 以 正整数 作为容量 capacity 初始化 LRU 缓存 int get(int key) 如果关键字 key 存在于缓存中，则返回关键字的值，否则返回 -1 。 void put(int key, int value)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LRU缓存--链表算法解析">
+<meta property="og:url" content="https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="LRU缓存–链表算法解析请你设计并实现一个满足 LRU (最近最少使用) 缓存约束的数据结构。 实现 LRUCache 类：  LRUCache(int capacity) 以 正整数 作为容量 capacity 初始化 LRU 缓存 int get(int key) 如果关键字 key 存在于缓存中，则返回关键字的值，否则返回 -1 。 void put(int key, int value)">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/image-20240106182409398.png">
+<meta property="article:published_time" content="2024-01-06T10:11:07.413Z">
+<meta property="article:modified_time" content="2024-01-06T10:24:14.065Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/image-20240106182409398.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>LRU缓存--链表算法解析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/01/06/Redis%E5%AE%9E%E8%B7%B5-%E5%95%86%E6%88%B7%E6%9F%A5%E8%AF%A2%E7%BC%93%E5%AD%98/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&text=LRU缓存--链表算法解析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&is_video=false&description=LRU缓存--链表算法解析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LRU缓存--链表算法解析&body=Check out this article: https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&name=LRU缓存--链表算法解析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&t=LRU缓存--链表算法解析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LRU%E7%BC%93%E5%AD%98%E2%80%93%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">LRU缓存–链表算法解析</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        LRU缓存--链表算法解析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-06T10:11:07.413Z" class="dt-published" itemprop="datePublished">2024-01-06</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="LRU缓存–链表算法解析"><a href="#LRU缓存–链表算法解析" class="headerlink" title="LRU缓存–链表算法解析"></a>LRU缓存–链表算法解析</h1><p>请你设计并实现一个满足 LRU (最近最少使用) 缓存约束的数据结构。</p>
+<p>实现 <code>LRUCache</code> 类：</p>
+<ul>
+<li><code>LRUCache(int capacity)</code> 以 <strong>正整数</strong> 作为容量 <code>capacity</code> 初始化 LRU 缓存</li>
+<li><code>int get(int key)</code> 如果关键字 <code>key</code> 存在于缓存中，则返回关键字的值，否则返回 <code>-1</code> 。</li>
+<li><code>void put(int key, int value)</code> 如果关键字 <code>key</code> 已经存在，则变更其数据值 <code>value</code> ；如果不存在，则向缓存中插入该组 <code>key-value</code> 。如果插入操作导致关键字数量超过 <code>capacity</code> ，则应该 <strong>逐出</strong> 最久未使用的关键字。</li>
+</ul>
+<p>函数 <code>get</code> 和 <code>put</code> 必须以 <code>O(1)</code> 的平均时间复杂度运行。</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">输入</span><br><span class="line">[&quot;LRUCache&quot;, &quot;put&quot;, &quot;put&quot;, &quot;get&quot;, &quot;put&quot;, &quot;get&quot;, &quot;put&quot;, &quot;get&quot;, &quot;get&quot;, &quot;get&quot;]</span><br><span class="line">[[2], [1, 1], [2, 2], [1], [3, 3], [2], [4, 4], [1], [3], [4]]</span><br><span class="line">输出</span><br><span class="line">[null, null, null, 1, null, -1, null, -1, 3, 4]</span><br><span class="line"></span><br><span class="line">解释</span><br><span class="line">LRUCache lRUCache = new LRUCache(2);</span><br><span class="line">lRUCache.put(1, 1); // 缓存是 &#123;1=1&#125;</span><br><span class="line">lRUCache.put(2, 2); // 缓存是 &#123;1=1, 2=2&#125;</span><br><span class="line">lRUCache.get(1);    // 返回 1</span><br><span class="line">lRUCache.put(3, 3); // 该操作会使得关键字 2 作废，缓存是 &#123;1=1, 3=3&#125;</span><br><span class="line">lRUCache.get(2);    // 返回 -1 (未找到)</span><br><span class="line">lRUCache.put(4, 4); // 该操作会使得关键字 1 作废，缓存是 &#123;4=4, 3=3&#125;</span><br><span class="line">lRUCache.get(1);    // 返回 -1 (未找到)</span><br><span class="line">lRUCache.get(3);    // 返回 3</span><br><span class="line">lRUCache.get(4);    // 返回 4</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>1 &lt;= capacity &lt;= 3000</code></li>
+<li><code>0 &lt;= key &lt;= 10000</code></li>
+<li><code>0 &lt;= value &lt;= 105</code></li>
+<li>最多调用 <code>2 * 105</code> 次 <code>get</code> 和 <code>put</code></li>
+</ul>
+<blockquote>
+<p>这道题目我一开始想到使用HashMap存储键值对，使用双向链表维持LRU关系，但是钻了牛角尖，下意识认为Map结构是&lt;Integer, Integer&gt;，这样的话每次get操作还需要重新遍历双向链表，找到目标节点并前移到链表头部，不满足时间复杂度O(1)，其实我们Map结构是&lt;Integer, DlinkNode&gt;更简单，直接一步找到在双向链表中的位置。</p>
+</blockquote>
+<p>LRU 缓存机制可以通过<code>哈希表</code>辅以<code>双向链表</code>实现，我们用一个哈希表和一个双向链表维护所有在缓存中的键值对。</p>
+<ul>
+<li>双向链表按照被使用的顺序存储了这些键值对，靠近<code>头部</code>的键值对是<code>最近使用</code>的，而靠近<code>尾部</code>的键值对是<code>最久未使用</code>的。</li>
+<li>哈希表即为普通的哈希映射（HashMap），通过缓存数据的<code>键</code>映射到其在<code>双向链表中的位置</code>。</li>
+</ul>
+<p>这样以来，我们首先使用哈希表进行定位，找出缓存项在双向链表中的位置，随后将其移动到双向链表的头部，即可在 <code>O(1)</code> 的时间内完成 <code>get</code> 或者 <code>put</code> 操作。具体的方法如下：</p>
+<ul>
+<li>对于 <code>get</code> 操作，首先判断 <code>key</code> 是否存在：<ul>
+<li>如果 <code>key</code> 不存在，则返回 <code>−1</code>；</li>
+<li>如果 <code>key</code> 存在，则 <code>key</code> 对应的节点是最近被使用的节点。通过哈希表定位到该节点在双向链表中的位置，并将其移动到双向链表的头部，最后返回该节点的值。</li>
+</ul>
+</li>
+<li>对于 <code>put</code> 操作，首先判断 <code>key</code> 是否存在：<ul>
+<li>如果 <code>key</code> 不存在，使用 <code>key</code> 和 <code>value</code> 创建一个新的节点，在双向链表的头部添加该节点，并将 <code>key</code> 和该节点添加进哈希表中。然后判断双向链表的节点数是否超出容量，如果超出容量，则删除双向链表的尾部节点，并删除哈希表中对应的项；</li>
+<li>如果 <code>key</code> 存在，则与 <code>get</code> 操作类似，先通过哈希表定位，再将对应的节点的值更新为 <code>value</code>，并将该节点移到双向链表的头部。</li>
+</ul>
+</li>
+</ul>
+<p>上述各项操作中，访问哈希表的时间复杂度为 <code>O(1)</code>，在双向链表的头部添加节点、在双向链表的尾部删除节点的复杂度也为 <code>O(1)</code>。而将一个节点移到双向链表的头部，可以分成「删除该节点」和「在双向链表的头部添加节点」两步操作，都可以在 <code>O(1)</code> 时间内完成。</p>
+<blockquote>
+<p>在双向链表的实现中，使用一个伪头部（dummy head）和伪尾部（dummy tail）标记界限，这样在添加节点和删除节点的时候就不需要检查相邻的节点是否存在。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LRUCache</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">DLinkedNode</span> &#123;</span><br><span class="line">        <span class="type">int</span> key;</span><br><span class="line">        <span class="type">int</span> value;</span><br><span class="line">        DLinkedNode prev;</span><br><span class="line">        DLinkedNode next;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">DLinkedNode</span><span class="params">()</span> &#123;&#125;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">DLinkedNode</span><span class="params">(<span class="type">int</span> _key, <span class="type">int</span> _value)</span> &#123;key = _key; value = _value;&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Map&lt;Integer, DLinkedNode&gt; cache = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;Integer, DLinkedNode&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> size;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> capacity;</span><br><span class="line">    <span class="keyword">private</span> DLinkedNode head, tail;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">LRUCache</span><span class="params">(<span class="type">int</span> capacity)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.size = <span class="number">0</span>;</span><br><span class="line">        <span class="built_in">this</span>.capacity = capacity;</span><br><span class="line">        <span class="comment">// 使用伪头部和伪尾部节点</span></span><br><span class="line">        head = <span class="keyword">new</span> <span class="title class_">DLinkedNode</span>();</span><br><span class="line">        tail = <span class="keyword">new</span> <span class="title class_">DLinkedNode</span>();</span><br><span class="line">        head.next = tail;</span><br><span class="line">        tail.prev = head;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">get</span><span class="params">(<span class="type">int</span> key)</span> &#123;</span><br><span class="line">        <span class="type">DLinkedNode</span> <span class="variable">node</span> <span class="operator">=</span> cache.get(key);</span><br><span class="line">        <span class="keyword">if</span> (node == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果 key 存在，先通过哈希表定位，再移到头部</span></span><br><span class="line">        moveToHead(node);</span><br><span class="line">        <span class="keyword">return</span> node.value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">put</span><span class="params">(<span class="type">int</span> key, <span class="type">int</span> value)</span> &#123;</span><br><span class="line">        <span class="type">DLinkedNode</span> <span class="variable">node</span> <span class="operator">=</span> cache.get(key);</span><br><span class="line">        <span class="keyword">if</span> (node == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="comment">// 如果 key 不存在，创建一个新的节点</span></span><br><span class="line">            <span class="type">DLinkedNode</span> <span class="variable">newNode</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DLinkedNode</span>(key, value);</span><br><span class="line">            <span class="comment">// 添加进哈希表</span></span><br><span class="line">            cache.put(key, newNode);</span><br><span class="line">            <span class="comment">// 添加至双向链表的头部</span></span><br><span class="line">            addToHead(newNode);</span><br><span class="line">            ++size;</span><br><span class="line">            <span class="keyword">if</span> (size &gt; capacity) &#123;</span><br><span class="line">                <span class="comment">// 如果超出容量，删除双向链表的尾部节点</span></span><br><span class="line">                <span class="type">DLinkedNode</span> <span class="variable">tail</span> <span class="operator">=</span> removeTail();</span><br><span class="line">                <span class="comment">// 删除哈希表中对应的项</span></span><br><span class="line">                cache.remove(tail.key);</span><br><span class="line">                --size;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 如果 key 存在，先通过哈希表定位，再修改 value，并移到头部</span></span><br><span class="line">            node.value = value;</span><br><span class="line">            moveToHead(node);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">addToHead</span><span class="params">(DLinkedNode node)</span> &#123;</span><br><span class="line">        node.prev = head;</span><br><span class="line">        node.next = head.next;</span><br><span class="line">        head.next.prev = node;</span><br><span class="line">        head.next = node;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">removeNode</span><span class="params">(DLinkedNode node)</span> &#123;</span><br><span class="line">        node.prev.next = node.next;</span><br><span class="line">        node.next.prev = node.prev;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">moveToHead</span><span class="params">(DLinkedNode node)</span> &#123;</span><br><span class="line">        removeNode(node);</span><br><span class="line">        addToHead(node);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> DLinkedNode <span class="title function_">removeTail</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">DLinkedNode</span> <span class="variable">res</span> <span class="operator">=</span> tail.prev;</span><br><span class="line">        removeNode(res);</span><br><span class="line">        <span class="keyword">return</span> res;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/image-20240106182409398.png" alt="image-20240106182409398"></p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LRU%E7%BC%93%E5%AD%98%E2%80%93%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">LRU缓存–链表算法解析</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&text=LRU缓存--链表算法解析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&is_video=false&description=LRU缓存--链表算法解析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LRU缓存--链表算法解析&body=Check out this article: https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&title=LRU缓存--链表算法解析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&name=LRU缓存--链表算法解析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/06/LRU%E7%BC%93%E5%AD%98--%E9%93%BE%E8%A1%A8%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/&t=LRU缓存--链表算法解析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
