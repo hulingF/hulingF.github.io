@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis实践之消息队列1.消息队列介绍消息队列（Message Queue），字面意思就是存放消息的队列。最简单的消息队列模型包括3个角色：  消息队列：存储和管理消息，也被称为消息代理（Message Broker） 生产者：发送消息到消息队列 消费者：从消息队列获取消息并处理消息  Redis提供了三种不同的方式来实现消息队列：  List结构：基于List结构模拟消息队列 PubSub：基">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis实践之消息队列">
+<meta property="og:url" content="https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis实践之消息队列1.消息队列介绍消息队列（Message Queue），字面意思就是存放消息的队列。最简单的消息队列模型包括3个角色：  消息队列：存储和管理消息，也被称为消息代理（Message Broker） 生产者：发送消息到消息队列 消费者：从消息队列获取消息并处理消息  Redis提供了三种不同的方式来实现消息队列：  List结构：基于List结构模拟消息队列 PubSub：基">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185004014.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185143572.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185234614.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185409393.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185438326.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185542277.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185627737.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185732901.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185821020.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185853834.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190354602.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190407870.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190511875.png">
+<meta property="article:published_time" content="2024-01-10T09:40:03.375Z">
+<meta property="article:modified_time" content="2024-01-10T11:11:22.888Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185004014.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis实践之消息队列</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/01/09/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E4%BC%98%E6%83%A0%E5%8A%B5%E7%A7%92%E6%9D%80/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&text=Redis实践之消息队列"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&is_video=false&description=Redis实践之消息队列"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之消息队列&body=Check out this article: https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&name=Redis实践之消息队列&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&t=Redis实践之消息队列"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之消息队列</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.消息队列介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%9F%BA%E4%BA%8EList%E7%BB%93%E6%9E%84%E6%A8%A1%E6%8B%9F%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.2.</span> <span class="toc-text">2.基于List结构模拟消息队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%9F%BA%E4%BA%8EPubSub%E7%9A%84%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.3.</span> <span class="toc-text">3.基于PubSub的消息队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%9F%BA%E4%BA%8EStream%E7%9A%84%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.4.</span> <span class="toc-text">4.基于Stream的消息队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%9F%BA%E4%BA%8EStream%E7%9A%84%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97-%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84"><span class="toc-number">1.5.</span> <span class="toc-text">5.基于Stream的消息队列-消费者组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%BC%82%E6%AD%A5%E7%A7%92%E6%9D%80%E4%B8%8B%E5%8D%95"><span class="toc-number">1.6.</span> <span class="toc-text">6.消息队列实现异步秒杀下单</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis实践之消息队列
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-10T09:40:03.375Z" class="dt-published" itemprop="datePublished">2024-01-10</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis实践之消息队列"><a href="#Redis实践之消息队列" class="headerlink" title="Redis实践之消息队列"></a>Redis实践之消息队列</h1><h2 id="1-消息队列介绍"><a href="#1-消息队列介绍" class="headerlink" title="1.消息队列介绍"></a>1.消息队列介绍</h2><p>消息队列（Message Queue），字面意思就是存放消息的队列。最简单的消息队列模型包括3个角色：</p>
+<ul>
+<li>消息队列：存储和管理消息，也被称为消息代理（Message Broker）</li>
+<li>生产者：发送消息到消息队列</li>
+<li>消费者：从消息队列获取消息并处理消息</li>
+</ul>
+<p>Redis提供了三种不同的方式来实现消息队列：</p>
+<ul>
+<li>List结构：基于List结构模拟消息队列</li>
+<li>PubSub：基本的点对点消息模型</li>
+<li>Stream：比较完善的消息队列模型</li>
+</ul>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185004014.png" alt="image-20240110185004014"> </p>
+<h2 id="2-基于List结构模拟消息队列"><a href="#2-基于List结构模拟消息队列" class="headerlink" title="2.基于List结构模拟消息队列"></a>2.基于List结构模拟消息队列</h2><p>消息队列（Message Queue），字面意思就是存放消息的队列。而Redis的list数据结构是一个双向链表，很容易模拟出队列效果。</p>
+<p>队列是入口和出口不在一边，因此我们可以利用：LPUSH结合RPOP、或者RPUSH结合LPOP来实现。不过要注意的是，当队列中没有消息时RPOP或LPOP操作会返回null，并不像JVM的阻塞队列那样会阻塞并等待消息。因此这里应该使用BRPOP或者BLPOP来实现阻塞效果。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185143572.png" alt="image-20240110185143572"> </p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185234614.png" alt="image-20240110185234614"> </p>
+<h2 id="3-基于PubSub的消息队列"><a href="#3-基于PubSub的消息队列" class="headerlink" title="3.基于PubSub的消息队列"></a>3.基于PubSub的消息队列</h2><p>PubSub（发布订阅）是Redis2.0版本引入的消息传递模型。顾名思义，消费者可以订阅一个或多个channel，生产者向对应channel发送消息后，所有订阅者都能收到相关消息。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185409393.png" alt="image-20240110185409393"> </p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185438326.png" alt="image-20240110185438326"> </p>
+<h2 id="4-基于Stream的消息队列"><a href="#4-基于Stream的消息队列" class="headerlink" title="4.基于Stream的消息队列"></a>4.基于Stream的消息队列</h2><p>Stream是Redis 5.0引入的一种新数据类型，可以实现一个功能非常完善的消息队列。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185542277.png" alt="image-20240110185542277"> </p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185627737.png" alt="image-20240110185627737"> </p>
+<p>在业务开发中，我们可以循环的调用XREAD阻塞方式来查询最新消息，从而实现持续监听队列的效果，伪代码如下：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185732901.png" alt="image-20240110185732901"> </p>
+<blockquote>
+<p>当我们指定起始ID为$时，代表读取最新的消息，如果我们处理一条消息的过程中，又有超过1条以上的消息到达队列，则下次获取时也只能获取到最新的一条，会出现漏读消息的问题。</p>
+</blockquote>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185821020.png" alt="image-20240110185821020"> </p>
+<h2 id="5-基于Stream的消息队列-消费者组"><a href="#5-基于Stream的消息队列-消费者组" class="headerlink" title="5.基于Stream的消息队列-消费者组"></a>5.基于Stream的消息队列-消费者组</h2><p>消费者组（Consumer Group）：将多个消费者划分到一个组中，监听同一个队列。具备下列特点：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185853834.png" alt="image-20240110185853834"> </p>
+<p>创建消费者组：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">XGROUP CREATE  key groupName ID [MKSTREAM]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>key：队列名称</li>
+<li>groupName：消费者组名称</li>
+<li>ID：起始ID标示，$代表队列中最后一个消息，0则代表队列中第一个消息</li>
+<li>MKSTREAM：队列不存在时自动创建队列</li>
+</ul>
+<p>其它常见命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">删除指定的消费者组</span></span><br><span class="line">XGROUP DESTORY key groupName</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">给指定的消费者组添加消费者</span></span><br><span class="line">XGROUP CREATECONSUMER key groupName consumername</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">删除消费者组中的指定消费者</span></span><br><span class="line">XGROUP DELCONSUMER key groupName consumername</span><br></pre></td></tr></table></figure>
+
+<p>从消费者组读取消息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">XREADGROUP GROUP group consumer [COUNT count] [BLOCK milliseconds] [NOACK] STREAMS key [key ...] ID [ID ...]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>group：消费组名称</li>
+<li>consumer：消费者名称，如果消费者不存在，会自动创建一个消费者</li>
+<li>count：本次查询的最大数量</li>
+<li>BLOCK milliseconds：当没有消息时最长等待时间</li>
+<li>NOACK：无需手动ACK，获取到消息后自动确认</li>
+<li>STREAMS key：指定队列名称</li>
+<li>ID：获取消息的起始ID：<ul>
+<li>“&gt;”：从下一个未消费的消息开始</li>
+<li>其它：根据指定id从pending-list中获取已消费但未确认的消息，例如0，是从pending-list中的第一个消息开始</li>
+</ul>
+</li>
+</ul>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190354602.png" alt="image-20240110190354602"> </p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190407870.png" alt="image-20240110190407870"></p>
+<h2 id="6-消息队列实现异步秒杀下单"><a href="#6-消息队列实现异步秒杀下单" class="headerlink" title="6.消息队列实现异步秒杀下单"></a>6.消息队列实现异步秒杀下单</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190511875.png" alt="image-20240110190511875"></p>
+<p>Lua脚本的改写:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 秒杀优惠劵ID</span></span><br><span class="line"><span class="keyword">local</span> voucherId = ARGV[<span class="number">1</span>]</span><br><span class="line"><span class="comment">-- 用户ID</span></span><br><span class="line"><span class="keyword">local</span> userId = ARGV[<span class="number">2</span>]</span><br><span class="line"><span class="comment">-- 订单ID</span></span><br><span class="line"><span class="keyword">local</span> orderId = RGV[<span class="number">3</span>]</span><br><span class="line"><span class="comment">-- 秒杀券库存Key</span></span><br><span class="line"><span class="keyword">local</span> stockKey = <span class="string">&#x27;seckill:stock:&#x27;</span> .. voucherId</span><br><span class="line"><span class="comment">-- 秒杀券订单Key</span></span><br><span class="line"><span class="keyword">local</span> orderKey = <span class="string">&#x27;seckill:order:&#x27;</span> .. voucherId</span><br><span class="line"><span class="comment">-- 判断库存是否充足</span></span><br><span class="line"><span class="keyword">if</span>(<span class="built_in">tonumber</span>(redis.call(<span class="string">&#x27;get&#x27;</span>, stockKey)) &lt;= <span class="number">0</span>) <span class="keyword">then</span></span><br><span class="line">    <span class="comment">-- 库存不足，返回1</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"><span class="comment">-- 判断一人一单</span></span><br><span class="line"><span class="keyword">if</span>(redis.call(<span class="string">&#x27;sismember&#x27;</span>, orderKey, userId) == <span class="number">1</span>) <span class="keyword">then</span></span><br><span class="line">    <span class="comment">-- 用户已下单，返回2</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">2</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"><span class="comment">-- 扣减库存</span></span><br><span class="line">redis.call(<span class="string">&#x27;incrby&#x27;</span>, stockKey, <span class="number">-1</span>)</span><br><span class="line"><span class="comment">-- 保存用户</span></span><br><span class="line">redis.call(<span class="string">&#x27;sadd&#x27;</span>, orderKey, userId)</span><br><span class="line"><span class="comment">-- 下单信息保存到消息队列</span></span><br><span class="line">redis.call(<span class="string">&#x27;xadd&#x27;</span>, <span class="string">&#x27;stream.orders&#x27;</span>, <span class="string">&#x27;*&#x27;</span>, <span class="string">&#x27;userId&#x27;</span>, userId, <span class="string">&#x27;voucherId&#x27;</span>, voucherId, <span class="string">&#x27;id&#x27;</span>, orderId);</span><br><span class="line"><span class="comment">-- 秒杀成功，返回0</span></span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p>异步下单的业务代码:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">ExecutorService</span> <span class="variable">SECKILL_ORDER_HANDLER</span> <span class="operator">=</span> Executors.newSingleThreadExecutor();</span><br><span class="line"><span class="comment">// 消息队列名称</span></span><br><span class="line"><span class="keyword">private</span> <span class="type">String</span> <span class="variable">queueName</span> <span class="operator">=</span> <span class="string">&quot;stream.orders&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">@PostConstruct</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">initial</span><span class="params">()</span> &#123;</span><br><span class="line">    SECKILL_ORDER_HANDLER.submit(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="comment">// 消息队列中取出订单消息，每次读取一条消息，最长等待2秒</span></span><br><span class="line">                List&lt;MapRecord&lt;String, Object, Object&gt;&gt; list = stringRedisTemplate.opsForStream().read(</span><br><span class="line">                    Consumer.from(<span class="string">&quot;g1&quot;</span>, <span class="string">&quot;c1&quot;</span>),</span><br><span class="line">                    StreamReadOptions.empty().count(<span class="number">1</span>).block(Duration.ofSeconds(<span class="number">2</span>)),</span><br><span class="line">                    StreamOffset.create(queueName, ReadOffset.lastConsumed())</span><br><span class="line">                );</span><br><span class="line">                <span class="comment">// 判断消息获取是否成功</span></span><br><span class="line">                <span class="keyword">if</span> (list == <span class="literal">null</span> || list.isEmpty()) &#123;</span><br><span class="line">                    <span class="comment">// 没有消息，继续循环</span></span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 解析订单消息</span></span><br><span class="line">                MapRecord&lt;String, Object, Object&gt; record = list.get(<span class="number">0</span>);</span><br><span class="line">                Map&lt;Object, Object&gt; value = record.getValue();</span><br><span class="line">                <span class="type">VoucherOrder</span> <span class="variable">voucherOrder</span> <span class="operator">=</span> BeanUtil.fillBeanWithMap(value, <span class="keyword">new</span> <span class="title class_">VoucherOrder</span>(), <span class="literal">true</span>);</span><br><span class="line">                <span class="comment">// 扣减库存，使用乐观锁(stock &gt; 0)</span></span><br><span class="line">                <span class="type">boolean</span> <span class="variable">updated</span> <span class="operator">=</span> seckillVoucherService.update()</span><br><span class="line">                    .setSql(<span class="string">&quot;stock = stock - 1&quot;</span>)</span><br><span class="line">                    .eq(<span class="string">&quot;voucher_id&quot;</span>, voucherOrder.getVoucherId())</span><br><span class="line">                    .gt(<span class="string">&quot;stock&quot;</span>, <span class="number">0</span>)</span><br><span class="line">                    .update();</span><br><span class="line">                <span class="keyword">if</span> (!updated) &#123;</span><br><span class="line">                    log.error(<span class="string">&quot;库存不足！&quot;</span>);</span><br><span class="line">                    <span class="keyword">return</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 下单</span></span><br><span class="line">                save(voucherOrder);</span><br><span class="line">                <span class="comment">// ACK确认消息消费完毕</span></span><br><span class="line">                stringRedisTemplate.opsForStream().acknowledge(queueName, <span class="string">&quot;g1&quot;</span>, record.getId());</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                log.error(<span class="string">&quot;订单处理异常&quot;</span>, e);</span><br><span class="line">                handlePendingList();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">handlePendingList</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 消费者pending-list中取出订单消息</span></span><br><span class="line">            List&lt;MapRecord&lt;String, Object, Object&gt;&gt; list = stringRedisTemplate.opsForStream().read(</span><br><span class="line">                Consumer.from(<span class="string">&quot;g1&quot;</span>, <span class="string">&quot;c1&quot;</span>),</span><br><span class="line">                StreamReadOptions.empty().count(<span class="number">1</span>),</span><br><span class="line">                StreamOffset.create(queueName, ReadOffset.from(<span class="string">&quot;0&quot;</span>))</span><br><span class="line">            );</span><br><span class="line">            <span class="comment">// 判断消息获取是否成功</span></span><br><span class="line">            <span class="keyword">if</span> (list == <span class="literal">null</span> || list.isEmpty()) &#123;</span><br><span class="line">                <span class="comment">// 没有消息，说明消费者的pending-list中没有遗漏未处理的订单，结束循环</span></span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 解析订单消息</span></span><br><span class="line">            MapRecord&lt;String, Object, Object&gt; record = list.get(<span class="number">0</span>);</span><br><span class="line">            Map&lt;Object, Object&gt; value = record.getValue();</span><br><span class="line">            <span class="type">VoucherOrder</span> <span class="variable">voucherOrder</span> <span class="operator">=</span> BeanUtil.fillBeanWithMap(value, <span class="keyword">new</span> <span class="title class_">VoucherOrder</span>(), <span class="literal">true</span>);</span><br><span class="line">            <span class="comment">// 扣减库存，使用乐观锁(stock &gt; 0)</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">updated</span> <span class="operator">=</span> seckillVoucherService.update()</span><br><span class="line">                .setSql(<span class="string">&quot;stock = stock - 1&quot;</span>)</span><br><span class="line">                .eq(<span class="string">&quot;voucher_id&quot;</span>, voucherOrder.getVoucherId())</span><br><span class="line">                .gt(<span class="string">&quot;stock&quot;</span>, <span class="number">0</span>)</span><br><span class="line">                .update();</span><br><span class="line">            <span class="keyword">if</span> (!updated) &#123;</span><br><span class="line">                log.error(<span class="string">&quot;库存不足！&quot;</span>);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 下单</span></span><br><span class="line">            save(voucherOrder);</span><br><span class="line">            <span class="comment">// ACK确认消息消费完毕</span></span><br><span class="line">            stringRedisTemplate.opsForStream().acknowledge(queueName, <span class="string">&quot;g1&quot;</span>, record.getId());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;订单处理异常&quot;</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">seckillVoucher3</span><span class="params">(Long voucherId)</span> &#123;</span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="type">long</span> <span class="variable">orderId</span> <span class="operator">=</span> redisIdWorker.getNextId(<span class="string">&quot;inc:order:&quot;</span>);</span><br><span class="line">    <span class="comment">// 执行Lua脚本</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">result</span> <span class="operator">=</span> stringRedisTemplate.execute(</span><br><span class="line">        SECKILL_SCRIPT,</span><br><span class="line">        Collections.emptyList(),</span><br><span class="line">        voucherId.toString(),</span><br><span class="line">        userId.toString(),</span><br><span class="line">        String.valueOf(orderId));</span><br><span class="line">    <span class="comment">// 判断秒杀资格</span></span><br><span class="line">    <span class="keyword">if</span> (result.intValue() == <span class="number">1</span>) <span class="keyword">return</span> Result.fail(<span class="string">&quot;库存不足&quot;</span>);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (result.intValue() == <span class="number">2</span>) <span class="keyword">return</span> Result.fail(<span class="string">&quot;用户不能重复下单&quot;</span>);</span><br><span class="line">    <span class="comment">// 返回订单ID</span></span><br><span class="line">    <span class="keyword">return</span> Result.ok(orderId);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之消息队列</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.消息队列介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%9F%BA%E4%BA%8EList%E7%BB%93%E6%9E%84%E6%A8%A1%E6%8B%9F%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.2.</span> <span class="toc-text">2.基于List结构模拟消息队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%9F%BA%E4%BA%8EPubSub%E7%9A%84%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.3.</span> <span class="toc-text">3.基于PubSub的消息队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%9F%BA%E4%BA%8EStream%E7%9A%84%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="toc-number">1.4.</span> <span class="toc-text">4.基于Stream的消息队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%9F%BA%E4%BA%8EStream%E7%9A%84%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97-%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84"><span class="toc-number">1.5.</span> <span class="toc-text">5.基于Stream的消息队列-消费者组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%BC%82%E6%AD%A5%E7%A7%92%E6%9D%80%E4%B8%8B%E5%8D%95"><span class="toc-number">1.6.</span> <span class="toc-text">6.消息队列实现异步秒杀下单</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&text=Redis实践之消息队列"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&is_video=false&description=Redis实践之消息队列"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之消息队列&body=Check out this article: https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&title=Redis实践之消息队列"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&name=Redis实践之消息队列&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/&t=Redis实践之消息队列"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
