@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis实践之点赞排行榜1.项目背景探店笔记类似点评网站的评价，往往是图文结合。对应的表有两个：  tb_blog：探店笔记表，包含笔记中的标题、文字、图片等 tb_blog_comments：其他用户对探店笔记的评价     涉及的相关接口包括上传图片接口、发布笔记接口、查看笔记详情接口： 1234567891011121314151617181920212223242526272829303">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis实践之点赞排行榜">
+<meta property="og:url" content="https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis实践之点赞排行榜1.项目背景探店笔记类似点评网站的评价，往往是图文结合。对应的表有两个：  tb_blog：探店笔记表，包含笔记中的标题、文字、图片等 tb_blog_comments：其他用户对探店笔记的评价     涉及的相关接口包括上传图片接口、发布笔记接口、查看笔记详情接口： 1234567891011121314151617181920212223242526272829303">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111105725776.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111105753513.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111110608746.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111110752093.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111110808582.png">
+<meta property="article:published_time" content="2024-01-11T02:55:54.977Z">
+<meta property="article:modified_time" content="2024-01-11T03:10:33.428Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111105725776.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis实践之点赞排行榜</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/01/10/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&text=Redis实践之点赞排行榜"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&is_video=false&description=Redis实践之点赞排行榜"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之点赞排行榜&body=Check out this article: https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&name=Redis实践之点赞排行榜&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&t=Redis实践之点赞排行榜"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之点赞排行榜</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">1.项目背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%82%B9%E8%B5%9E%E5%8A%9F%E8%83%BD"><span class="toc-number">1.2.</span> <span class="toc-text">2.点赞功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="toc-number">1.3.</span> <span class="toc-text">3.点赞排行榜</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis实践之点赞排行榜
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-11T02:55:54.977Z" class="dt-published" itemprop="datePublished">2024-01-11</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis实践之点赞排行榜"><a href="#Redis实践之点赞排行榜" class="headerlink" title="Redis实践之点赞排行榜"></a>Redis实践之点赞排行榜</h1><h2 id="1-项目背景"><a href="#1-项目背景" class="headerlink" title="1.项目背景"></a>1.项目背景</h2><p>探店笔记类似点评网站的评价，往往是图文结合。对应的表有两个：</p>
+<ul>
+<li>tb_blog：探店笔记表，包含笔记中的标题、文字、图片等</li>
+<li>tb_blog_comments：其他用户对探店笔记的评价</li>
+</ul>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111105725776.png" alt="image-20240111105725776"></p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111105753513.png" alt="image-20240111105753513"> </p>
+<p>涉及的相关接口包括上传图片接口、发布笔记接口、查看笔记详情接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">uploadImage</span><span class="params">(<span class="meta">@RequestParam(&quot;file&quot;)</span> MultipartFile image)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 获取原始文件名称</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">originalFilename</span> <span class="operator">=</span> image.getOriginalFilename();</span><br><span class="line">        <span class="comment">// 生成新文件名</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">fileName</span> <span class="operator">=</span> createNewFileName(originalFilename);</span><br><span class="line">        <span class="comment">// 保存文件</span></span><br><span class="line">        image.transferTo(<span class="keyword">new</span> <span class="title class_">File</span>(SystemConstants.IMAGE_UPLOAD_DIR, fileName));</span><br><span class="line">        <span class="comment">// 返回结果</span></span><br><span class="line">        log.debug(<span class="string">&quot;文件上传成功，&#123;&#125;&quot;</span>, fileName);</span><br><span class="line">        <span class="keyword">return</span> Result.ok(fileName);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;文件上传失败&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> String <span class="title function_">createNewFileName</span><span class="params">(String originalFilename)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取后缀</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">suffix</span> <span class="operator">=</span> StrUtil.subAfter(originalFilename, <span class="string">&quot;.&quot;</span>, <span class="literal">true</span>);</span><br><span class="line">    <span class="comment">// 生成目录</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">name</span> <span class="operator">=</span> UUID.randomUUID().toString();</span><br><span class="line">    <span class="type">int</span> <span class="variable">hash</span> <span class="operator">=</span> name.hashCode();</span><br><span class="line">    <span class="type">int</span> <span class="variable">d1</span> <span class="operator">=</span> hash &amp; <span class="number">0xF</span>;</span><br><span class="line">    <span class="type">int</span> <span class="variable">d2</span> <span class="operator">=</span> (hash &gt;&gt; <span class="number">4</span>) &amp; <span class="number">0xF</span>;</span><br><span class="line">    <span class="comment">// 判断目录是否存在</span></span><br><span class="line">    <span class="type">File</span> <span class="variable">dir</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(SystemConstants.IMAGE_UPLOAD_DIR, StrUtil.format(<span class="string">&quot;/blogs/&#123;&#125;/&#123;&#125;&quot;</span>, d1, d2));</span><br><span class="line">    <span class="keyword">if</span> (!dir.exists()) &#123;</span><br><span class="line">        dir.mkdirs();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 生成文件名</span></span><br><span class="line">    <span class="keyword">return</span> StrUtil.format(<span class="string">&quot;/blogs/&#123;&#125;/&#123;&#125;/&#123;&#125;.&#123;&#125;&quot;</span>, d1, d2, name, suffix);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">saveBlog</span><span class="params">(<span class="meta">@RequestBody</span> Blog blog)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取登录用户</span></span><br><span class="line">    <span class="type">UserDTO</span> <span class="variable">user</span> <span class="operator">=</span> UserHolder.getUser();</span><br><span class="line">    blog.setUserId(user.getId());</span><br><span class="line">    <span class="comment">// 保存探店博文</span></span><br><span class="line">    blogService.save(blog);</span><br><span class="line">    <span class="comment">// 返回id</span></span><br><span class="line">    <span class="keyword">return</span> Result.ok(blog.getId());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">queryBlogById</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">    <span class="comment">// 查询笔记</span></span><br><span class="line">    <span class="type">Blog</span> <span class="variable">blog</span> <span class="operator">=</span> getById(id);</span><br><span class="line">    <span class="keyword">if</span> (blog == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.fail(<span class="string">&quot;笔记不存在!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 注入用户信息</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> blog.getUserId();</span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> userService.getById(userId);</span><br><span class="line">    blog.setName(user.getNickName());</span><br><span class="line">    blog.setIcon(user.getIcon());</span><br><span class="line">    <span class="comment">// 判断当前用户是否已点赞</span></span><br><span class="line">    blog.setIsLike(isMember(blog, userId));</span><br><span class="line">    <span class="keyword">return</span> Result.ok(blog);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Boolean <span class="title function_">isMember</span><span class="params">(Blog blog, Long userId)</span> &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> <span class="string">&quot;blog:liked:&quot;</span> + userId;</span><br><span class="line">    <span class="keyword">return</span> stringRedisTemplate.opsForZSet().score(key, userId.toString()) != <span class="literal">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>前端需要知道当前用户是否已点赞过某篇笔记，以便高亮显示，同时需要保证一人一赞功能，重复点赞等同于取消点赞，这些依赖于Redis中的sortedset数据结构实现(保存某篇笔记的点赞用户列表，按照点赞时间戳排序)。</p>
+</blockquote>
+<h2 id="2-点赞功能"><a href="#2-点赞功能" class="headerlink" title="2.点赞功能"></a>2.点赞功能</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111110608746.png" alt="image-20240111110608746"> </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">likeBlog</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">    <span class="comment">// 查询当前用户是否已点赞</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> <span class="string">&quot;blog:liked:&quot;</span> + id;</span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="type">Double</span> <span class="variable">score</span> <span class="operator">=</span> stringRedisTemplate.opsForZSet().score(key, userId.toString());</span><br><span class="line">    <span class="comment">// 当前用户未点赞</span></span><br><span class="line">    <span class="keyword">if</span> (score == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 数据库点赞数+1</span></span><br><span class="line">        <span class="type">boolean</span> <span class="variable">updated</span> <span class="operator">=</span> update().setSql(<span class="string">&quot;liked = liked + 1&quot;</span>).eq(<span class="string">&quot;id&quot;</span>, id).update();</span><br><span class="line">        <span class="keyword">if</span> (updated) &#123;</span><br><span class="line">            <span class="comment">// Redis笔记点赞列表添加当前用户</span></span><br><span class="line">            stringRedisTemplate.opsForZSet().add(key, userId.toString(), System.currentTimeMillis());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// 当前用户已点赞</span></span><br><span class="line">        <span class="comment">// 数据库点赞数-1</span></span><br><span class="line">        <span class="type">boolean</span> <span class="variable">updated</span> <span class="operator">=</span> update().setSql(<span class="string">&quot;liked = liked - 1&quot;</span>).eq(<span class="string">&quot;id&quot;</span>, id).update();</span><br><span class="line">        <span class="keyword">if</span> (updated) &#123;</span><br><span class="line">            <span class="comment">// Redis笔记点赞列表删除当前用户</span></span><br><span class="line">            stringRedisTemplate.opsForZSet().remove(key, userId.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Result.ok();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-点赞排行榜"><a href="#3-点赞排行榜" class="headerlink" title="3.点赞排行榜"></a>3.点赞排行榜</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111110752093.png" alt="image-20240111110752093"> </p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/image-20240111110808582.png" alt="image-20240111110808582"> </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">queryBlogLikes</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> <span class="string">&quot;blog:liked:&quot;</span> + id;</span><br><span class="line">    <span class="comment">// 1.查询top5的点赞用户</span></span><br><span class="line">    Set&lt;String&gt; top5 = stringRedisTemplate.opsForZSet().range(key, <span class="number">0</span>, <span class="number">4</span>);</span><br><span class="line">    <span class="keyword">if</span> (top5 == <span class="literal">null</span> || top5.isEmpty()) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.ok(Collections.emptyList());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 2.解析出其中的用户id</span></span><br><span class="line">    List&lt;Long&gt; ids = top5.stream().map(Long::valueOf).collect(Collectors.toList());</span><br><span class="line">    <span class="type">String</span> <span class="variable">idStr</span> <span class="operator">=</span> StrUtil.join(<span class="string">&quot;,&quot;</span>, ids);</span><br><span class="line">    <span class="comment">// 3.根据用户id查询用户 WHERE id IN ( 5 , 1 ) ORDER BY FIELD(id, 5, 1)</span></span><br><span class="line">    List&lt;UserDTO&gt; userDTOS = userService.query()</span><br><span class="line">        .in(<span class="string">&quot;id&quot;</span>, ids).last(<span class="string">&quot;ORDER BY FIELD(id,&quot;</span> + idStr + <span class="string">&quot;)&quot;</span>).list()</span><br><span class="line">        .stream()</span><br><span class="line">        .map(user -&gt; BeanUtil.copyProperties(user, UserDTO.class))</span><br><span class="line">        .collect(Collectors.toList());</span><br><span class="line">    <span class="comment">// 4.返回</span></span><br><span class="line">    <span class="keyword">return</span> Result.ok(userDTOS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之点赞排行榜</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">1.项目背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%82%B9%E8%B5%9E%E5%8A%9F%E8%83%BD"><span class="toc-number">1.2.</span> <span class="toc-text">2.点赞功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="toc-number">1.3.</span> <span class="toc-text">3.点赞排行榜</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&text=Redis实践之点赞排行榜"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&is_video=false&description=Redis实践之点赞排行榜"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之点赞排行榜&body=Check out this article: https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&title=Redis实践之点赞排行榜"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&name=Redis实践之点赞排行榜&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/&t=Redis实践之点赞排行榜"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
