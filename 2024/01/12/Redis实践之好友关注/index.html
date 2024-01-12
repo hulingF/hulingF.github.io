@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis实践之好友关注1.关注与取关  需求：基于该表数据结构，实现两个接口：  关注和取关接口 判断是否关注的接口  关注是User之间的关系，是博主与粉丝的关系，数据库中有一张tb_follow表来标示：  12345678910111213141516171819202122public Result follow(Long followUserId, Boolean isFollow)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis实践之好友关注">
+<meta property="og:url" content="https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis实践之好友关注1.关注与取关  需求：基于该表数据结构，实现两个接口：  关注和取关接口 判断是否关注的接口  关注是User之间的关系，是博主与粉丝的关系，数据库中有一张tb_follow表来标示：  12345678910111213141516171819202122public Result follow(Long followUserId, Boolean isFollow)">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112113504573.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112113633589.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112113915316.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112114259205.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112114700368.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115218029.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115416429.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115819126.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115833203.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112120113299.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112120130013.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112120527922.png">
+<meta property="article:published_time" content="2024-01-12T03:33:17.443Z">
+<meta property="article:modified_time" content="2024-01-12T04:10:01.865Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112113504573.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis实践之好友关注</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/01/11/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%82%B9%E8%B5%9E%E6%8E%92%E8%A1%8C%E6%A6%9C/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&text=Redis实践之好友关注"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&is_video=false&description=Redis实践之好友关注"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之好友关注&body=Check out this article: https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&name=Redis实践之好友关注&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&t=Redis实践之好友关注"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之好友关注</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%B3%E6%B3%A8%E4%B8%8E%E5%8F%96%E5%85%B3"><span class="toc-number">1.1.</span> <span class="toc-text">1.关注与取关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%85%B1%E5%90%8C%E5%85%B3%E6%B3%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.共同关注</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%B3%E6%B3%A8%E6%8E%A8%E9%80%81"><span class="toc-number">1.3.</span> <span class="toc-text">3.关注推送</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis实践之好友关注
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-12T03:33:17.443Z" class="dt-published" itemprop="datePublished">2024-01-12</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis实践之好友关注"><a href="#Redis实践之好友关注" class="headerlink" title="Redis实践之好友关注"></a>Redis实践之好友关注</h1><h2 id="1-关注与取关"><a href="#1-关注与取关" class="headerlink" title="1.关注与取关"></a>1.关注与取关</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112113504573.png" alt="image-20240112113504573"> </p>
+<p>需求：基于该表数据结构，实现两个接口：</p>
+<ol>
+<li>关注和取关接口</li>
+<li>判断是否关注的接口</li>
+</ol>
+<p>关注是User之间的关系，是博主与粉丝的关系，数据库中有一张tb_follow表来标示：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112113633589.png" alt="image-20240112113633589"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">follow</span><span class="params">(Long followUserId, Boolean isFollow)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取当前登录用户ID</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="comment">// 关注</span></span><br><span class="line">    <span class="keyword">if</span> (BooleanUtil.isTrue(isFollow)) &#123;</span><br><span class="line">        <span class="type">Follow</span> <span class="variable">follow</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Follow</span>();</span><br><span class="line">        follow.setFollowUserId(followUserId);</span><br><span class="line">        follow.setUserId(userId);</span><br><span class="line">        save(follow);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// 取关</span></span><br><span class="line">        remove(<span class="keyword">new</span> <span class="title class_">QueryWrapper</span>&lt;Follow&gt;().eq(<span class="string">&quot;user_id&quot;</span>, userId).eq(<span class="string">&quot;follow_user_id&quot;</span>, followUserId));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Result.ok();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">isFollow</span><span class="params">(Long followUserId)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取当前登录用户ID</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="comment">// 查询是否关注</span></span><br><span class="line">    <span class="type">Integer</span> <span class="variable">count</span> <span class="operator">=</span> query().eq(<span class="string">&quot;user_id&quot;</span>, userId).eq(<span class="string">&quot;follow_user_id&quot;</span>, followUserId).count();</span><br><span class="line">    <span class="keyword">return</span> Result.ok(count &gt; <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-共同关注"><a href="#2-共同关注" class="headerlink" title="2.共同关注"></a>2.共同关注</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112113915316.png" alt="image-20240112113915316"> </p>
+<p>先来完成查看用户主页的两个接口，这跟我们的共同关注功能无关，代码如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;/&#123;id&#125;&quot;)</span></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">queryUserById</span><span class="params">(<span class="meta">@PathVariable(&quot;id&quot;)</span> Long userId)</span>&#123;</span><br><span class="line">    <span class="comment">// 查询详情</span></span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> userService.getById(userId);</span><br><span class="line">    <span class="keyword">if</span> (user == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.ok();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">UserDTO</span> <span class="variable">userDTO</span> <span class="operator">=</span> BeanUtil.copyProperties(user, UserDTO.class);</span><br><span class="line">    <span class="comment">// 返回</span></span><br><span class="line">    <span class="keyword">return</span> Result.ok(userDTO);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@GetMapping(&quot;/of/user&quot;)</span></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">queryBlogByUserId</span><span class="params">(</span></span><br><span class="line"><span class="params">    <span class="meta">@RequestParam(value = &quot;current&quot;, defaultValue = &quot;1&quot;)</span> Integer current,</span></span><br><span class="line"><span class="params">    <span class="meta">@RequestParam(&quot;id&quot;)</span> Long id)</span> &#123;</span><br><span class="line">    <span class="comment">// 根据用户查询</span></span><br><span class="line">    Page&lt;Blog&gt; page = blogService.query()</span><br><span class="line">        .eq(<span class="string">&quot;user_id&quot;</span>, id).page(<span class="keyword">new</span> <span class="title class_">Page</span>&lt;&gt;(current, SystemConstants.MAX_PAGE_SIZE));</span><br><span class="line">    <span class="comment">// 获取当前页数据</span></span><br><span class="line">    List&lt;Blog&gt; records = page.getRecords();</span><br><span class="line">    <span class="keyword">return</span> Result.ok(records);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>需求：利用Redis中恰当的数据结构，实现共同关注功能。在博主个人页面展示出当前用户与博主的共同好友。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112114259205.png" alt="image-20240112114259205"> </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 改造之前的关注接口:</span></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">follow</span><span class="params">(Long followUserId, Boolean isFollow)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取当前登录用户ID</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="comment">// 关注</span></span><br><span class="line">    <span class="keyword">if</span> (BooleanUtil.isTrue(isFollow)) &#123;</span><br><span class="line">        <span class="type">Follow</span> <span class="variable">follow</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Follow</span>();</span><br><span class="line">        follow.setFollowUserId(followUserId);</span><br><span class="line">        follow.setUserId(userId);</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">isSuccess</span> <span class="operator">=</span> save(follow);</span><br><span class="line">        <span class="keyword">if</span> (isSuccess) &#123;</span><br><span class="line">            stringRedisTemplate.opsForSet().add(<span class="string">&quot;follows:&quot;</span> + userId, followUserId.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// 取关</span></span><br><span class="line">        <span class="type">boolean</span> <span class="variable">isSuccess</span> <span class="operator">=</span> remove(<span class="keyword">new</span> <span class="title class_">QueryWrapper</span>&lt;Follow&gt;().eq(<span class="string">&quot;user_id&quot;</span>, userId).eq(<span class="string">&quot;follow_user_id&quot;</span>, followUserId));</span><br><span class="line">        <span class="keyword">if</span> (isSuccess) &#123;</span><br><span class="line">            stringRedisTemplate.opsForSet().remove(<span class="string">&quot;follows:&quot;</span> + userId, followUserId.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Result.ok();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> Result <span class="title function_">followCommons</span><span class="params">(Long followUserId)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取当前登录用户ID</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="comment">// 查询共同关注</span></span><br><span class="line">    Set&lt;String&gt; commons = stringRedisTemplate.opsForSet().intersect(<span class="string">&quot;follows:&quot;</span> + userId, <span class="string">&quot;follows:&quot;</span> + followUserId);</span><br><span class="line">    <span class="keyword">if</span> (commons == <span class="literal">null</span> || commons.isEmpty()) <span class="keyword">return</span> Result.ok(Collections.emptyList());</span><br><span class="line">    <span class="comment">// 解析用户ID</span></span><br><span class="line">    List&lt;Long&gt; ids = commons.stream().map(Long::valueOf).collect(Collectors.toList());</span><br><span class="line">    <span class="comment">// 查询用户</span></span><br><span class="line">    List&lt;UserDTO&gt; userDTOS = userService.listByIds(ids).stream().map(user -&gt; BeanUtil.copyProperties(user, UserDTO.class)).collect(Collectors.toList());</span><br><span class="line">    <span class="keyword">return</span> Result.ok(userDTOS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-关注推送"><a href="#3-关注推送" class="headerlink" title="3.关注推送"></a>3.关注推送</h2><p>关注推送也叫做Feed流，直译为投喂。为用户持续的提供“沉浸式”的体验，通过无限下拉刷新获取新的信息。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112114700368.png" alt="image-20240112114700368"> </p>
+<p>Feed流产品有两种常见模式：</p>
+<ul>
+<li>Timeline：不做内容筛选，简单的按照内容发布时间排序，常用于好友或关注，例如朋友圈<ul>
+<li>优点：信息全面，不会有缺失，并且实现也相对简单</li>
+<li>缺点：信息噪音较多，用户不一定感兴趣，内容获取效率低</li>
+</ul>
+</li>
+<li>智能排序：利用智能算法屏蔽掉违规的、用户不感兴趣的内容，推送用户感兴趣信息来吸引用户<ul>
+<li>优点：投喂用户感兴趣信息，用户粘度很高，容易沉迷</li>
+<li>缺点：如果算法不精准，可能起到反作用</li>
+</ul>
+</li>
+</ul>
+<p>本例中的个人页面，是基于关注的好友来做Feed流，因此采用Timeline的模式。该模式的实现方案：</p>
+<ul>
+<li>拉模式</li>
+<li>推模式</li>
+<li>推拉结合</li>
+</ul>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115218029.png" alt="image-20240112115218029"></p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115416429.png" alt="image-20240112115416429"></p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115819126.png" alt="image-20240112115819126"></p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112115833203.png" alt="image-20240112115833203"></p>
+<p>基于推模式实现关注推送功能：</p>
+<ul>
+<li>修改新增探店笔记的业务，在保存blog到数据库的同时，推送到粉丝的收件箱</li>
+<li>收件箱满足可以根据时间戳排序，必须用Redis的数据结构实现</li>
+<li>查询收件箱数据时，可以实现分页查询</li>
+</ul>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112120113299.png" alt="image-20240112120113299"></p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112120130013.png" alt="image-20240112120130013"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">saveBlog</span><span class="params">(Blog blog)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取登录用户</span></span><br><span class="line">    <span class="type">UserDTO</span> <span class="variable">user</span> <span class="operator">=</span> UserHolder.getUser();</span><br><span class="line">    blog.setUserId(user.getId());</span><br><span class="line">    <span class="comment">// 保存探店博文</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">isSuccess</span> <span class="operator">=</span> save(blog);</span><br><span class="line">    <span class="keyword">if</span> (isSuccess) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.fail(<span class="string">&quot;新增笔记失败!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 查询笔记作者的所有粉丝</span></span><br><span class="line">    List&lt;Follow&gt; follows = followService.query().eq(<span class="string">&quot;follow_user_id&quot;</span>, user.getId()).list();</span><br><span class="line">    <span class="comment">// 推送笔记ID给所有粉丝</span></span><br><span class="line">    <span class="keyword">for</span> (Follow follow : follows) &#123;</span><br><span class="line">        <span class="comment">// 获取粉丝ID</span></span><br><span class="line">        <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> follow.getUserId();</span><br><span class="line">        <span class="comment">// 推送到粉丝收件箱</span></span><br><span class="line">        stringRedisTemplate.opsForZSet().add(<span class="string">&quot;feed:&quot;</span> + userId, blog.getId().toString(), System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回id</span></span><br><span class="line">    <span class="keyword">return</span> Result.ok(blog.getId());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/image-20240112120527922.png" alt="image-20240112120527922"> </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">queryBlogOfFollow</span><span class="params">(Long max, Integer offset)</span> &#123;</span><br><span class="line">    <span class="comment">// 获取当前用户</span></span><br><span class="line">    <span class="type">UserDTO</span> <span class="variable">user</span> <span class="operator">=</span> UserHolder.getUser();</span><br><span class="line">    <span class="comment">// 查询收件箱</span></span><br><span class="line">    Set&lt;ZSetOperations.TypedTuple&lt;String&gt;&gt; typedTuples = stringRedisTemplate.opsForZSet().reverseRangeByScoreWithScores(<span class="string">&quot;feed:&quot;</span> + user.getId(), <span class="number">0</span>, max, offset, <span class="number">2</span>);</span><br><span class="line">    <span class="keyword">if</span> (typedTuples == <span class="literal">null</span> || typedTuples.isEmpty()) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.ok();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 解析数据</span></span><br><span class="line">    List&lt;Long&gt; ids = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(typedTuples.size());</span><br><span class="line">    <span class="type">long</span> <span class="variable">minTime</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> <span class="variable">count</span> <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (ZSetOperations.TypedTuple&lt;String&gt; typedTuple : typedTuples) &#123;</span><br><span class="line">        <span class="comment">// 获取笔记ID</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">blogId</span> <span class="operator">=</span> typedTuple.getValue();</span><br><span class="line">        <span class="comment">// 获取笔记发布时间戳</span></span><br><span class="line">        <span class="type">long</span> <span class="variable">time</span> <span class="operator">=</span> typedTuple.getScore().longValue();</span><br><span class="line">        <span class="comment">// 更新本次分页查询的笔记列表中的最小时间戳和重复个数</span></span><br><span class="line">        <span class="keyword">if</span> (time == minTime) &#123;</span><br><span class="line">            count++;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            minTime = time;</span><br><span class="line">            count = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 查询笔记</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">idStr</span> <span class="operator">=</span> StrUtil.join(<span class="string">&quot;,&quot;</span>, ids);</span><br><span class="line">    List&lt;Blog&gt; blogs = query().in(<span class="string">&quot;id&quot;</span>, ids).last(<span class="string">&quot;ORDER BY FIELD(id,&quot;</span> + idStr + <span class="string">&quot;)&quot;</span>).list();</span><br><span class="line">    <span class="keyword">for</span> (Blog blog : blogs) &#123;</span><br><span class="line">        <span class="comment">// 注入用户信息</span></span><br><span class="line">        <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> blog.getUserId();</span><br><span class="line">        <span class="type">User</span> <span class="variable">u</span> <span class="operator">=</span> userService.getById(userId);</span><br><span class="line">        blog.setName(u.getNickName());</span><br><span class="line">        blog.setIcon(u.getIcon());</span><br><span class="line">        <span class="comment">// 判断当前用户是否已点赞</span></span><br><span class="line">        blog.setIsLike(isMember(blog, userId));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 封装并返回</span></span><br><span class="line">    <span class="type">ScrollResult</span> <span class="variable">scrollResult</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ScrollResult</span>();</span><br><span class="line">    scrollResult.setList(blogs);</span><br><span class="line">    scrollResult.setMinTime(minTime);</span><br><span class="line">    scrollResult.setOffset(count);</span><br><span class="line">    <span class="keyword">return</span> Result.ok(scrollResult);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之好友关注</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%B3%E6%B3%A8%E4%B8%8E%E5%8F%96%E5%85%B3"><span class="toc-number">1.1.</span> <span class="toc-text">1.关注与取关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%85%B1%E5%90%8C%E5%85%B3%E6%B3%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.共同关注</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%B3%E6%B3%A8%E6%8E%A8%E9%80%81"><span class="toc-number">1.3.</span> <span class="toc-text">3.关注推送</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&text=Redis实践之好友关注"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&is_video=false&description=Redis实践之好友关注"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之好友关注&body=Check out this article: https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&title=Redis实践之好友关注"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&name=Redis实践之好友关注&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/12/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E5%A5%BD%E5%8F%8B%E5%85%B3%E6%B3%A8/&t=Redis实践之好友关注"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
