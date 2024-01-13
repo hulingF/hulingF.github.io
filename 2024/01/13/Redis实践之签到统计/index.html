@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis实践之签到统计1.BitMap介绍     2.签到功能  12345678910111213public Result sign() &amp;#123;    &#x2F;&#x2F; 获取当前用户ID    Long userId &#x3D; UserHolder.getUser().getId();    &#x2F;&#x2F; 获取日期信息    LocalDateTime now &#x3D; LocalDateTime.now();">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis实践之签到统计">
+<meta property="og:url" content="https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis实践之签到统计1.BitMap介绍     2.签到功能  12345678910111213public Result sign() &amp;#123;    &#x2F;&#x2F; 获取当前用户ID    Long userId &#x3D; UserHolder.getUser().getId();    &#x2F;&#x2F; 获取日期信息    LocalDateTime now &#x3D; LocalDateTime.now();">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113104621780.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105102867.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105137296.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105207927.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105332762.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105416457.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113113728235.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117305852-3.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117470088-6.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117506286-9.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117650198-12.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117676110-15.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117710019-18.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705118170384-21.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705118274925-24.webp">
+<meta property="article:published_time" content="2024-01-13T02:43:38.388Z">
+<meta property="article:modified_time" content="2024-01-13T04:07:53.358Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113104621780.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis实践之签到统计</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/01/12/%E6%8B%AC%E5%8F%B7%E7%94%9F%E6%88%90-%E5%9B%9E%E6%BA%AF%E7%AE%97%E6%B3%95%E8%A7%A3%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&text=Redis实践之签到统计"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&is_video=false&description=Redis实践之签到统计"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之签到统计&body=Check out this article: https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&name=Redis实践之签到统计&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&t=Redis实践之签到统计"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之签到统计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-BitMap%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.BitMap介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%AD%BE%E5%88%B0%E5%8A%9F%E8%83%BD"><span class="toc-number">1.2.</span> <span class="toc-text">2.签到功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1"><span class="toc-number">1.3.</span> <span class="toc-text">3.签到统计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-UV%E7%BB%9F%E8%AE%A1"><span class="toc-number">1.4.</span> <span class="toc-text">4.UV统计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-HyperLogLog%E5%8E%9F%E7%90%86"><span class="toc-number">1.5.</span> <span class="toc-text">5.HyperLogLog原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1%E6%A6%82%E7%8E%87%E5%8E%9F%E7%90%86"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1概率原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2%E5%88%86%E6%A1%B6"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2分桶</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3%E8%B0%83%E5%92%8C%E5%B9%B3%E5%9D%87"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3调和平均</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4%E7%BB%86%E8%8A%82%E5%BE%AE%E8%B0%83"><span class="toc-number">1.5.4.</span> <span class="toc-text">5.4细节微调</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-5constant%E5%B8%B8%E6%95%B0%E7%9A%84%E9%80%89%E6%8B%A9"><span class="toc-number">1.5.5.</span> <span class="toc-text">5.5constant常数的选择</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-6%E5%88%86%E6%A1%B6%E6%95%B0m%E7%9A%84%E9%80%89%E6%8B%A9"><span class="toc-number">1.5.6.</span> <span class="toc-text">5.6分桶数m的选择</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-7%E5%90%88%E5%B9%B6"><span class="toc-number">1.5.7.</span> <span class="toc-text">5.7合并</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-8Redis%E4%B8%AD%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.5.8.</span> <span class="toc-text">5.8Redis中的实现</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis实践之签到统计
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-13T02:43:38.388Z" class="dt-published" itemprop="datePublished">2024-01-13</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis实践之签到统计"><a href="#Redis实践之签到统计" class="headerlink" title="Redis实践之签到统计"></a>Redis实践之签到统计</h1><h2 id="1-BitMap介绍"><a href="#1-BitMap介绍" class="headerlink" title="1.BitMap介绍"></a>1.BitMap介绍</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113104621780.png" alt="image-20240113104621780"> </p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105102867.png" alt="image-20240113105102867"></p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105137296.png" alt="image-20240113105137296"> </p>
+<h2 id="2-签到功能"><a href="#2-签到功能" class="headerlink" title="2.签到功能"></a>2.签到功能</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105207927.png" alt="image-20240113105207927"> </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">sign</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 获取当前用户ID</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="comment">// 获取日期信息</span></span><br><span class="line">    <span class="type">LocalDateTime</span> <span class="variable">now</span> <span class="operator">=</span> LocalDateTime.now();</span><br><span class="line">    <span class="comment">// 组装位图键</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> <span class="string">&quot;sign:&quot;</span> + userId + now.format(DateTimeFormatter.ofPattern(<span class="string">&quot;:yyyyMM&quot;</span>));</span><br><span class="line">    <span class="comment">// 获取本月的第几天</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">dayOfMonth</span> <span class="operator">=</span> now.getDayOfMonth();</span><br><span class="line">    <span class="comment">// 利用位图进行用户的本月签到</span></span><br><span class="line">    stringRedisTemplate.opsForValue().setBit(key, dayOfMonth - <span class="number">1</span>, <span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">return</span> Result.ok();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-签到统计"><a href="#3-签到统计" class="headerlink" title="3.签到统计"></a>3.签到统计</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105332762.png" alt="image-20240113105332762"></p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113105416457.png" alt="image-20240113105416457">  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result <span class="title function_">signCount</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 获取当前用户ID</span></span><br><span class="line">    <span class="type">Long</span> <span class="variable">userId</span> <span class="operator">=</span> UserHolder.getUser().getId();</span><br><span class="line">    <span class="comment">// 获取日期信息</span></span><br><span class="line">    <span class="type">LocalDateTime</span> <span class="variable">now</span> <span class="operator">=</span> LocalDateTime.now();</span><br><span class="line">    <span class="comment">// 组装位图键</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> <span class="string">&quot;sign:&quot;</span> + userId + now.format(DateTimeFormatter.ofPattern(<span class="string">&quot;:yyyyMM&quot;</span>));</span><br><span class="line">    <span class="comment">// 获取本月的第几天</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">dayOfMonth</span> <span class="operator">=</span> now.getDayOfMonth();</span><br><span class="line">    <span class="comment">// 获取用户本月的签到记录</span></span><br><span class="line">    List&lt;Long&gt; result = stringRedisTemplate.opsForValue().bitField(key, BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(dayOfMonth)).valueAt(<span class="number">0</span>));</span><br><span class="line">    <span class="keyword">if</span> (result == <span class="literal">null</span> || result.isEmpty()) &#123;</span><br><span class="line">        <span class="keyword">return</span> Result.ok(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">Long</span> <span class="variable">num</span> <span class="operator">=</span> result.get(<span class="number">0</span>);</span><br><span class="line">    <span class="comment">// 统计连续签到天数</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">count</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> ((num &amp; <span class="number">1</span>) != <span class="number">0</span>) &#123;</span><br><span class="line">        count++;</span><br><span class="line">        num &gt;&gt;&gt;= <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Result.ok(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-UV统计"><a href="#4-UV统计" class="headerlink" title="4.UV统计"></a>4.UV统计</h2><p>Redis中的HLL是基于string结构实现的，单个HLL的内存永远小于16kb，内存占用低的令人发指！作为代价，其测量结果是概率性的，有小于0.81％的误差。不过对于UV统计来说，这完全可以忽略。</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/image-20240113113728235.png" alt="image-20240113113728235"></p>
+<h2 id="5-HyperLogLog原理"><a href="#5-HyperLogLog原理" class="headerlink" title="5.HyperLogLog原理"></a>5.HyperLogLog原理</h2><blockquote>
+<p>参考文章：<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/55defda6dcd2">探索HyperLogLog算法（含Java实现） - 简书 (jianshu.com)</a></p>
+</blockquote>
+<h3 id="5-1概率原理"><a href="#5-1概率原理" class="headerlink" title="5.1概率原理"></a>5.1概率原理</h3><p>基数就是指一个集合中不同值的数目，比如[a,b,c,d]的基数就是4，[a,b,c,d,a]的基数还是4，因为a重复了一个，不算。基数也可以称之为Distinct Value，简称DV。下文中可能有时候称呼为基数，有时候称之为DV，但都是同一个意思。HyperLogLog算法就是用来计算基数的。</p>
+<p>HyperLogLog本质上来源于生活中一个小的发现，假设你抛了很多次硬币，你告诉在这次抛硬币的过程中最多只有两次扔出连续的反面，让我猜你总共抛了多少次硬币，我敢打赌你抛硬币的总次数不会太多，相反，如果你和我说最多出现了100次连续的反面，那么我敢肯定扔硬盘的总次数非常的多，甚至我还可以给出一个估计，这个估计要怎么给呢？其实是一个很简单的概率问题，假设1代表抛出正面，0代表反面：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp.webp" alt="img"> </p>
+<p>上图中以抛硬币序列”1110100110”为例，其中最长的反面序列是”00”，我们顺手把后面那个1也给带上，也就是”001”，因为它包括了序列中最长的一串0，所以在序列中肯定只出现过一次，而它在任意序列出现出现且仅出现一次的概率显然是上图所示的三个二分之一相乘，也就是八分之一，所以我可以给出一个估计值，你大概总共抛了8次硬币。</p>
+<blockquote>
+<p>很显然，上面这种做法虽然能够估计抛硬币的总数，但是显然误差是比较大的，很容易受到突发事件（比如突然连续抛出好多0）的影响，HyperLogLog算法研究的就是如何减小这个误差。</p>
+</blockquote>
+<p>之前说过，HyperLogLog算法是用来计算基数的，这个抛硬币的序列和基数有什么关系呢？比如在数据库中，我只要在每次插入一条新的记录时，计算这条记录的hash，并且转换成二进制，就可以将其看成一个硬币序列了，如下(0b前缀表示二进制数)：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117305852-3.webp" alt="img"> </p>
+<p>根据上面抛硬币的启发我可以想到如下的估计基数的算法（这里先给出伪代码，后面会有Java实现）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">输入：一个集合</span><br><span class="line">输出：集合的基数</span><br><span class="line">算法：</span><br><span class="line">     max = <span class="number">0</span></span><br><span class="line">     对于集合中的每个元素：</span><br><span class="line">               hashCode = hash(元素)</span><br><span class="line">               num = hashCode二进制表示中最前面连续的<span class="number">0</span>的数量</span><br><span class="line">               <span class="keyword">if</span> num &gt; max:</span><br><span class="line">                   max = num</span><br><span class="line">     最后的结果是<span class="number">2</span>的(max + <span class="number">1</span>)次幂  </span><br></pre></td></tr></table></figure>
+
+<p>举个例子，对于集合<code>&#123;ele1, ele2&#125;</code>，先求<code>hash(ele1)=0b00110111</code>，它最前面的连续的0的数量为2（又称为前导0），然后求<code>hash(ele2)=0b10010000111</code>，它的前导0数量为0，我们始终只保存前导零数量的最大值，所以最后max是2，我们估计的基数就是2的(2+1)次幂，即8。</p>
+<blockquote>
+<p>为什么最后的max要加1呢？这是一个数学细节，具体要看论文，简单的理解的话，可以像之前抛硬币的例子那样理解，把最长的一串零的后面的一个1或者前面的一个1”顺手”带上进行概率估计。显然这个算法是非常不准确的，但是这个想法还是很有启发性的，从这个简单的想法跟随下文一步一步优化即可得到最终的比较高精度的HyperLogLog算法。</p>
+</blockquote>
+<h3 id="5-2分桶"><a href="#5-2分桶" class="headerlink" title="5.2分桶"></a>5.2分桶</h3><p>最简单的一种优化方法显然就是把数据分成m个均等的部分，分别估计其总数求平均后再乘以m，称之为<code>分桶</code>。对应到前面抛硬币的例子，其实就是把硬币序列分成m个均等的部分，分别用之前提到的那个方法估计总数求平均后再乘以m，这样就能一定程度上避免单一突发事件造成的误差。具体要怎么分桶呢？我们可以将每个元素的hash值的二进制表示的前几位用来指示数据属于哪个桶，然后把剩下的部分再按照之前最简单的想法处理。<br>还是以刚刚的那个集合<code>&#123;ele1,ele2&#125;</code>为例，假设我要分2个桶，那么我只要去ele1的hash值的第一位来确定其分桶即可，之后用剩下的部分进行前导零的计算，如下图：假设ele1和ele2的hash值二进制表示如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hash(ele1) = <span class="number">00110111</span></span><br><span class="line">hash(ele2) = <span class="number">10010001</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117470088-6.webp" alt="img"> </p>
+<p>到这里，你大概已经理解了LogLog算法的基本思想，LogLog算法是在HyperLogLog算法之前提出的一个基数估计算法，HyperLogLog算法其实就是LogLog算法的一个改进版。LogLog算法完整的基数计算公式如下：</p>
+<p> <img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117506286-9.webp" alt="img"></p>
+<p>其中m代表分桶数，R头上一道横杠的记号就代表每个桶的结果（其实就是桶中数据的最长前导零+1）的均值，相比我之前举的简单的例子，LogLog算法还乘了一个常数constant进行修正，这个constant具体是多少等我讲到Java实现的时候再说。</p>
+<h3 id="5-3调和平均"><a href="#5-3调和平均" class="headerlink" title="5.3调和平均"></a>5.3调和平均</h3><p>前面的LogLog算法中我们是使用的是平均数来将每个桶的结果汇总起来，但是平均数有一个广为人知的缺点，就是容易受到大的数值的影响，一个常见的例子是，假如我的工资是1000元一个月，我老板的工资是100000元一个月，那么我和老板的平均工资就是(100000 + 1000)&#x2F;2，即50500元，显然这离我的工资相差甚远，我肯定不服这个平均工资。用<code>调和平均数</code>就可以解决这一问题，调和平均数的结果会<code>倾向于集合中比较小的数</code>，x1到xn的调和平均数的公式如下：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117650198-12.webp" alt="img"> </p>
+<p>再用这个公式算一下我和老板的平均工资：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117676110-15.webp" alt="img"> </p>
+<p>最后的结果是1980元，这和我的工资水平还比较接近，这样的平均工资水平我才比较信服。</p>
+<p>再回到前面的LogLog算法，从前面的举的例子可以看出，影响LogLog算法精度的一个重要因素就是，hash值的前导零的数量显然是有很大的偶然性的，经常会出现一两数据前导零的数目比较多的情况，所以HyperLogLog算法相比LogLog算法一个重要的改进就是使用调和平均数而不是平均数来聚合每个桶中的结果，HyperLogLog算法的公式如下：其中constant常数和m的含义和之前的LogLog算法公式中的含义一致，Rj代表(第j个桶中的数据的最大前导零数目+1)</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705117710019-18.webp" alt="img"> </p>
+<h3 id="5-4细节微调"><a href="#5-4细节微调" class="headerlink" title="5.4细节微调"></a>5.4细节微调</h3><p>关于HyperLogLog算法的大体思想到这里你就已经全部理解了。不过算法中还有一些细微的校正，<code>在数据总量比较小的时候，很容易就预测偏大</code>(大量桶中没有数据，分母整体偏小)，所以我们做如下校正：（DV代表估计的基数值，m代表桶的数量，V代表结果为0的桶的数目，log表示自然对数）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> DV &lt; (<span class="number">5</span> / <span class="number">2</span>) * m:</span><br><span class="line">    DV = m * log(m/V)</span><br></pre></td></tr></table></figure>
+
+<p>我再详细解释一下V的含义，假设我分配了64个桶（即m&#x3D;64），当数据量很小时（比方说只有两三个），那肯定有大量桶中没有数据，也就说他们的估计值是0，V就代表这样的桶的数目。事实证明，这个校正的效果是非常好，在数据量小的时，估计得非常准确。</p>
+<h3 id="5-5constant常数的选择"><a href="#5-5constant常数的选择" class="headerlink" title="5.5constant常数的选择"></a>5.5constant常数的选择</h3><p>constant常数的选择与分桶的数目有关，具体的数学证明请看论文，这里就直接给出结论：假设：m为分桶数，p是m的以2为底的对数</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705118170384-21.webp" alt="img"> </p>
+<p>则按如下的规则计算constant</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">switch</span> (p) &#123;</span><br><span class="line">   <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">       constant = <span class="number">0.673</span> * m * m;</span><br><span class="line">   <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">       constant = <span class="number">0.697</span> * m * m;</span><br><span class="line">   <span class="keyword">case</span> <span class="number">6</span>:</span><br><span class="line">       constant = <span class="number">0.709</span> * m * m;</span><br><span class="line">   <span class="keyword">default</span>:</span><br><span class="line">       constant = (<span class="number">0.7213</span> / (<span class="number">1</span> + <span class="number">1.079</span> / m)) * m * m;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-6分桶数m的选择"><a href="#5-6分桶数m的选择" class="headerlink" title="5.6分桶数m的选择"></a>5.6分桶数m的选择</h3><p>如果理解了之前的分桶算法，那么很显然分桶数只能是2的整数次幂。如果分桶越多，那么估计的精度就会越高，统计学上用来衡量估计精度的一个指标是“相对标准误差”(relative standard deviation，简称RSD)，RSD的计算公式这里就不给出了，百科上一搜就可以知道，从直观上理解，RSD的值其实就是（(每次估计的值）在（估计均值）上下的波动）占（估计均值）的比例（这句话加那么多括号是为了方便大家断句）。RSD的值与分桶数m存在如下的计算关系：</p>
+<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/webp-1705118274925-24.webp" alt="img"> </p>
+<p>有了这个公式，你可以先确定你想要达到的RSD的值，然后再推出分桶的数目m。</p>
+<h3 id="5-7合并"><a href="#5-7合并" class="headerlink" title="5.7合并"></a>5.7合并</h3><p>假设有两个数据流，分别构建了两个HyperLogLog结构，称为a和b，他们的桶数是一样的，为n，现在要计算两个数据流总体的基数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">数据流a：<span class="string">&quot;a&quot;</span> <span class="string">&quot;b&quot;</span> <span class="string">&quot;c&quot;</span> <span class="string">&quot;d&quot;</span>  基数：<span class="number">4</span></span><br><span class="line">数据流b：<span class="string">&quot;b&quot;</span> <span class="string">&quot;c&quot;</span> <span class="string">&quot;d&quot;</span> <span class="string">&quot;e&quot;</span>  基数：<span class="number">4</span></span><br><span class="line">两个数据流的总体基数：<span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+<p>从前文我们可以知道，HyperLogLog算法在内存中的结构其实就是一个桶数组，需要先用下面的算法从a和我b的桶数组中构建出新的桶数组c，其实就是从a,b的对应位置取最大的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">输入：桶数组a，b。它们的长度都是n</span><br><span class="line">输出：新的桶数组c</span><br><span class="line">算法：</span><br><span class="line">     c = c[n];</span><br><span class="line">     <span class="keyword">for</span> (i=<span class="number">0</span>; i&lt;n; i++)&#123;</span><br><span class="line">         c[i]=max(a[i], b[i]);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">return</span> c;</span><br></pre></td></tr></table></figure>
+
+<p>之后用桶数组c代入前面的算法即可得到合并的总体基数。</p>
+<h3 id="5-8Redis中的实现"><a href="#5-8Redis中的实现" class="headerlink" title="5.8Redis中的实现"></a>5.8Redis中的实现</h3><p>Redis中和HyperLogLog相关的命令有三个：</p>
+<ul>
+<li><p><code>PFADD hll ele</code></p>
+<p>：将ele添加进hll的基数计算中。流程：</p>
+<ul>
+<li>先对ele求hash（使用的是一种叫做MurMurHash的算法）</li>
+<li>将hash的低14位(因为总共有2的14次方个桶)作为桶的编号，选桶，记桶中当前的值为count</li>
+<li>从的hash的第15位开始数0，假设从第15位开始有n个连续的0（即前导0）</li>
+<li>如果n大于count，则把选中的桶的值置为n，否则不变</li>
+</ul>
+</li>
+<li><p><code>PFCOUNT hll</code>：计算hll的基数。就是使用上面给出的<code>DV</code>公式根据桶中的数值，计算基数</p>
+</li>
+<li><p><code>PFMERGE hll3 hll1 hll2</code>：将hll1和hll2合并成hll3。用的就是上面说的合并算法</p>
+</li>
+</ul>
+<p>Redis的所有HyperLogLog结构都是固定的16384个桶（2的14次方），并且有两种存储格式：</p>
+<ul>
+<li>稀疏格式：HyperLogLog算法在刚开始的时候，大多数桶其实都是0，稀疏格式通过存储<code>连续的0的数目</code>，而不是每个0存一遍，大大减小了HyperLogLog刚开始时需要占用的内存</li>
+<li>紧凑格式：用6个bit表示一个桶，需要占用<code>12KB</code>内存</li>
+</ul>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">Redis实践之签到统计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-BitMap%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.BitMap介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%AD%BE%E5%88%B0%E5%8A%9F%E8%83%BD"><span class="toc-number">1.2.</span> <span class="toc-text">2.签到功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1"><span class="toc-number">1.3.</span> <span class="toc-text">3.签到统计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-UV%E7%BB%9F%E8%AE%A1"><span class="toc-number">1.4.</span> <span class="toc-text">4.UV统计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-HyperLogLog%E5%8E%9F%E7%90%86"><span class="toc-number">1.5.</span> <span class="toc-text">5.HyperLogLog原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1%E6%A6%82%E7%8E%87%E5%8E%9F%E7%90%86"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1概率原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2%E5%88%86%E6%A1%B6"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2分桶</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3%E8%B0%83%E5%92%8C%E5%B9%B3%E5%9D%87"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3调和平均</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4%E7%BB%86%E8%8A%82%E5%BE%AE%E8%B0%83"><span class="toc-number">1.5.4.</span> <span class="toc-text">5.4细节微调</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-5constant%E5%B8%B8%E6%95%B0%E7%9A%84%E9%80%89%E6%8B%A9"><span class="toc-number">1.5.5.</span> <span class="toc-text">5.5constant常数的选择</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-6%E5%88%86%E6%A1%B6%E6%95%B0m%E7%9A%84%E9%80%89%E6%8B%A9"><span class="toc-number">1.5.6.</span> <span class="toc-text">5.6分桶数m的选择</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-7%E5%90%88%E5%B9%B6"><span class="toc-number">1.5.7.</span> <span class="toc-text">5.7合并</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-8Redis%E4%B8%AD%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.5.8.</span> <span class="toc-text">5.8Redis中的实现</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&text=Redis实践之签到统计"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&is_video=false&description=Redis实践之签到统计"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis实践之签到统计&body=Check out this article: https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&title=Redis实践之签到统计"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&name=Redis实践之签到统计&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/01/13/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1/&t=Redis实践之签到统计"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
