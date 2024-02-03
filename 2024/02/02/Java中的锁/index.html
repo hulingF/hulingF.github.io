@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Java中的锁1.Lock接口 Java并法包中与锁相关的API和组件不少，不仅要会优雅地使用，还要知其所以然，理解实现的细节方能更加得心应手且正确地使用这些组件。  在Lock接口出现之前，Java程序是靠synchronized关键字实现锁功能的，而Java SE 5之后，并发包中新增了Lock接口（以及相关实现类）用来实现锁功能，它提供了与synchronized关键字类似的同步功能，只是在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java中的锁">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Java中的锁1.Lock接口 Java并法包中与锁相关的API和组件不少，不仅要会优雅地使用，还要知其所以然，理解实现的细节方能更加得心应手且正确地使用这些组件。  在Lock接口出现之前，Java程序是靠synchronized关键字实现锁功能的，而Java SE 5之后，并发包中新增了Lock接口（以及相关实现类）用来实现锁功能，它提供了与synchronized关键字类似的同步功能，只是在">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203182834949.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203183532729.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203183737920.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203190019432.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203190122917.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203190358147.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203191559294.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203191817959.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203191910567.png">
+<meta property="article:published_time" content="2024-02-02T03:29:16.769Z">
+<meta property="article:modified_time" content="2024-02-03T11:26:03.081Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="并发编程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203182834949.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Java中的锁</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/03/KMP%E7%AE%97%E6%B3%95%E7%9A%84%E7%AE%80%E6%98%8E%E5%86%99%E6%B3%95/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/01/%E7%BA%BF%E7%A8%8B%E5%BA%94%E7%94%A8%E5%A4%8D%E6%9D%82%E5%AE%9E%E4%BE%8B/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&text=Java中的锁"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&is_video=false&description=Java中的锁"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java中的锁&body=Check out this article: https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&name=Java中的锁&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&t=Java中的锁"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E4%B8%AD%E7%9A%84%E9%94%81"><span class="toc-number">1.</span> <span class="toc-text">Java中的锁</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Lock%E6%8E%A5%E5%8F%A3"><span class="toc-number">1.1.</span> <span class="toc-text">1.Lock接口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E9%98%9F%E5%88%97%E5%90%8C%E6%AD%A5%E5%99%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.队列同步器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-LockSupport%E5%B7%A5%E5%85%B7"><span class="toc-number">1.3.</span> <span class="toc-text">3.LockSupport工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Condition"><span class="toc-number">1.4.</span> <span class="toc-text">4.Condition</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Java中的锁
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-02T03:29:16.769Z" class="dt-published" itemprop="datePublished">2024-02-02</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Java中的锁"><a href="#Java中的锁" class="headerlink" title="Java中的锁"></a>Java中的锁</h1><h2 id="1-Lock接口"><a href="#1-Lock接口" class="headerlink" title="1.Lock接口"></a>1.Lock接口</h2><blockquote>
+<p>Java并法包中与锁相关的API和组件不少，不仅要会优雅地使用，还要知其所以然，理解实现的细节方能更加得心应手且正确地使用这些组件。</p>
+</blockquote>
+<p>在Lock接口出现之前，Java程序是靠<code>synchronized</code>关键字实现锁功能的，而Java SE 5之后，并发包中新增了<code>Lock</code>接口（以及相关实现类）用来实现锁功能，它提供了与synchronized关键字类似的同步功能，只是在使用时需要显式地获取和释放锁。虽然它缺少了（通过synchronized块或者方法所提供的）隐式获取释放锁的便捷性，但是却拥有了<code>锁获取与释放的可操作性</code>、<code>可中断的获取锁</code>以及<code>超时获取锁</code>等多种synchronized关键字所不具备的同步特性。</p>
+<p>使用synchronized关键字将会隐式地获取锁，但是它将锁的获取和释放固化了，也就是先获取再释放。当然，这种方式简化了同步的管理，可是扩展性没有显示的锁获取和释放来的好。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Lock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line">lock.lock();</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 业务逻辑</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    lock.unlock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>不要将获取锁的过程写在try块中，因为如果在获取锁（自定义锁的实现）时发生了异常，异常抛出的同时，也会导致锁无故释放。</p>
+</blockquote>
+<p>Lock接口提供了synchronized关键字所不具备的三个主要特性：</p>
+<ol>
+<li><code>尝试非阻塞地获取锁</code>：当前线程尝试获取锁，如果这一时刻锁没有被其他线程获取到，则成功获取并持有锁。</li>
+<li><code>能被中断地获取锁</code>：与synchronized不同，获取到锁的线程能够响应中断，当获取到锁的线程被中断时，中断异常将被抛出，同时锁被释放。</li>
+<li><code>超时获取锁</code>：在指定的截止时间之前获取锁，如果截至时间到了仍然无法获取锁，则返回。</li>
+</ol>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203182834949.png" alt="image-20240203182834949"></p>
+<p>Lock接口的实现基本都是通过聚合了一个同步器的子类来完成线程访问控制的。</p>
+<h2 id="2-队列同步器"><a href="#2-队列同步器" class="headerlink" title="2.队列同步器"></a>2.队列同步器</h2><p>队列同步器AbstractQueuedSynchronizer（以下简称同步器），是用来构建锁或者其他同步组件的基础框架，它使用了一个int成员变量表示同步状态，通过内置的FIFO队列来完成资源获取线程的排队工作，并发包的作者（Doug Lea）期望它能够成为实现大部分同步需求的基础。</p>
+<p>同步器的主要使用方式是<code>继承</code>，子类通过继承同步器并实现它的保护方法来管理同步状态，在保护方法的实现过程中免不了要对同步状态进行更改，这时就需要使用同步器提供的3个方法（<code>getState()</code>、<code>setState(int newState)</code>和<code>compareAndSetState(int expect,int update)</code>）来进行操作，因为它们能够保证状态的改变是安全的。子类推荐被定义为自定义同步组件的<code>静态内部类</code>，同步器自身没有实现任何同步接口，它仅仅是定义了若干同步状态获取和释放的方法来供自定义同步组件使用，同步器既可以支持独占式地获取同步状态，也可以支持共享式地获取同步状态，这样就可以方便实现不同类型的同步组件（ReentrantLock、ReentrantReadWriteLock和CountDownLatch等）。</p>
+<p>同步器是实现锁（也可以是任意同步组件）的关键，在锁的实现中<code>聚合同步器</code>，利用同步器实现锁的语义。可以这样理解二者之间的关系：<strong>锁是面向使用者的，它定义了使用者与锁交互的接口（比如可以允许两个线程并行访问），隐藏了实现细节；同步器面向的是锁的实现者，它简化了锁的实现方式，屏蔽了同步状态管理、线程的排队、等待与唤醒等底层操作。</strong>锁和同步器很好地隔离了使用者和实现者所需关注的领域。</p>
+<p>同步器的设计是基于<code>模板方法</code>模式的，也就是说，使用者需要继承同步器并重写指定的方法，随后将同步器组合在自定义同步组件的实现中，并调用同步器提供的模板方法，而这些模板方法将会调用使用者重写的方法。</p>
+<p>重写同步器指定的方法时，需要使用同步器提供的如下3个方法来访问或修改同步状态。</p>
+<ol>
+<li>getState()：获取当前同步状态。</li>
+<li>setState(int newState)：设置当前同步状态。</li>
+<li>compareAndSetState(int expect,int update)：使用CAS设置当前状态，该方法能够保证状态设置的原子性。</li>
+</ol>
+<p><strong>同步器可重写的方法:</strong></p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203183532729.png" alt="image-20240203183532729"></p>
+<p><strong>实现自定义同步组件时，将会调用同步器提供的模板方法:</strong></p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203183737920.png" alt="image-20240203183737920"></p>
+<p>同步器提供的模板方法基本上分为3类：独占式获取与释放同步状态、共享式获取与释放同步状态和查询同步队列中的等待线程情况。自定义同步组件将使用同步器提供的模板方法来实现自己的同步语义。</p>
+<p>只有掌握了同步器的工作原理才能更加深入地理解并发包中其他的并发组件，所以下面通过一个独占锁的示例来深入了解一下同步器的工作原理。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Mutex</span> <span class="keyword">implements</span> <span class="title class_">Lock</span> &#123;</span><br><span class="line">    <span class="comment">// 静态内部类，自定义同步器</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Sync</span> <span class="keyword">extends</span> <span class="title class_">AbstractQueuedSynchronizer</span> &#123;</span><br><span class="line">        <span class="comment">// 是否处于占用状态</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> <span class="type">boolean</span> <span class="title function_">isHeldExclusively</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> getState() == <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 当状态为0的时候获取锁</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> <span class="type">boolean</span> <span class="title function_">tryAcquire</span><span class="params">(<span class="type">int</span> arg)</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (compareAndSetState(<span class="number">0</span>, <span class="number">1</span>)) &#123;</span><br><span class="line">                setExclusiveOwnerThread(Thread.currentThread());</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 释放锁，将状态设置为0</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> <span class="type">boolean</span> <span class="title function_">tryRelease</span><span class="params">(<span class="type">int</span> arg)</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (getState() == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalMonitorStateException</span>();</span><br><span class="line">            &#125;</span><br><span class="line">            setExclusiveOwnerThread(<span class="literal">null</span>);</span><br><span class="line">            setState(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 返回一个Condition，每个condition都包含了一个condition队列</span></span><br><span class="line">        Condition <span class="title function_">newCondition</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ConditionObject</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 仅需要将操作代理到Sync上即可</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Sync</span> <span class="variable">sync</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Sync</span>();</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">lock</span><span class="params">()</span> &#123;</span><br><span class="line">        sync.acquire(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">lockInterruptibly</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        sync.acquireInterruptibly(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">tryLock</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> sync.tryAcquire(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">tryLock</span><span class="params">(<span class="type">long</span> time, TimeUnit unit)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="keyword">return</span> sync.tryAcquireNanos(<span class="number">1</span>, unit.toNanos(time));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">unlock</span><span class="params">()</span> &#123;</span><br><span class="line">        sync.release(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Condition <span class="title function_">newCondition</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> sync.newCondition();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述示例中，独占锁Mutex是一个自定义同步组件，它在同一时刻只允许一个线程占有锁。Mutex中定义了一个静态内部类，该内部类继承了同步器并实现了独占式获取和释放同步状态。在tryAcquire(int acquires)方法中，如果经过CAS设置成功（同步状态设置为1），则代表获取了同步状态，而在tryRelease(int releases)方法中只是将同步状态重置为0。<strong>用户使用Mutex时并不会直接和内部同步器的实现打交道，而是调用Mutex提供的方法</strong>，在Mutex的实现中，以获取锁的lock()方法为例，只需要在方法实现中调用同步器的模板方法acquire(int args)即可，当前线程调用该方法获取同步状态失败后会被加入到同步队列中等待，这样就<code>大大降低了实现一个可靠自定义同步组件的门槛</code>。</p>
+<p>同步器依赖内部的同步队列（一个<code>FIFO双向队列</code>）来完成同步状态的管理，当前线程获取同步状态失败时，同步器会将<code>当前线程以及等待状态</code>等信息构造成为一个节点（Node）并将其加入同步队列，同时会阻塞当前线程，当同步状态释放时，会把首节点的后继节点中的线程唤醒，使其再次尝试获取同步状态。</p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203190019432.png" alt="image-20240203190019432"></p>
+<p>节点是构成同步队列（和等待队列）的基础，同步器拥有首节点（head）和尾节点（tail），没有成功获取同步状态的线程将会成为节点加入该队列的尾部。</p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203190122917.png" alt="image-20240203190122917"></p>
+<p>同步器包含了两个节点类型的引用，一个指向头节点，而另一个指向尾节点。试想一下，当一个线程成功地获取了同步状态（或者锁），其他线程将无法获取到同步状态，转而被构造成为节点并加入到同步队列中，而这个加入队列的过程必须要保证<code>线程安全</code>，因此同步器提供了一个基于CAS的设置尾节点的方法：<code>compareAndSetTail(Node expect,Node update)</code>，它需要传递当前线程“认为”的尾节点和当前节点，只有设置成功后，当前节点才正式与之前的尾节点建立关联。</p>
+<p>同步队列遵循<code>FIFO</code>，首节点是获取同步状态成功的节点，&#x3D;&#x3D;首节点的线程在释放同步状态时，将会唤醒后继节点&#x3D;&#x3D;，而后继节点将会在获取同步状态成功时将自己设置为首节点。</p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203190358147.png" alt="image-20240203190358147"></p>
+<p>设置首节点是通过获取同步状态成功的线程来完成的，由于只有一个线程能够成功获取到同步状态，因此设置头节点的方法并不需要使用CAS来保证，它只需要将首节点设置成为原首节点的后继节点并断开原首节点的next引用即可。</p>
+<h2 id="3-LockSupport工具"><a href="#3-LockSupport工具" class="headerlink" title="3.LockSupport工具"></a>3.LockSupport工具</h2><p>当需要阻塞或唤醒一个线程的时候，都会使用LockSupport工具类来完成相应工作。LockSupport定义了一组的公共静态方法，这些方法提供了最基本的线程阻塞和唤醒功能，而LockSupport也成为构建同步组件的基础工具。</p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203191559294.png" alt="image-20240203191559294"></p>
+<p>在Java 6中，LockSupport增加了park(Object blocker)、parkNanos(Object blocker,long nanos)和parkUntil(Object blocker,long deadline)3个方法，用于实现阻塞当前线程的功能，其中参数<code>blocker</code>是用来标识<code>当前线程在等待的对象</code>（以下称为阻塞对象），该对象主要用于<code>问题排查</code>和<code>系统监控</code>。</p>
+<p>下面的示例中，将对比parkNanos(long nanos)方法和parkNanos(Object blocker,long nanos)方法来展示<code>阻塞对象blocker</code>的用处。</p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203191817959.png" alt="image-20240203191817959"></p>
+<p>从表的线程dump结果可以看出，代码片段的内容都是阻塞当前线程10秒，但从线程dump结果可以看出，<strong>有阻塞对象的parkNanos方法能够传递给开发人员更多的现场信息</strong>。这是由于在Java 5之前，当线程阻塞（使用synchronized关键字）在一个对象上时，通过线程dump能够查看到该线程的阻塞对象，方便问题定位，而Java 5推出的Lock等并发工具时却遗漏了这一点，致使在线程dump时无法提供阻塞对象的信息。因此，在Java 6中，LockSupport新增了上述3个含有阻塞对象的park方法，用以替代原有的park方法。</p>
+<h2 id="4-Condition"><a href="#4-Condition" class="headerlink" title="4.Condition"></a>4.Condition</h2><p>任意一个Java对象，都拥有一组监视器方法（定义在java.lang.Object上），主要包括wait()、wait(long timeout)、notify()以及notifyAll()方法，这些方法与synchronized同步关键字配合，可以实现等待&#x2F;通知模式。Condition接口也提供了类似Object的监视器方法，与Lock配合可以实现等待&#x2F;通知模式，但是这两者在使用方式以及功能特性上还是有差别的。</p>
+<p><img src="/../../../../../../imgs/Java%E4%B8%AD%E7%9A%84%E9%94%81/image-20240203191910567.png" alt="image-20240203191910567"></p>
+<p>Condition定义了等待&#x2F;通知两种类型的方法，当前线程调用这些方法时，需要提前获取到Condition对象关联的锁。Condition对象是由Lock对象（调用Lock对象的newCondition()方法）创建出来的，换句话说，<code>Condition是依赖Lock对象的</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Lock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line"><span class="type">Condition</span> <span class="variable">condition</span> <span class="operator">=</span> lock.newCondition();</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">conditionWait</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    lock.lock();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        condition.await();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">conditionSignal</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    lock.lock();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        condition.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如示例所示，一般都会将Condition对象作为成员变量。当调用await()方法后，当前线程会释放锁并在此等待，而其他线程调用Condition对象的signal()方法，通知当前线程后，当前线程才从await()方法返回，并且在返回前已经获取了锁。</p>
+<p>获取一个Condition必须通过Lock的newCondition()方法。下面通过一个有界队列的示例来深入了解Condition的使用方式。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BoundQueue</span>&lt;T&gt; &#123;</span><br><span class="line">    <span class="keyword">private</span> Object[] items;</span><br><span class="line">    <span class="comment">// 添加的下标，删除的下标和数组当前数量</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> addIndex, removeIndex, count;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">Lock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line">    <span class="keyword">private</span> <span class="type">Condition</span> <span class="variable">notEmpty</span> <span class="operator">=</span> lock.newCondition();</span><br><span class="line">    <span class="keyword">private</span> <span class="type">Condition</span> <span class="variable">notFull</span> <span class="operator">=</span> lock.newCondition();</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">BoundQueue</span><span class="params">(<span class="type">int</span> size)</span> &#123;</span><br><span class="line">        items = <span class="keyword">new</span> <span class="title class_">Objects</span>[size];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 添加一个元素，如果数组满，则添加线程进入等待状态，直到有&quot;空位&quot;</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">(T t)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        lock.lock();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (count == items.length)</span><br><span class="line">                notFull.await();</span><br><span class="line">            items[addIndex] = t;</span><br><span class="line">            <span class="keyword">if</span> (++addIndex == items.length) &#123;</span><br><span class="line">                addIndex = <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            ++count;</span><br><span class="line">            notEmpty.signal();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            lock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 由头部删除一个元素，如果数组空，则删除线程进入等待状态，直到有新添加元素</span></span><br><span class="line">    <span class="keyword">public</span> T <span class="title function_">remove</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        lock.lock();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (count == <span class="number">0</span>)</span><br><span class="line">                notEmpty.await();</span><br><span class="line">            <span class="type">Object</span> <span class="variable">x</span> <span class="operator">=</span> items[removeIndex];</span><br><span class="line">            <span class="keyword">if</span> (++removeIndex == items.length) &#123;</span><br><span class="line">                removeIndex = <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            --count;</span><br><span class="line">            notFull.signal();</span><br><span class="line">            <span class="keyword">return</span> (T) x;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            lock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述示例中，BoundedQueue通过add(T t)方法添加一个元素，通过remove()方法移出一个元素。以添加方法为例。</p>
+<p>首先需要获得锁，目的是确保数组修改的<code>可见性</code>和<code>排他性</code>。当数组数量等于数组长度时，表示数组已满，则调用notFull.await()，当前线程随之释放锁并进入等待状态。如果数组数量不等于数组长度，表示数组未满，则添加元素到数组中，同时通知等待在notEmpty上的线程，数组中已经有新元素可以获取。</p>
+<p><strong>在添加和删除方法中使用while循环而非if判断，目的是防止过早或意外的通知，只有条件符合才能够退出循环。回想之前提到的等待&#x2F;通知的经典范式，二者是非常类似的。</strong></p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E4%B8%AD%E7%9A%84%E9%94%81"><span class="toc-number">1.</span> <span class="toc-text">Java中的锁</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Lock%E6%8E%A5%E5%8F%A3"><span class="toc-number">1.1.</span> <span class="toc-text">1.Lock接口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E9%98%9F%E5%88%97%E5%90%8C%E6%AD%A5%E5%99%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.队列同步器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-LockSupport%E5%B7%A5%E5%85%B7"><span class="toc-number">1.3.</span> <span class="toc-text">3.LockSupport工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Condition"><span class="toc-number">1.4.</span> <span class="toc-text">4.Condition</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&text=Java中的锁"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&is_video=false&description=Java中的锁"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java中的锁&body=Check out this article: https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&title=Java中的锁"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&name=Java中的锁&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/02/Java%E4%B8%AD%E7%9A%84%E9%94%81/&t=Java中的锁"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
