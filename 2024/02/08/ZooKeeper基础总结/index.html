@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="ZooKeeper基础总结 结合了Guide哥和Hollis哥的文章总结学习，方便后续复习整理。  1.ZooKeeper介绍1.1ZooKeeper概览ZooKeeper是一个开源的分布式协调服务，它的设计目标是将那些复杂且容易出错的分布式一致性服务封装起来，构成一个高效可靠的原语集，并以一系列简单易用的接口提供给用户使用。 ZooKeeper为我们提供了高可用、高性能、稳定的分布式数据一致性解">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZooKeeper基础总结">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="ZooKeeper基础总结 结合了Guide哥和Hollis哥的文章总结学习，方便后续复习整理。  1.ZooKeeper介绍1.1ZooKeeper概览ZooKeeper是一个开源的分布式协调服务，它的设计目标是将那些复杂且容易出错的分布式一致性服务封装起来，构成一个高效可靠的原语集，并以一系列简单易用的接口提供给用户使用。 ZooKeeper为我们提供了高可用、高性能、稳定的分布式数据一致性解">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208145637424.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208150743452.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208151033647.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208152018421.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208152332442.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/zookeeper-watcher.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/zookeeper-cluster.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/zookeeper-cluser-roles.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208153629303.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/3A831473EEEB77FFB747137638250BBD.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/675CF587DB955449A473B98C7038CF08.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/C0CA7AA8B05391CB55EE7BD6FCC4819C.jpg">
+<meta property="article:published_time" content="2024-02-08T04:20:20.440Z">
+<meta property="article:modified_time" content="2024-02-08T08:34:43.544Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="ZooKeeper">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208145637424.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>ZooKeeper基础总结</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/07/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&text=ZooKeeper基础总结"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&is_video=false&description=ZooKeeper基础总结"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ZooKeeper基础总结&body=Check out this article: https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&name=ZooKeeper基础总结&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&t=ZooKeeper基础总结"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93"><span class="toc-number">1.</span> <span class="toc-text">ZooKeeper基础总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-ZooKeeper%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.ZooKeeper介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1ZooKeeper%E6%A6%82%E8%A7%88"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1ZooKeeper概览</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2ZooKeeper%E7%89%B9%E7%82%B9"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2ZooKeeper特点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3ZooKeeper%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3ZooKeeper应用场景</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-ZooKeeper%E6%A6%82%E5%BF%B5"><span class="toc-number">1.2.</span> <span class="toc-text">2.ZooKeeper概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1ZooKeeper%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1ZooKeeper数据模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2ZooKeeper%E8%8A%82%E7%82%B9%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2ZooKeeper节点类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3ZooKeeper%E7%9A%84ACL%E6%9D%83%E9%99%90%E6%8E%A7%E5%88%B6"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3ZooKeeper的ACL权限控制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4ZooKeeper%E7%9A%84Watcher%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4ZooKeeper的Watcher通知机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5ZooKeeper%E7%9A%84%E4%BC%9A%E8%AF%9D"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5ZooKeeper的会话</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-ZooKeeper%E9%9B%86%E7%BE%A4"><span class="toc-number">1.3.</span> <span class="toc-text">3.ZooKeeper集群</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1ZooKeeper%E7%9A%84%E9%9B%86%E7%BE%A4%E8%A7%92%E8%89%B2"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1ZooKeeper的集群角色</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2ZooKeeper%E7%9A%84%E9%80%89%E4%B8%BE%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2ZooKeeper的选举流程</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        ZooKeeper基础总结
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-08T04:20:20.440Z" class="dt-published" itemprop="datePublished">2024-02-08</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/ZooKeeper/" rel="tag">ZooKeeper</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="ZooKeeper基础总结"><a href="#ZooKeeper基础总结" class="headerlink" title="ZooKeeper基础总结"></a>ZooKeeper基础总结</h1><blockquote>
+<p>结合了Guide哥和Hollis哥的文章总结学习，方便后续复习整理。</p>
+</blockquote>
+<h2 id="1-ZooKeeper介绍"><a href="#1-ZooKeeper介绍" class="headerlink" title="1.ZooKeeper介绍"></a>1.ZooKeeper介绍</h2><h3 id="1-1ZooKeeper概览"><a href="#1-1ZooKeeper概览" class="headerlink" title="1.1ZooKeeper概览"></a>1.1ZooKeeper概览</h3><p>ZooKeeper是一个开源的<code>分布式协调服务</code>，它的设计目标是将那些复杂且容易出错的分布式一致性服务封装起来，构成一个高效可靠的原语集，并以一系列简单易用的接口提供给用户使用。</p>
+<p>ZooKeeper为我们提供了高可用、高性能、稳定的分布式数据一致性解决方案，通常被用于实现诸如数据发布&#x2F;订阅、负载均衡、命名服务、分布式协调&#x2F;通知、集群管理、Master选举、分布式锁和分布式队列等功能。这些功能的实现主要依赖于ZooKeeper提供的<code>数据存储</code>+<code>事件监听</code>功能。</p>
+<blockquote>
+<p>ZooKeeper将数据保存在内存中，性能是不错的。在“读”多于“写”的应用程序中尤其地高性能，因为“写”会导致所有的服务器间同步状态。（“读”多于“写”是协调服务的典型场景）。</p>
+</blockquote>
+<h3 id="1-2ZooKeeper特点"><a href="#1-2ZooKeeper特点" class="headerlink" title="1.2ZooKeeper特点"></a>1.2ZooKeeper特点</h3><ul>
+<li><p><code>顺序一致性</code>：从同一客户端发起的事务请求，最终将会严格地按照顺序被应用到ZooKeeper中去。</p>
+</li>
+<li><p><code>原子性</code>：所有事务请求的处理结果在整个集群中所有机器上的应用情况是一致的，也就是说，要么整个集群中所有的机器都成功应用了某一个事务，要么都没有应用。</p>
+</li>
+<li><p><code>单一系统映像</code>：无论客户端连到哪一个ZooKeeper服务器上，其看到的服务端数据模型都是一致的。</p>
+</li>
+<li><p><code>可靠性</code>：一旦一次更改请求被应用，更改的结果就会被持久化，直到被下一次更改覆盖。</p>
+</li>
+<li><p><code>实时性</code>：每个客户端的系统视图都是最新的。</p>
+</li>
+</ul>
+<h3 id="1-3ZooKeeper应用场景"><a href="#1-3ZooKeeper应用场景" class="headerlink" title="1.3ZooKeeper应用场景"></a>1.3ZooKeeper应用场景</h3><ol>
+<li><code>分布式配置管理</code>：ZooKeeper可以存储配置信息，应用程序可以动态读取配置信息。</li>
+<li><code>分布式同步</code>：ZooKeeper可以协调各个节点的同步，确保数据的一致性。</li>
+<li><code>命名服务</code>：ZooKeeper可以作为一个命名服务，应用程序可以通过名字来找到所需的服务。</li>
+<li><code>集群管理</code>：ZooKeeper可以用来管理分布式集群，协调各个节点的加入与退出。</li>
+<li><code>Master选举</code>：ZooKeeper可以用来实现Master选举，选择一个节点作为Master节点。</li>
+<li><code>分布式协调服务</code>：ZooKeeper提供了一些分布式协调服务，如分布式锁、唯一标识生成等，帮助系统的各个组件之间进行协调。</li>
+<li><code>服务注册与发现</code>：ZooKeeper可以用来注册和发现系统中的服务，简化服务的部署和更新。</li>
+<li><code>负载均衡</code>：ZooKeeper可以用来动态地对请求进行负载均衡，以提高系统的可用性。</li>
+</ol>
+<h2 id="2-ZooKeeper概念"><a href="#2-ZooKeeper概念" class="headerlink" title="2.ZooKeeper概念"></a>2.ZooKeeper概念</h2><h3 id="2-1ZooKeeper数据模型"><a href="#2-1ZooKeeper数据模型" class="headerlink" title="2.1ZooKeeper数据模型"></a>2.1ZooKeeper数据模型</h3><p>ZooKeeper数据模型采用<code>层次化的多叉树形结构</code>，每个节点上都可以存储数据，这些数据可以是数字、字符串或者是二进制序列。每个节点还可以拥有N个子节点，最上层是根节点以“&#x2F;”来代表。每个数据节点在ZooKeeper中被称为<code>znode</code>，它是ZooKeeper中数据的最小单元。并且，每个znode都有一个唯一的路径标识。</p>
+<p>&#x3D;&#x3D;强调一句：ZooKeeper主要是用来协调服务的，而不是用来存储业务数据的，所以不要放比较大的数据在znode上，ZooKeeper给出的每个节点的数据大小上限是1M。&#x3D;&#x3D;</p>
+<h3 id="2-2ZooKeeper节点类型"><a href="#2-2ZooKeeper节点类型" class="headerlink" title="2.2ZooKeeper节点类型"></a>2.2ZooKeeper节点类型</h3><ul>
+<li><p>持久（PERSISTENT）节点：一旦创建就一直存在即使ZooKeeper集群宕机，直到将其删除。</p>
+</li>
+<li><p>临时（EPHEMERAL）节点：临时节点的生命周期是与客户端会话（session）绑定的，会话消失则节点消失。并且，临时节点只能做叶子节点，不能创建子节点。</p>
+</li>
+<li><p>持久顺序（PERSISTENT_SEQUENTIAL）节点：除了具有持久（PERSISTENT）节点的特性之外，子节点的名称还具有顺序性。</p>
+</li>
+<li><p>临时顺序（EPHEMERAL_SEQUENTIAL）节点：除了具备临时（EPHEMERAL）节点的特性之外，子节点的名称还具有顺序性。</p>
+</li>
+</ul>
+<blockquote>
+<p>每个znode由2部分组成:stat-状态信息；data：节点存放的数据内容。</p>
+</blockquote>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208145637424.png" alt="image-20240208145637424"></p>
+<p>&#x3D;&#x3D;验证pZxid、cversion和numChildren的意义&#x3D;&#x3D;</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208150743452.png" alt="image-20240208150743452"></p>
+<p>&#x3D;&#x3D;验证mZxid、dataVersion和dataLength的意义&#x3D;&#x3D;</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208151033647.png" alt="image-20240208151033647"></p>
+<p>&#x3D;&#x3D;验证pZxid、numChildren和ephemeralOwner的意义&#x3D;&#x3D;</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208152018421.png" alt="image-20240208152018421"></p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208152332442.png" alt="image-20240208152332442"></p>
+<h3 id="2-3ZooKeeper的ACL权限控制"><a href="#2-3ZooKeeper的ACL权限控制" class="headerlink" title="2.3ZooKeeper的ACL权限控制"></a>2.3ZooKeeper的ACL权限控制</h3><p>ZooKeeper采用ACL（AccessControlLists）策略来进行权限控制，类似于UNIX文件系统的权限控制。</p>
+<p>对于znode操作的权限，ZooKeeper提供了以下5种：</p>
+<ul>
+<li><strong>CREATE</strong>: 能创建子节点</li>
+<li><strong>READ</strong>：能获取节点数据和列出其子节点</li>
+<li><strong>WRITE</strong>: 能设置&#x2F;更新节点数据</li>
+<li><strong>DELETE</strong>: 能删除子节点</li>
+<li><strong>ADMIN</strong>: 能设置节点ACL的权限</li>
+</ul>
+<blockquote>
+<p>其中尤其需要注意的是，CREATE和DELETE这两种权限都是针对子节点的权限控制。</p>
+</blockquote>
+<p>对于身份认证，提供了以下几种方式：</p>
+<ul>
+<li><strong>world</strong>：默认方式，所有用户都可无条件访问。</li>
+<li><strong>auth</strong>:不使用任何id，代表任何已认证的用户。</li>
+<li><strong>digest</strong>:用户名:密码认证方式：username:password。</li>
+<li><strong>ip</strong>: 对指定ip进行限制。</li>
+</ul>
+<h3 id="2-4ZooKeeper的Watcher通知机制"><a href="#2-4ZooKeeper的Watcher通知机制" class="headerlink" title="2.4ZooKeeper的Watcher通知机制"></a>2.4ZooKeeper的Watcher通知机制</h3><p>Watcher（事件监听器），是ZooKeeper中的一个很重要的特性。ZooKeeper允许用户在指定节点上注册一些Watcher，并且在一些特定事件触发的时候，ZooKeeper服务端会将事件通知到感兴趣的客户端上去，该机制是ZooKeeper实现分布式协调服务的重要特性。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/zookeeper-watcher.png" alt="ZooKeeper Watcher 机制"></p>
+<h3 id="2-5ZooKeeper的会话"><a href="#2-5ZooKeeper的会话" class="headerlink" title="2.5ZooKeeper的会话"></a>2.5ZooKeeper的会话</h3><p>Session可以看作是ZooKeeper服务器与客户端的之间的一个<code>TCP长连接</code>，通过这个连接，客户端能够通过<code>心跳检测</code>与服务器保持有效的会话，也能够向ZooKeeper服务器发送请求并接受响应，同时还能够通过该连接接收来自服务器的Watcher事件通知。</p>
+<p>Session有一个属性叫做：<code>sessionTimeout</code>，<code>sessionTimeout</code>代表会话的超时时间。当由于服务器压力太大、网络故障或是客户端主动断开连接等各种原因导致客户端连接断开时，只要在<code>sessionTimeout</code>规定的时间内能够重新连接上集群中任意一台服务器，那么之前创建的会话仍然有效。</p>
+<p>另外，在为客户端创建会话之前，服务端首先会为每个客户端都分配一个<code>sessionID</code>。由于 <code>sessionID</code>是ZooKeeper会话的一个重要标识，许多与会话相关的运行机制都是基于这个 <code>sessionID</code>的，因此，无论是哪台服务器为客户端分配的<code>sessionID</code>，都务必保证全局唯一。</p>
+<h2 id="3-ZooKeeper集群"><a href="#3-ZooKeeper集群" class="headerlink" title="3.ZooKeeper集群"></a>3.ZooKeeper集群</h2><p>为了保证<code>高可用</code>，最好是以<code>集群</code>形态来部署ZooKeeper，这样只要集群中<code>大部分</code>机器是可用的（能够容忍一定的机器故障），那么ZooKeeper本身仍然是可用的。通常3台服务器就可以构成一个 ZooKeeper集群了。ZooKeeper官方提供的架构图就是一个ZooKeeper集群整体对外提供服务。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/zookeeper-cluster.png" alt="ZooKeeper 集群架构"></p>
+<p>上图中每一个Server代表一个安装ZooKeeper服务的服务器。组成ZooKeeper服务的服务器都会在内存中维护当前的服务器状态，并且每台服务器之间都互相保持着通信。集群间通过<code>ZAB</code>协议（ZooKeeper Atomic Broadcast）来保持数据的一致性。</p>
+<p><strong>最典型集群模式：Master&#x2F;Slave 模式（主备模式）</strong>。在这种模式中，通常Master服务器作为主服务器提供写服务，其他的Slave服务器作为从服务器通过异步复制的方式获取Master服务器最新的数据，并提供读服务。</p>
+<h3 id="3-1ZooKeeper的集群角色"><a href="#3-1ZooKeeper的集群角色" class="headerlink" title="3.1ZooKeeper的集群角色"></a>3.1ZooKeeper的集群角色</h3><p>在ZooKeeper中没有选择传统的Master&#x2F;Slave概念，而是引入了Leader、Follower和Observer三种角色。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/zookeeper-cluser-roles.png" alt="ZooKeeper 集群中角色"></p>
+<p>ZooKeeper集群中的所有机器通过一个<strong>Leader选举过程</strong>来选定一台称为“<strong>Leader</strong>”的机器，Leader既可以为客户端提供写服务又能提供读服务。除了Leader外，<strong>Follower</strong>和<strong>Observer</strong>都只能提供读服务。</p>
+<blockquote>
+<p>Follower和Observer唯一的区别在于Observer机器不参与Leader的选举过程，也不参与写操作的“过半写成功”策略，因此<code>Observer机器可以在不影响写性能的情况下提升集群的读性能</code>。</p>
+</blockquote>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/image-20240208153629303.png" alt="image-20240208153629303"></p>
+<h3 id="3-2ZooKeeper的选举流程"><a href="#3-2ZooKeeper的选举流程" class="headerlink" title="3.2ZooKeeper的选举流程"></a>3.2ZooKeeper的选举流程</h3><blockquote>
+<p>注意如果Zookeeper是单机部署是不需要选举的，集群模式下才需要选举。</p>
+</blockquote>
+<p>Zookeeper的选举原理和人类选举的逻辑类似，套用一下人类选举的四个基本概念详细解释一下Zookeeper。</p>
+<ul>
+<li><strong>个人能力</strong></li>
+</ul>
+<p>如何衡量Zookeeper节点个人能力？答案是靠<code>数据是否够新</code>，如果节点的数据越新就代表这个节点的个人能力越强，是不是感觉很奇怪，就是这么定的！</p>
+<p>在Zookeeper中通常是以事务id（后面简称<code>zxid</code>）来标识数据的新旧程度（版本），节点新的zxid越大代表这个节点的数据越新，也就代表这个节点能力越强。</p>
+<blockquote>
+<p>zxid 的全称是 <code>ZooKeeper Transaction Id</code>，即 Zookeeper 事务id。</p>
+</blockquote>
+<ul>
+<li><strong>遇强改投</strong></li>
+</ul>
+<p>在集群选举开始时，节点首先认为自己是强的（即数据是新的），然后在选票上写上自己的名字（包括<code>zxid</code>和<code>sid</code>），zxid是事务id，sid标识自己。</p>
+<p>紧接着会将选票传递给其他节点，同时自己也会接收其他节点传过来的选票。每个节点接收到选票后会做比较，这个人是不是比我强（zxid比我大），如果比较强，那我就需要<code>改票</code>，明明别人比我强，我也不能厚着脸皮对吧。</p>
+<ul>
+<li><strong>投票箱</strong></li>
+</ul>
+<p>与人类选举投票箱稍微有点不一样，Zookeeper集群会在每个节点的内存中维护一个投票箱。节点会将自己的选票以及其他节点的选票都放在这个投票箱中。由于选票是互相传阅的，所以终每个节点投票箱中的选票会是一样的。</p>
+<ul>
+<li><strong>服从多数</strong></li>
+</ul>
+<p>在投票的过程中会去统计是否有超过一半的选票和自己选择的是同一个节点，即都认为某个节点是强的。一旦集群中有<code>超过半数</code>的节点都认为某个节点强，那该节点就是了，投票也宣告结束。</p>
+<hr>
+<p>🤖什么场景下Zookeeper需要选举？</p>
+<hr>
+<p>当Zookeeper集群中的一台服务器出现以下两种情况之一时，需要进入<code>Leader选举</code>。</p>
+<p>（1）服务器初始化启动。</p>
+<p>（2）服务器运行期间Leader故障。</p>
+<blockquote>
+<p>启动期间的Leader选举</p>
+</blockquote>
+<p>假设一个Zookeeper集群中有5台服务器，id从1到5编号，并且它们都是新启动的，没有历史数据。假设服务器依次启动，我们来分析一下选举过程：</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/3A831473EEEB77FFB747137638250BBD.jpg" alt="img"></p>
+<p><strong>（1）服务器1启动</strong></p>
+<p>发起一次选举，服务器1投自己一票，此时服务器1票数一票，不够半数以上（3票），选举无法完成。</p>
+<p>投票结果：服务器1为1票。</p>
+<p>服务器1状态保持为<code>LOOKING</code>。</p>
+<p><strong>（2）服务器2启动</strong></p>
+<p>发起一次选举，服务器1和2分别投自己一票，此时服务器1发现服务器2的id比自己大，更改选票投给服务器2。</p>
+<p>投票结果：服务器1为0票，服务器2为2票。</p>
+<p>服务器1，2状态保持<code>LOOKING</code></p>
+<p><strong>（3）服务器3启动</strong></p>
+<p>发起一次选举，服务器1、2、3先投自己一票，然后因为服务器3的id大，两者更改选票投给为服务器3；</p>
+<p>投票结果：服务器1为0票，服务器2为0票，服务器3为3票。此时服务器3的票数已经超过半数（3票），服务器3当选<code>Leader</code>。</p>
+<p>服务器1，2更改状态为<code>FOLLOWING</code>，服务器3更改状态为<code>LEADING</code>。</p>
+<p><strong>（4）服务器4启动</strong></p>
+<p>发起一次选举，此时服务器1，2，3已经不是LOOKING状态，不会更改选票信息。交换选票信息结果：服务器3为3票，服务器4为1票。此时服务器4服从多数，更改选票信息为服务器3。</p>
+<p>服务器4并更改状态为<code>FOLLOWING</code>。</p>
+<p><strong>（5）服务器5启动</strong></p>
+<p>与服务器4一样投票给3，此时服务器3一共5票，服务器5为0票。</p>
+<p>服务器5并更改状态为<code>FOLLOWING</code>。</p>
+<p><strong>最终的结果</strong>：</p>
+<p>服务器3是<code>Leader</code>，状态为<code>LEADING</code>；其余服务器是<code>Follower</code>，状态为<code>FOLLOWING</code>。</p>
+<blockquote>
+<p>运行期间的Leader选举</p>
+</blockquote>
+<p>在Zookeeper运行期间<code>Leader</code>和<code>非 Leader</code>各司其职，当有非Leader服务器宕机或加入不会影响Leader，但是一旦Leader服务器挂了，那么整个Zookeeper集群将<code>暂停对外服务</code>，会触发新一轮的选举。</p>
+<p>初始状态下服务器3当选为<code>Leader</code>，假设现在服务器3故障宕机了，此时每个服务器上zxid可能都不一样，server1为99，server2为102，server4为100，server5为101。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/675CF587DB955449A473B98C7038CF08.jpg" alt="img"></p>
+<p>运行期选举与初始状态投票过程基本类似，大致可以分为以下几个步骤：</p>
+<p>（1）状态变更。Leader故障后，余下的<code>非Observer</code>服务器都会将自己的服务器状态变更为<code>LOOKING</code>，然后开始进入<code>Leader选举过程</code>。</p>
+<p>（2）每个Server会发出投票。</p>
+<p>（3）接收来自各个服务器的投票，如果其他服务器的数据比自己的新会改投票。</p>
+<p>（4）处理和统计投票，每一轮投票结束后都会统计投票，超过半数即可当选。</p>
+<p>（5）改变服务器的状态，宣布当选。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/C0CA7AA8B05391CB55EE7BD6FCC4819C.jpg" alt="img"></p>
+<hr>
+<p>🧶选举机制中涉及到的核心概念</p>
+<hr>
+<p><strong>（1）Server id：服务器ID</strong></p>
+<p>比如有三台服务器，编号分别是1,2,3。编号越大在选择算法中的权重越大，比如初始化启动时就是根据服务器ID进行比较。</p>
+<p><strong>（2）Zxid：事务ID</strong></p>
+<p>服务器中存放的数据的事务ID，值越大说明数据越新，在选举算法中数据越新权重越大。</p>
+<p><strong>（3）Epoch：逻辑时钟</strong></p>
+<p>也叫投票的次数，同一轮投票过程中的逻辑时钟值是相同的，每投完一次票这个数据就会增加。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93"><span class="toc-number">1.</span> <span class="toc-text">ZooKeeper基础总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-ZooKeeper%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.ZooKeeper介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1ZooKeeper%E6%A6%82%E8%A7%88"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1ZooKeeper概览</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2ZooKeeper%E7%89%B9%E7%82%B9"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2ZooKeeper特点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3ZooKeeper%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3ZooKeeper应用场景</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-ZooKeeper%E6%A6%82%E5%BF%B5"><span class="toc-number">1.2.</span> <span class="toc-text">2.ZooKeeper概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1ZooKeeper%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1ZooKeeper数据模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2ZooKeeper%E8%8A%82%E7%82%B9%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2ZooKeeper节点类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3ZooKeeper%E7%9A%84ACL%E6%9D%83%E9%99%90%E6%8E%A7%E5%88%B6"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3ZooKeeper的ACL权限控制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4ZooKeeper%E7%9A%84Watcher%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4ZooKeeper的Watcher通知机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5ZooKeeper%E7%9A%84%E4%BC%9A%E8%AF%9D"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5ZooKeeper的会话</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-ZooKeeper%E9%9B%86%E7%BE%A4"><span class="toc-number">1.3.</span> <span class="toc-text">3.ZooKeeper集群</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1ZooKeeper%E7%9A%84%E9%9B%86%E7%BE%A4%E8%A7%92%E8%89%B2"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1ZooKeeper的集群角色</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2ZooKeeper%E7%9A%84%E9%80%89%E4%B8%BE%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2ZooKeeper的选举流程</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&text=ZooKeeper基础总结"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&is_video=false&description=ZooKeeper基础总结"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ZooKeeper基础总结&body=Check out this article: https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&title=ZooKeeper基础总结"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&name=ZooKeeper基础总结&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/&t=ZooKeeper基础总结"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

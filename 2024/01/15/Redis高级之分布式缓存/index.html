@@ -52,7 +52,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171456648.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171542874.png">
 <meta property="article:published_time" content="2024-01-15T04:07:08.073Z">
-<meta property="article:modified_time" content="2024-01-17T09:19:25.250Z">
+<meta property="article:modified_time" content="2024-02-07T07:09:38.191Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
@@ -227,14 +227,14 @@
 <li>如果你希望在Redis意外停止工作（例如电源中断）的情况下丢失的数据最少的话，那么RDB不适合你。虽然你可以配置不同的save时间点(例如每隔5分钟并且对数据集有100个写的操作),但Redis要完整的保存整个数据集是一个比较繁重的工作,你通常会每隔5分钟或者更久做一次完整的保存,万一在Redis意外宕机,你可能会<code>丢失几分钟的数据</code>。</li>
 <li>RDB需要经常fork子进程来保存数据集到硬盘上,当<code>数据集比较大</code>的时候,<code>fork</code>的过程是非常<code>耗时</code>的,可能会导致Redis在一些毫秒级内不能响应客户端的请求。如果数据集巨大并且CPU性能不是很好的情况下,这种情况会持续1秒,AOF也需要fork,但是你可以调节重写日志文件的频率来提高数据集的耐久度。</li>
 </ul>
-<h3 id="2-2AOF"><a href="#2-2AOF" class="headerlink" title="2.2AOF"></a>2.2AOF</h3><p>快照功能并不是非常耐久（durable）： 如果Redis因为某些原因而造成<code>故障停机</code>，那么服务器将丢失<code>最近写入且仍未保存到快照</code>中的那些数据。从1.1版本开始，Redis增加了一种完全耐久的持久化方式：<code>AOF持久化</code>。</p>
-<p>AOF全称为Append Only File，Redis处理的每一个<code>写命令</code>都会记录在AOF文件，可以看作是命令日志文件。从现在开始，每当Redis执行一个改变数据集的命令时（比如SET），这个命令就会被<code>追加</code>到AOF文件的末尾。这样的话，当Redis重新启时，程序就可以通过重新执行AOF文件中的命令来达到<code>重建数据集</code>的目的。</p>
+<h3 id="2-2AOF"><a href="#2-2AOF" class="headerlink" title="2.2AOF"></a>2.2AOF</h3><p>快照功能并不是非常耐久（durable）：如果Redis因为某些原因而造成<code>故障停机</code>，那么服务器将丢失<code>最近写入且仍未保存到快照</code>中的那些数据。从1.1版本开始，Redis增加了一种完全耐久的持久化方式：<code>AOF持久化</code>。</p>
+<p>AOF全称为Append Only File，Redis处理的每一个<code>写命令</code>都会记录在AOF文件，可以看作是命令日志文件。从现在开始，每当Redis执行一个改变数据集的命令时（比如SET），这个命令就会被<code>追加</code>到AOF文件的末尾。这样的话，当Redis重启时，程序就可以通过重新执行AOF文件中的命令来达到<code>重建数据集</code>的目的。</p>
 <p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240116194925765.png" alt="image-20240116194925765"> </p>
 <p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240115173124670.png" alt="image-20240115173124670"> </p>
-<p>因为AOF的运作方式是不断地将命令追加到文件的末尾，所以随着写入命令的不断增加，AOF文件的<code>体积</code>也会变得<code>越来越大</code>。举个例子，如果你对一个计数器调用了100次INCR，那么仅仅是为了保存这个计数器的当前值，AOF文件就需要使用100条记录（entry）。然而在实际上， 只使用一条SET命令已经足以保存计数器的当前值了，其余99条记录实际上都是多余的。</p>
-<p>为了处理这种情况，Redis支持一种有趣的特性：可以在不打断服务客户端的情况下，对AOF文件进行重建（rebuild）。执行<code>bgwriteaof</code>命令，Redis将生成一个新的AOF文件，这个文件包含重建当前数据集所需的最少命令。Redis2.2需要自己手动执行<code>bgwriteaof</code>命令；Redis2.4则可以自动触发AOF重写。</p>
-<p>触发阈值可以在配置文件redis.conf中指定:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">AOF文件比上次文件增长超过多少百分比则触发重写</span></span><br><span class="line">auto-aof-rewrite-percentage 100</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">AOF文件体制最小多少以上才触发重写</span></span><br><span class="line">auto-aof-rewrite-min-size 64mb</span><br></pre></td></tr></table></figure>
+<p>因为AOF的运作方式是不断地将命令追加到文件的末尾，所以随着写入命令的不断增加，AOF文件的<code>体积</code>也会变得<code>越来越大</code>。举个例子，如果你对一个计数器调用了100次INCR，那么仅仅是为了保存这个计数器的当前值，AOF文件就需要使用100条记录（entry）。然而在实际上，只使用一条SET命令已经足以保存计数器的当前值了，其余99条记录实际上都是多余的。</p>
+<p>为了处理这种情况，Redis支持一种有趣的特性：可以在不打断服务客户端的情况下，对AOF文件进行重建（rebuild）。执行<code>bgwriteaof</code>命令，Redis将生成一个新的AOF文件，<code>这个文件包含重建当前数据集所需的最少命令</code>。Redis2.2需要自己手动执行<code>bgwriteaof</code>命令；Redis2.4则可以自动触发AOF重写。</p>
+<p><code>触发阈值</code>可以在配置文件redis.conf中指定:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">AOF文件比上次文件增长超过多少百分比则触发重写</span></span><br><span class="line">auto-aof-rewrite-percentage 100</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">AOF文件体积最小多少以上才触发重写</span></span><br><span class="line">auto-aof-rewrite-min-size 64mb</span><br></pre></td></tr></table></figure>
 
 <h3 id="2-3总结"><a href="#2-3总结" class="headerlink" title="2.3总结"></a>2.3总结</h3><p>RDB和AOF各有自己的优缺点，如果对数据安全性要求较高，在实际开发中往往会结合两者来使用。</p>
 <table>
@@ -324,11 +324,11 @@
 </ul>
 <p><strong><font color='red'>注意</font></strong>：在5.0以后新增命令replicaof，与salveof效果一致。</p>
 <p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117130026291.png" alt="image-20240117130026291"></p>
-<h3 id="3-2数据同步原理"><a href="#3-2数据同步原理" class="headerlink" title="3.2数据同步原理"></a>3.2数据同步原理</h3><p>主从同步之间的第一次同步属于<code>全量同步</code>，此时Master节点需要生成内存数据的<code>RDB</code>快照文件并发放给Slave节点，由于生成RDB文件是子进程异步完成的，主进程依然正常处理客户端请求，因此主从全量同步期间Master节点可能会有<code>新数据的写入</code>，这时Master节点需要一块内存缓冲区<code>repl_baklog</code>记录所有写入命令，并<code>增量同步</code>给从节点（重放命令实现落库）。</p>
+<h3 id="3-2数据同步原理"><a href="#3-2数据同步原理" class="headerlink" title="3.2数据同步原理"></a>3.2数据同步原理</h3><p>主从同步之间的第一次同步属于<code>全量同步</code>，此时Master节点需要生成内存数据的<code>RDB</code>快照文件并发放给Slave节点，由于生成RDB文件是子进程异步完成的，主进程依然正常处理客户端请求，因此主从全量同步期间Master节点可能会有<code>新数据的写入</code>，这时Master节点需要一块内存缓冲区<code>repl_backlog</code>记录所有写入命令，并<code>增量同步</code>给从节点（重放命令实现落库）。</p>
 <p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117131844958.png" alt="image-20240117131844958"></p>
 <p>Master如何判断Slave是不是第一次来同步数据？这里会用到两个很重要的概念：</p>
 <ul>
-<li>Replication Id：简称replid，是数据集的标记，replid一致则说明是同一数据集。每一个Master都有唯一的replid，Slave则会继承Master节点的replid。</li>
+<li>Replication Id：简称replid，是数据集的标记，<code>replid一致则说明是同一数据集</code>。每一个Master都有唯一的replid，Slave则会继承Master节点的replid。</li>
 <li>offset：偏移量，随着记录在repl_baklog中的数据增多而逐渐增大。Slave完成同步时也会记录当前同步的offset，如果Slave的offset小于Master的offset，说明Slave数据落后于Master，需要更新。因此Slave做数据同步，必须向Master声明自己的replication id和offset，Master才可以判断到底需要同步哪些数据。</li>
 </ul>
 <p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117132212741.png" alt="image-20240117132212741"></p>
@@ -336,7 +336,7 @@
 <p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117134118872.png" alt="image-20240117134118872"></p>
 <p>可以从以下几个方面来优化Redis主从就集群：</p>
 <ol>
-<li>在Master中配置<code>repl-diskless-sync yes</code>(适合于磁盘满网络带宽高的情况)启用<code>无磁盘复制</code>，避免全量同步时的磁盘IO。</li>
+<li>在Master中配置<code>repl-diskless-sync yes</code>(适合于磁盘慢网络带宽高的情况)启用<code>无磁盘复制</code>，避免全量同步时的磁盘IO。</li>
 <li>Redis单节点上的内存占用不要太大，减少RDB导致的过多磁盘IO。</li>
 <li>适当提高<code>repl_backlog</code>的大小，发现Slave宕机时<code>尽快</code>实现故障恢复，尽可能避免全量同步。</li>
 <li>限制一个Master上的Slave节点数量，如果实在是太多Slave，则可以采用主-从-从链式结构，减少Master压力。</li>
@@ -349,12 +349,12 @@
 </ul>
 <p>什么时候执行全量同步？</p>
 <ul>
-<li>Slave节点第一次连接Master节点时。</li>
-<li>Slave节点断开时间太久，repl_baklog中的offset已经被覆盖时。</li>
+<li>Slave节点<code>第一次连接</code>Master节点时。</li>
+<li>Slave节点<code>断开时间太久，repl_baklog中的offset已经被覆盖时</code>。</li>
 </ul>
 <p>什么时候执行增量同步？</p>
 <ul>
-<li>Slave节点断开又恢复，并且在repl_baklog中能找到offset时。</li>
+<li>Slave节点<code>断开又恢复，并且在repl_baklog中能找到offset时</code>。</li>
 </ul>
 <h2 id="4-Redis哨兵机制"><a href="#4-Redis哨兵机制" class="headerlink" title="4.Redis哨兵机制"></a>4.Redis哨兵机制</h2><h3 id="4-1哨兵的作用与原理"><a href="#4-1哨兵的作用与原理" class="headerlink" title="4.1哨兵的作用与原理"></a>4.1哨兵的作用与原理</h3><p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117140659819.png" alt="image-20240117140659819"> </p>
 <p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117140835307.png" alt="image-20240117140835307"></p>
