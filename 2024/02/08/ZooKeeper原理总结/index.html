@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="ZooKeeper原理总结 主要参考了Guide哥和Hollis哥的文章以及其他一些技术视频。  1.Paxos算法Paxos算法是基于消息传递且具有高度容错特性的一致性算法，是目前公认的解决分布式一致性问题最有效的算法之一，其解决的问题就是在分布式系统中如何就某个值（决议）达成一致 。 在Paxos中主要有三个角色，分别为Proposer提案者、Acceptor表决者、Learner学习者。Pa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZooKeeper原理总结">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="ZooKeeper原理总结 主要参考了Guide哥和Hollis哥的文章以及其他一些技术视频。  1.Paxos算法Paxos算法是基于消息传递且具有高度容错特性的一致性算法，是目前公认的解决分布式一致性问题最有效的算法之一，其解决的问题就是在分布式系统中如何就某个值（决议）达成一致 。 在Paxos中主要有三个角色，分别为Proposer提案者、Acceptor表决者、Learner学习者。Pa">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/cd1e5f78875b4ad6b54013738f570943tplv-k3u1fbpfcp-zoom-1.jpeg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/dad7f51d58b24a72b249278502ec04bdtplv-k3u1fbpfcp-zoom-1.jpeg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/9359bbabb511472e8de04d0826967996tplv-k3u1fbpfcp-zoom-1.jpeg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/07bf6c1e10f84fc58a2453766ca6bd18tplv-k3u1fbpfcp-zoom-1.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/b64c7f25a5d24766889da14260005e31tplv-k3u1fbpfcp-zoom-1.jpeg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/4b8365e80bdf441ea237847fb91236b7tplv-k3u1fbpfcp-zoom-1.jpeg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/99cdca39ad6340ae8b77e8befe94e36etplv-k3u1fbpfcp-zoom-1.jpeg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/image-20240208235507851.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/image-20240208235519146.png">
+<meta property="article:published_time" content="2024-02-08T15:53:17.742Z">
+<meta property="article:modified_time" content="2024-02-08T15:55:22.584Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="ZooKeeper">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/cd1e5f78875b4ad6b54013738f570943tplv-k3u1fbpfcp-zoom-1.jpeg">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>ZooKeeper原理总结</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/08/ZooKeeper%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&text=ZooKeeper原理总结"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&is_video=false&description=ZooKeeper原理总结"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ZooKeeper原理总结&body=Check out this article: https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&name=ZooKeeper原理总结&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&t=ZooKeeper原理总结"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93"><span class="toc-number">1.</span> <span class="toc-text">ZooKeeper原理总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Paxos%E7%AE%97%E6%B3%95"><span class="toc-number">1.1.</span> <span class="toc-text">1.Paxos算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1prepare%E9%98%B6%E6%AE%B5"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1prepare阶段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2accept%E9%98%B6%E6%AE%B5"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2accept阶段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3Paxos%E7%AE%97%E6%B3%95%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3Paxos算法的死循环问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-ZAB%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.2.</span> <span class="toc-text">2.ZAB协议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1ZooKeeper%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1ZooKeeper架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2ZAB%E4%B8%AD%E7%9A%84%E8%A7%92%E8%89%B2"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2ZAB中的角色</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E6%B6%88%E6%81%AF%E5%B9%BF%E6%92%AD%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3消息广播模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E5%B4%A9%E6%BA%83%E6%81%A2%E5%A4%8D%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4崩溃恢复模式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-ZooKeeper%E7%9A%84Watcher%E5%8E%9F%E7%90%86"><span class="toc-number">1.3.</span> <span class="toc-text">3.ZooKeeper的Watcher原理</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        ZooKeeper原理总结
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-08T15:53:17.742Z" class="dt-published" itemprop="datePublished">2024-02-08</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/ZooKeeper/" rel="tag">ZooKeeper</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="ZooKeeper原理总结"><a href="#ZooKeeper原理总结" class="headerlink" title="ZooKeeper原理总结"></a>ZooKeeper原理总结</h1><blockquote>
+<p>主要参考了Guide哥和Hollis哥的文章以及其他一些技术视频。</p>
+</blockquote>
+<h2 id="1-Paxos算法"><a href="#1-Paxos算法" class="headerlink" title="1.Paxos算法"></a>1.Paxos算法</h2><p><code>Paxos</code>算法是基于<strong>消息传递且具有高度容错特性的一致性算法</strong>，是目前公认的解决分布式一致性问题最有效的算法之一，<strong>其解决的问题就是在分布式系统中如何就某个值（决议）达成一致</strong> 。</p>
+<p>在<code>Paxos</code>中主要有三个角色，分别为<code>Proposer提案者</code>、<code>Acceptor表决者</code>、<code>Learner学习者</code>。<code>Paxos</code>算法和<code>2PC</code>一样，也有两个阶段，分别为<code>prepare</code>和<code>accept</code>阶段。</p>
+<h3 id="1-1prepare阶段"><a href="#1-1prepare阶段" class="headerlink" title="1.1prepare阶段"></a>1.1prepare阶段</h3><ul>
+<li><p><code>Proposer提案者</code>：负责提出<code>proposal</code>，每个提案者在提出提案时都会首先获取到一个<strong>具有全局唯一性的、递增的提案编号N</strong>，即在整个集群中是唯一的编号N，然后将该编号赋予其要提出的提案，在<strong>第一阶段是只将提案编号发送给所有的表决者</strong>。</p>
+</li>
+<li><p><code>Acceptor表决者</code>：每个表决者在<code>accept</code>某提案后，会将该提案编号N记录在本地，这样每个表决者中保存的已经被accept的提案中会存在一个<strong>编号最大的提案</strong>，其编号假设为<code>maxN</code>。每个表决者仅会<code>accept</code>编号大于自己本地<code>maxN</code>的提案，在批准提案时表决者会将以前接受过的最大编号的提案作为响应反馈给<code>Proposer</code> 。</p>
+</li>
+</ul>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/cd1e5f78875b4ad6b54013738f570943tplv-k3u1fbpfcp-zoom-1.jpeg" alt="paxos第一阶段"></p>
+<h3 id="1-2accept阶段"><a href="#1-2accept阶段" class="headerlink" title="1.2accept阶段"></a>1.2accept阶段</h3><p>当一个提案被<code>Proposer</code>提出后，如果<code>Proposer</code>收到了超过半数的<code>Acceptor</code>的批准（<code>Proposer</code>本身同意），那么此时<code>Proposer</code>会给所有的<code>Acceptor</code>发送真正的提案（你可以理解为第一阶段为试探），这个时候<code>Proposer</code>就会发送提案的内容和提案编号。</p>
+<p>表决者收到提案请求后会再次比较本身已经批准过的最大提案编号和该提案编号，如果该提案编号 <strong>大于等于</strong>已经批准过的最大提案编号，那么就<code>accept</code>该提案（此时执行提案内容但不提交），随后将情况返回给<code>Proposer</code>。如果不满足则不回应或者返回NO。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/dad7f51d58b24a72b249278502ec04bdtplv-k3u1fbpfcp-zoom-1.jpeg" alt="paxos第二阶段1"></p>
+<p>当<code>Proposer</code>收到超过半数的<code>accept</code>，那么它这个时候会向所有的<code>acceptor</code>发送提案的提交请求。需要注意的是，因为上述仅仅是超过半数的<code>acceptor</code>批准执行了该提案内容，其他没有批准的并没有执行该提案内容，所以这个时候需要<strong>向未批准的<code>acceptor</code>发送提案内容和提案编号并让它无条件执行和提交</strong>，而对于前面已经批准过该提案的<code>acceptor</code>来说<strong>仅仅需要发送该提案的编号</strong>，让<code>acceptor</code>执行提交就行了。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/9359bbabb511472e8de04d0826967996tplv-k3u1fbpfcp-zoom-1.jpeg" alt="paxos第二阶段2"></p>
+<p>而如果<code>Proposer</code>如果没有收到超过半数的<code>accept</code>那么它将会将<strong>递增</strong>该<code>Proposal</code>的编号，然后 <strong>重新进入<code>Prepare</code>阶段</strong> 。</p>
+<h3 id="1-3Paxos算法的死循环问题"><a href="#1-3Paxos算法的死循环问题" class="headerlink" title="1.3Paxos算法的死循环问题"></a>1.3Paxos算法的死循环问题</h3><p>比如说，此时提案者P1提出一个方案M1，完成了<code>Prepare</code>阶段的工作，这个时候<code>acceptor</code>则批准了M1，但是此时提案者P2同时也提出了一个方案M2，它也完成了<code>Prepare</code>阶段的工作。然后P1的方案已经不能在第二阶段被批准了（因为<code>acceptor</code>已经批准了比M1更大的M2），所以P1自增方案变为M3重新进入<code>Prepare</code>阶段，然后<code>acceptor</code>又批准了新的M3方案，它又不能批准M2了，这个时候M2又自增进入<code>Prepare</code>阶段。。。</p>
+<p>就这样无休无止的永远提案下去，这就是<code>Paxos</code>算法的死循环问题。</p>
+<p>那么如何解决呢？很简单，人多了容易吵架，我现在 <strong>就允许一个能提案</strong> 就行了。</p>
+<h2 id="2-ZAB协议"><a href="#2-ZAB协议" class="headerlink" title="2.ZAB协议"></a>2.ZAB协议</h2><h3 id="2-1ZooKeeper架构"><a href="#2-1ZooKeeper架构" class="headerlink" title="2.1ZooKeeper架构"></a>2.1ZooKeeper架构</h3><p>作为一个优秀高效且可靠的分布式协调框架，<code>ZooKeeper</code>在解决分布式数据一致性问题时并没有直接使用<code>Paxos</code>，而是专门定制了一致性协议叫做<code>ZAB(ZooKeeper Atomic Broadcast)</code> 原子广播协议，该协议能够很好地支持 <strong>崩溃恢复</strong> 。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/07bf6c1e10f84fc58a2453766ca6bd18tplv-k3u1fbpfcp-zoom-1.png" alt="Zookeeper架构"></p>
+<h3 id="2-2ZAB中的角色"><a href="#2-2ZAB中的角色" class="headerlink" title="2.2ZAB中的角色"></a>2.2ZAB中的角色</h3><p>和介绍<code>Paxos</code>一样，在介绍<code>ZAB</code>协议之前，我们首先来了解一下在<code>ZAB</code>中三个主要的角色，<code>Leader领导者</code>、<code>Follower跟随者</code>、<code>Observer观察者</code>。</p>
+<ul>
+<li><p><code>Leader</code>：集群中<strong>唯一的写请求处理者</strong>，能够发起投票（投票也是为了进行写请求）。</p>
+</li>
+<li><p><code>Follower</code>：能够接收客户端的请求，如果是读请求则可以自己处理，<strong>如果是写请求则要转发给<code>Leader</code><strong>。在选举过程中会参与投票，</strong>有选举权和被选举权</strong> 。</p>
+</li>
+<li><p><code>Observer</code>：就是没有选举权和被选举权的<code>Follower</code>。</p>
+</li>
+</ul>
+<p>在<code>ZAB</code>协议中对<code>zkServer</code>(即上面我们说的三个角色的总称) 还有两种模式的定义，分别是<strong>消息广播</strong>和<strong>崩溃恢复</strong>。</p>
+<h3 id="2-3消息广播模式"><a href="#2-3消息广播模式" class="headerlink" title="2.3消息广播模式"></a>2.3消息广播模式</h3><p>说白了就是<code>ZAB</code>协议是如何处理写请求的，上面我们不是说只有<code>Leader</code>能处理写请求嘛？那么我们的<code>Follower</code>和<code>Observer</code>是不是也需要<strong>同步更新数据</strong>呢？总不能数据只在<code>Leader</code>中更新了，其他角色都没有得到更新吧？</p>
+<p>不就是 <strong>在整个集群中保持数据的一致性</strong> 嘛？如果是你，你会怎么做呢？</p>
+<p>废话，第一步肯定需要<code>Leader</code>将写请求<strong>广播</strong>出去呀，让<code>Leader</code>问问<code>Followers</code>是否同意更新(Observer不参与数据一致性更新过程)，如果<code>超过半数</code>以上的同意那么就进行<code>Follower</code>和<code>Observer</code>的更新（和<code>Paxos</code>一样）。当然这么说有点虚，画张图理解一下。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/b64c7f25a5d24766889da14260005e31tplv-k3u1fbpfcp-zoom-1.jpeg" alt="消息广播"></p>
+<p>嗯。。。看起来很简单，貌似懂了 🤥🤥🤥。这两个<code>Queue</code>哪冒出来的？答案是**<code>ZAB</code>需要让<code>Follower</code>和<code>Observer</code>保证顺序性** 。何为顺序性，比如我现在有一个写请求A，此时<code>Leader</code>将请求A广播出去，因为只需要半数同意就行，所以可能这个时候有一个<code>Follower</code>F1因为网络原因没有收到，而<code>Leader</code>又广播了一个请求B，因为网络原因，F1竟然先收到了请求B然后才收到了请求A，这个时候请求处理的顺序不同就会导致数据的不同，从而<strong>产生数据不一致问题</strong>。</p>
+<p>所以在<code>Leader</code>这端，它为每个其他的<code>zkServer</code>准备了一个<strong>队列</strong>，采用先进先出的方式发送消息。由于协议是**通过<code>TCP</code>**来进行网络通信的，保证了消息的发送顺序性，接受顺序性也得到了保证。</p>
+<p>除此之外，在<code>ZAB</code>中还定义了一个**全局单调递增的事务ID <code>ZXID</code>**，它是一个64位long型，其中高32位表示<code>epoch</code>年代，低32位表示事务id。<code>epoch</code>是会根据<code>Leader</code>的变化而变化的，当一个<code>Leader</code>挂了，新的<code>Leader</code>上位的时候，年代（<code>epoch</code>）就变了。而低32位可以简单理解为递增的事务id。</p>
+<p>定义这个的原因也是为了顺序性，每个<code>proposal</code>在<code>Leader</code>中生成后需要<strong>通过其<code>ZXID</code>来进行排序</strong>，才能得到处理。</p>
+<h3 id="2-4崩溃恢复模式"><a href="#2-4崩溃恢复模式" class="headerlink" title="2.4崩溃恢复模式"></a>2.4崩溃恢复模式</h3><p>说到崩溃恢复我们首先要提到<code>ZAB</code>中的<code>Leader</code>选举算法，当系统出现崩溃影响最大应该是<code>Leader</code>的崩溃，因为我们只有一个<code>Leader</code>，所以当<code>Leader</code>出现问题的时候我们势必需要重新选举<code>Leader</code> 。</p>
+<p><code>Leader</code>选举可以分为两个不同的阶段，第一个是我们提到的<code>Leader</code>宕机需要重新选举，第二则是当<code>Zookeeper</code>启动时需要进行系统的<code>Leader</code>初始化选举。下面我先来介绍一下<code>ZAB</code>是如何进行初始化选举的。</p>
+<p>假设我们集群中有 3 台机器，那也就意味着我们需要两台以上同意（超过半数）。比如这个时候我们启动了<code>server1</code>，它会首先<strong>投票给自己</strong>，投票内容为服务器的<code>myid</code>和<code>ZXID</code>，因为初始化所以<code>ZXID</code>都为0，此时<code>server1</code>发出的投票为(1,0)。但此时<code>server1</code>的投票仅为1，所以不能作为<code>Leader</code>，此时还在选举阶段所以整个集群处于**<code>Looking</code>状态**。</p>
+<p>接着<code>server2</code>启动了，它首先也会将投票选给自己(2,0)，并将投票信息广播出去（<code>server1</code>也会，只是它那时没有其他的服务器了），<code>server1</code>在收到<code>server2</code>的投票信息后会将投票信息与自己的作比较。<strong>首先它会比较<code>ZXID</code>，<code>ZXID</code>大的优先为<code>Leader</code>，如果相同则比较<code>myid</code>，<code>myid</code>大的优先作为<code>Leader</code><strong>。所以此时<code>server1</code>发现<code>server2</code>更适合做<code>Leader</code>，它就会将自己的投票信息更改为(2,0)然后再广播出去，之后<code>server2</code>收到之后发现和自己的一样无需做更改，并且自己的</strong>投票已经超过半数</strong>，则**确定<code>server2</code>为<code>Leader</code>**，<code>server1</code>也会将自己服务器设置为<code>Following</code>变为<code>Follower</code>。整个服务器就从<code>Looking</code>变为了正常状态。</p>
+<p>当<code>server3</code>启动发现集群没有处于<code>Looking</code>状态时，它会直接以<code>Follower</code>的身份加入集群。</p>
+<p>还是前面三个<code>server</code>的例子，如果在整个集群运行的过程中<code>server2</code>挂了，那么整个集群会如何重新选举<code>Leader</code>呢？其实和初始化选举差不多。</p>
+<p>首先毫无疑问的是剩下的两个<code>Follower</code>会将自己的状态<strong>从<code>Following</code>变为<code>Looking</code>状态</strong>，然后每个<code>server</code>会向初始化投票一样首先给自己投票（这不过这里的<code>zxid</code>可能不是0了，这里为了方便随便取个数字）。</p>
+<p>假设<code>server1</code>给自己投票为(1,99)，然后广播给其他<code>server</code>，<code>server3</code>首先也会给自己投票(3,95)，然后也广播给其他<code>server</code>。<code>server1</code>和<code>server3</code>此时会收到彼此的投票信息，和一开始选举一样，他们也会比较自己的投票和收到的投票（<code>zxid</code>大的优先，如果相同那么就<code>myid</code>大的优先）。这个时候<code>server1</code>收到了<code>server3</code>的投票发现没自己的合适故不变，<code>server3</code>收到<code>server1</code>的投票结果后发现比自己的合适于是更改投票为(1,99)然后广播出去，最后<code>server1</code>收到了发现自己的投票已经超过半数就把自己设为<code>Leader</code>，<code>server3</code>也随之变为<code>Follower</code>。</p>
+<p>那么说完了<code>ZAB</code>中的<code>Leader</code>选举方式之后我们再来了解一下 <strong>崩溃恢复</strong> 是什么玩意？</p>
+<p>其实主要就是 <strong>当集群中有机器挂了，我们整个集群如何保证数据一致性？</strong></p>
+<p>如果只是<code>Follower</code>挂了，而且挂的没超过半数的时候，因为我们一开始讲了在<code>Leader</code>中会维护队列，所以不用担心后面的数据没接收到导致数据不一致性。</p>
+<p>如果<code>Leader</code>挂了那就麻烦了，我们肯定需要先暂停服务变为<code>Looking</code>状态然后进行<code>Leader</code>的重新选举（上面我讲过了），但这个就要分为两种情况了，分别是 <strong>确保已经被Leader提交的提案最终能够被所有的Follower提交</strong> 和 <strong>跳过那些已经被丢弃的提案</strong> 。</p>
+<p>确保已经被Leader提交的提案最终能够被所有的Follower提交是什么意思呢？</p>
+<p>假设<code>Leader (server2)</code>发送<code>commit</code>请求（忘了请看上面的消息广播模式），他发送给了 <code>server3</code>，然后要发给<code>server1</code>的时候突然挂了。这个时候重新选举的时候我们如果把<code>server1</code>作为<code>Leader</code>的话，那么肯定会产生数据不一致性，因为<code>server3</code>肯定会提交刚刚<code>server2</code>发送的<code>commit</code>请求的提案，而<code>server1</code>根本没收到所以会丢弃。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/4b8365e80bdf441ea237847fb91236b7tplv-k3u1fbpfcp-zoom-1.jpeg" alt="崩溃恢复"></p>
+<p>那怎么解决呢？</p>
+<p>聪明的同学肯定会质疑，<strong>这个时候<code>server1</code>已经不可能成为<code>Leader</code>了，因为<code>server1</code>和<code>server3</code>进行投票选举的时候会比较<code>ZXID</code>，而此时<code>server3</code>的<code>ZXID</code>肯定比<code>server1</code>的大了</strong>。(不理解可以看前面的选举算法)</p>
+<p>那么跳过那些已经被丢弃的提案又是什么意思呢？</p>
+<p>假设<code>Leader (server2)</code>此时同意了提案N1，自身提交了这个事务并且要发送给所有 <code>Follower</code>要<code>commit</code>的请求，却在这个时候挂了，此时肯定要重新进行<code>Leader</code>的选举，比如说此时选<code>server1</code>为<code>Leader</code>（这无所谓）。但是过了一会，这个<strong>挂掉的<code>Leader</code>又重新恢复了</strong>，此时它肯定会作为<code>Follower</code>的身份进入集群中，需要注意的是刚刚<code>server2</code>已经同意提交了提案N1，但其他<code>server</code>并没有收到它的<code>commit</code>信息，所以其他<code>server</code>不可能再提交这个提案N1了，这样就会出现数据不一致性问题了，所以<strong>该提案N1最终需要被抛弃掉</strong>。</p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/99cdca39ad6340ae8b77e8befe94e36etplv-k3u1fbpfcp-zoom-1.jpeg" alt="崩溃恢复"></p>
+<h2 id="3-ZooKeeper的Watcher原理"><a href="#3-ZooKeeper的Watcher原理" class="headerlink" title="3.ZooKeeper的Watcher原理"></a>3.ZooKeeper的Watcher原理</h2><p>在Zookeeper中，watch机制是一种非常重要的特性，它能够让应用程序监听Zookeeper上节点的变化，从而及时做出响应。Zookeeper的watch机制实现中，涉及到多个概念，首先是客户端和服务端，这个好理解，Zookeeper的集群就是服务端，调用ZK服务的机器就是客户端。<br>还有两个模块，分别叫做<code>WatchManager</code>和<code>ZkWatcherManager</code>。</p>
+<ul>
+<li>WatchManager是Zookeeper服务端内部的一个模块，用于管理所有watcher的相关操作，包括watcher的注册、注销、触发等。</li>
+<li>ZkWatcherManager是Zookeeper客户端中的一个模块，用于管理客户端中watcher的相关操作，包括创建watcher、注册watcher、处理watcher事件等。</li>
+</ul>
+<p>了解了这几个概念之后，再来说一下ZK的watch机制是如何工作的:</p>
+<ol>
+<li>客户端连接到Zookeeper服务端，客户端创建一个ZkWatcherManager实例，用于管理客户端中所有的watcher。</li>
+<li>当客户端想要监控某个znode节点时，它可以调用ZkWatcherManager中的方法创建watcher并将其注册到客户端中。客户端将watcher的信息发送到Zookeeper服务端</li>
+<li>Zookeeper服务端接收到客户端发送的watcher信息后，会将该watcher信息交给WatchManager处理。WatchManager会将该watcher注册到相应的znode节点上，并将watcher相关的信息保存在内存中。</li>
+<li>当znode节点发生变化时，WatchManager会通知Zookeeper Server。</li>
+<li>Zookeeper Server会根据变化类型通知相应的客户端，告知它们发生了哪些变化。</li>
+<li>当客户端接收到Zookeeper Server的通知后，ZkWatcherManager会根据watcher的类型(data watcher或child watcher）来触发相应的事件处理方法，例如data watcher会触发processDataChanged()方法，child watcher会触发processChildChanged()方法等。</li>
+</ol>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/image-20240208235507851.png" alt="image-20240208235507851"></p>
+<p><img src="/../../../../../../imgs/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/image-20240208235519146.png" alt="image-20240208235519146"></p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93"><span class="toc-number">1.</span> <span class="toc-text">ZooKeeper原理总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Paxos%E7%AE%97%E6%B3%95"><span class="toc-number">1.1.</span> <span class="toc-text">1.Paxos算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1prepare%E9%98%B6%E6%AE%B5"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1prepare阶段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2accept%E9%98%B6%E6%AE%B5"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2accept阶段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3Paxos%E7%AE%97%E6%B3%95%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3Paxos算法的死循环问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-ZAB%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.2.</span> <span class="toc-text">2.ZAB协议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1ZooKeeper%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1ZooKeeper架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2ZAB%E4%B8%AD%E7%9A%84%E8%A7%92%E8%89%B2"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2ZAB中的角色</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E6%B6%88%E6%81%AF%E5%B9%BF%E6%92%AD%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3消息广播模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E5%B4%A9%E6%BA%83%E6%81%A2%E5%A4%8D%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4崩溃恢复模式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-ZooKeeper%E7%9A%84Watcher%E5%8E%9F%E7%90%86"><span class="toc-number">1.3.</span> <span class="toc-text">3.ZooKeeper的Watcher原理</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&text=ZooKeeper原理总结"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&is_video=false&description=ZooKeeper原理总结"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ZooKeeper原理总结&body=Check out this article: https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&title=ZooKeeper原理总结"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&name=ZooKeeper原理总结&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/08/ZooKeeper%E5%8E%9F%E7%90%86%E6%80%BB%E7%BB%93/&t=ZooKeeper原理总结"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
