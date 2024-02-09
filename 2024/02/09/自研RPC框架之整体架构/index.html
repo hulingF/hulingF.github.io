@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="自研RPC框架之整体架构1.RPC整体架构 整个RPC架构有四部分组成，包括服务调用方与提供方、注册中心、管理面板，其中管理面板有待实现，首先服务提供方和服务调用方都具有共同的API接口Jar包，里面包含了双方都需要的一致接口与实体类的声明，针对幂等性接口可以加上OpenrpcRetry注解，设置超时时间、重试次数、初始重试间隔时间等多种重试机制的参数。服务提供方会通过OpenrpcService">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自研RPC框架之整体架构">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="自研RPC框架之整体架构1.RPC整体架构 整个RPC架构有四部分组成，包括服务调用方与提供方、注册中心、管理面板，其中管理面板有待实现，首先服务提供方和服务调用方都具有共同的API接口Jar包，里面包含了双方都需要的一致接口与实体类的声明，针对幂等性接口可以加上OpenrpcRetry注解，设置超时时间、重试次数、初始重试间隔时间等多种重试机制的参数。服务提供方会通过OpenrpcService">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209142416533.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209144726291.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209145037105.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209145349859.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209145804941.png">
+<meta property="article:published_time" content="2024-02-09T06:24:06.013Z">
+<meta property="article:modified_time" content="2024-02-09T15:09:08.746Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="RPC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209142416533.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>自研RPC框架之整体架构</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8BSPI%E6%8F%92%E4%BB%B6%E5%8C%96%E6%9C%BA%E5%88%B6/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/09/ZooKeeper%E6%A0%B8%E5%BF%83%E4%BB%A3%E7%A0%81%E6%A2%B3%E7%90%86/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&text=自研RPC框架之整体架构"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&is_video=false&description=自研RPC框架之整体架构"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之整体架构&body=Check out this article: https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&name=自研RPC框架之整体架构&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&t=自研RPC框架之整体架构"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之整体架构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-RPC%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">1.RPC整体架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-RPC%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6"><span class="toc-number">1.2.</span> <span class="toc-text">2.RPC代码框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-RPC%E9%80%9A%E4%BF%A1%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3.RPC通信示例</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        自研RPC框架之整体架构
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-09T06:24:06.013Z" class="dt-published" itemprop="datePublished">2024-02-09</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/RPC/" rel="tag">RPC</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="自研RPC框架之整体架构"><a href="#自研RPC框架之整体架构" class="headerlink" title="自研RPC框架之整体架构"></a>自研RPC框架之整体架构</h1><h2 id="1-RPC整体架构"><a href="#1-RPC整体架构" class="headerlink" title="1.RPC整体架构"></a>1.RPC整体架构</h2><p><img src="/../../../../../../imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209142416533.png" alt="image-20240209142416533"></p>
+<p>整个RPC架构有四部分组成，包括服务调用方与提供方、注册中心、管理面板，其中管理面板有待实现，首先服务提供方和服务调用方都具有共同的API接口Jar包，里面包含了双方都需要的一致接口与实体类的声明，针对幂等性接口可以加上<code>OpenrpcRetry</code>注解，设置超时时间、重试次数、初始重试间隔时间等多种重试机制的参数。服务提供方会通过<code>OpenrpcService</code>注解配合包扫描完成服务的注册，其中服务名称设置为接口的全限定名称+分组名称(默认空字符串)+版本号(跟分组名称一个道理)，在服务名称的节点下创建临时子节点，临时子节点名称即为服务提供方声明的IP地址+端口号。服务调用方通过<code>OpenrpcReference</code>注解利用动态代理技术完成底层网络通信，创建代理对象，完成RPC远程调用。</p>
+<h2 id="2-RPC代码框架"><a href="#2-RPC代码框架" class="headerlink" title="2.RPC代码框架"></a>2.RPC代码框架</h2><p><img src="/../../../../../../imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209144726291.png" alt="image-20240209144726291"></p>
+<h2 id="3-RPC通信示例"><a href="#3-RPC通信示例" class="headerlink" title="3.RPC通信示例"></a>3.RPC通信示例</h2><p><code>openrpc-api</code>的内容:</p>
+<p><img src="/../../../../../../imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209145037105.png" alt="image-20240209145037105"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">HelloRPC</span> &#123;</span><br><span class="line">    <span class="meta">@OpenrpcRetry(timeout = 5000, tryTimes = 3, initInterval = 3000)</span></span><br><span class="line">    String <span class="title function_">SayHi</span><span class="params">(String msg)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    String <span class="title function_">login</span><span class="params">(String username, String password)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>openrpc-consumer</code>的内容:</p>
+<p><img src="/../../../../../../imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209145349859.png" alt="image-20240209145349859"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConsumerApplication</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(ConsumerApplication.class);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        ReferenceConfig&lt;HelloRPC&gt; reference = <span class="keyword">new</span> <span class="title class_">ReferenceConfig</span>&lt;&gt;();</span><br><span class="line">        reference.setInterface(HelloRPC.class);</span><br><span class="line">        reference.setGroup(<span class="string">&quot;&quot;</span>);</span><br><span class="line"></span><br><span class="line">        OpenrpcBootStrap.getInstance()</span><br><span class="line"><span class="comment">//                .application(&quot;first-openrpc-consumer&quot;)</span></span><br><span class="line"><span class="comment">//                .registry(new RegistryConfig(&quot;zookeeper://127.0.0.1:21810&quot;))</span></span><br><span class="line"><span class="comment">//                .serializeProtocol(&quot;hessian&quot;)</span></span><br><span class="line"><span class="comment">//                .compressProtocol(&quot;gzip&quot;)</span></span><br><span class="line">                .reference(reference);</span><br><span class="line"></span><br><span class="line">        <span class="type">HelloRPC</span> <span class="variable">helloRPC</span> <span class="operator">=</span> reference.get();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">s</span> <span class="operator">=</span> helloRPC.SayHi(<span class="string">&quot;hi&quot;</span>);</span><br><span class="line">            log.info(<span class="string">&quot;SayHi-&gt;&#123;&#125;&quot;</span>, s);</span><br><span class="line">        &#125;</span><br><span class="line">        Thread.sleep(<span class="number">1000000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>openrpc-provider</code>的内容:</p>
+<p><img src="/../../../../../../imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/image-20240209145804941.png" alt="image-20240209145804941"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@OpenrpcService(weight = 10, group = &quot;&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloRPCImpl</span> <span class="keyword">implements</span> <span class="title class_">HelloRPC</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">SayHi</span><span class="params">(String msg)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;hi consumer:&quot;</span> + msg;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@OpenrpcService(weight = 10, group = &quot;&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserServiceImpl</span> <span class="keyword">implements</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">login</span><span class="params">(String username, String password)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;注册成功&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ProviderApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">// ServiceConfig service = new ServiceConfig();</span></span><br><span class="line">        <span class="comment">// service.setInterface(HelloRPC.class);</span></span><br><span class="line">        <span class="comment">// service.setRef(new HelloRPCImpl());</span></span><br><span class="line">        OpenrpcBootStrap.getInstance().application(<span class="string">&quot;first-openrpc-provider&quot;</span>)</span><br><span class="line">        <span class="comment">// 配置注册中心</span></span><br><span class="line">        <span class="comment">// application.registry(new RegistryConfig(&quot;zookeeper://127.0.0.1:21810&quot;))</span></span><br><span class="line">        <span class="comment">// 发布服务</span></span><br><span class="line">        <span class="comment">// application.publish(service)</span></span><br><span class="line">        <span class="comment">// 扫描服务包,注册服务</span></span><br><span class="line">        .scanPackage(<span class="string">&quot;com.huling.service&quot;</span>)</span><br><span class="line">        <span class="comment">// 启动服务</span></span><br><span class="line">        .start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之整体架构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-RPC%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">1.RPC整体架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-RPC%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6"><span class="toc-number">1.2.</span> <span class="toc-text">2.RPC代码框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-RPC%E9%80%9A%E4%BF%A1%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3.RPC通信示例</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&text=自研RPC框架之整体架构"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&is_video=false&description=自研RPC框架之整体架构"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之整体架构&body=Check out this article: https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&title=自研RPC框架之整体架构"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&name=自研RPC框架之整体架构&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/09/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84/&t=自研RPC框架之整体架构"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
