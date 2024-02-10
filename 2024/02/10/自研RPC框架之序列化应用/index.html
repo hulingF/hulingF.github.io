@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="自研RPC框架之序列化应用1.序列化抽象我们定义了序列化器的统一接口Serializer，其中包含序列化和反序列化两个方法。 12345public interface Serializer &amp;#123;    byte[] serialize(Object object);    &lt;T&gt; T deserialize(byte[] bytes, Class&lt;T&gt; clazz">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自研RPC框架之序列化应用">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="自研RPC框架之序列化应用1.序列化抽象我们定义了序列化器的统一接口Serializer，其中包含序列化和反序列化两个方法。 12345public interface Serializer &amp;#123;    byte[] serialize(Object object);    &lt;T&gt; T deserialize(byte[] bytes, Class&lt;T&gt; clazz">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-02-10T12:04:31.807Z">
+<meta property="article:modified_time" content="2024-02-10T12:04:31.972Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="RPC">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>自研RPC框架之序列化应用</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&text=自研RPC框架之序列化应用"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&is_video=false&description=自研RPC框架之序列化应用"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之序列化应用&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&name=自研RPC框架之序列化应用&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&t=自研RPC框架之序列化应用"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之序列化应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%BA%8F%E5%88%97%E5%8C%96%E6%8A%BD%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1.序列化抽象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-JDK%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.JDK序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Hessian%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.3.</span> <span class="toc-text">3.Hessian序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Protostuff%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4.Protostuff序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Kryo%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.5.</span> <span class="toc-text">5.Kryo序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BA%8F%E5%88%97%E5%8C%96%E7%AE%80%E5%8D%95%E5%B7%A5%E5%8E%82"><span class="toc-number">1.6.</span> <span class="toc-text">6.序列化简单工厂</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        自研RPC框架之序列化应用
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-10T12:04:31.807Z" class="dt-published" itemprop="datePublished">2024-02-10</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/RPC/" rel="tag">RPC</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="自研RPC框架之序列化应用"><a href="#自研RPC框架之序列化应用" class="headerlink" title="自研RPC框架之序列化应用"></a>自研RPC框架之序列化应用</h1><h2 id="1-序列化抽象"><a href="#1-序列化抽象" class="headerlink" title="1.序列化抽象"></a>1.序列化抽象</h2><p>我们定义了序列化器的统一接口<code>Serializer</code>，其中包含序列化和反序列化两个方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Serializer</span> &#123;</span><br><span class="line">    <span class="type">byte</span>[] serialize(Object object);</span><br><span class="line"></span><br><span class="line">    &lt;T&gt; T <span class="title function_">deserialize</span><span class="params">(<span class="type">byte</span>[] bytes, Class&lt;T&gt; clazz)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-JDK序列化器"><a href="#2-JDK序列化器" class="headerlink" title="2.JDK序列化器"></a>2.JDK序列化器</h2><p>JDK序列化机制简单易用，只需实现<code>Serializable</code>接口，能够自动处理包含多个对象引用、循环引用等复杂对象图的序列化和反序列化，无需开发人员进行特殊处理，同时保留了对象类型信息，反序列化时能够准确地恢复对象的类型。</p>
+<p>但是，JDK序列化产生的<code>字节流相对较大</code>，这不仅影响性能，还增加了存储和网络传输的负担。更重要的是，JDK序列化<code>存在安全风险</code>，恶意的序列化数据可能导致安全漏洞，例如执行任意代码。因此我们绝对不能使用JDK序列化方式!</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JdkSerializer</span> <span class="keyword">implements</span> <span class="title class_">Serializer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(JdkSerializer.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] serialize(Object object) &#123;</span><br><span class="line">        <span class="keyword">if</span> (object == <span class="literal">null</span>) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;序列化对象不能为空&quot;</span>);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(<span class="string">&quot;序列化对象不能为空&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">ByteArrayOutputStream</span> <span class="variable">baos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">             <span class="type">ObjectOutputStream</span> <span class="variable">oos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectOutputStream</span>(baos)) &#123;</span><br><span class="line">            oos.writeObject(object);</span><br><span class="line">            <span class="type">byte</span>[] result = baos.toByteArray();</span><br><span class="line">            log.info(<span class="string">&quot;JDK序列化操作完成,字节数:&#123;&#125;&quot;</span>, result.length);</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;序列化过程发生异常:&#123;&#125;&quot;</span>, object);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; T <span class="title function_">deserialize</span><span class="params">(<span class="type">byte</span>[] bytes, Class&lt;T&gt; clazz)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (bytes == <span class="literal">null</span> || clazz == <span class="literal">null</span>) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;反序列化参数不能为空&quot;</span>);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(<span class="string">&quot;反序列化参数不能为空&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">ByteArrayInputStream</span> <span class="variable">bais</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(bytes);</span><br><span class="line">             <span class="type">ObjectInputStream</span> <span class="variable">ois</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectInputStream</span>(bais)) &#123;</span><br><span class="line">            log.info(<span class="string">&quot;JDK反序列化操作完成&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> (T) ois.readObject();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException | ClassNotFoundException e) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;反序列化过程发生异常:&#123;&#125;&quot;</span>, clazz);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-Hessian序列化器"><a href="#3-Hessian序列化器" class="headerlink" title="3.Hessian序列化器"></a>3.Hessian序列化器</h2><p>Hessian使用<code>二进制数据格式</code>进行序列化和反序列化，相较于基于文本的序列化协议（如XML、JSON），它<code>更加紧凑</code>，减少了传输数据的大小，提高了网络传输效率。Hessian设计之初就考虑到了跨语言的支持，使得不同语言编写的系统之间可以轻松地进行数据交换和通信。Hessian的API简单易用，开发人员可以快速地实现数据的序列化和反序列化，无需复杂的配置。</p>
+<p>但是，在一些特定情况下，不同语言实现的Hessian库之间可能存在兼容性问题，尤其是在处理复杂对象序列化时。与一些新兴的序列化协议相比，Hessian可能在特性和扩展性方面有所限制，特别是在支持新数据类型和自定义序列化行为方面。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HessianSerializer</span> <span class="keyword">implements</span> <span class="title class_">Serializer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(HessianSerializer.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] serialize(Object object) &#123;</span><br><span class="line">        <span class="keyword">if</span> (object == <span class="literal">null</span>) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;序列化对象不能为空&quot;</span>);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(<span class="string">&quot;序列化对象不能为空&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">Hessian2Output</span> <span class="variable">ho</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">ByteArrayOutputStream</span> <span class="variable">baos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>()) &#123;</span><br><span class="line">            ho = <span class="keyword">new</span> <span class="title class_">Hessian2Output</span>(baos);</span><br><span class="line">            ho.writeObject(object);</span><br><span class="line">            ho.flush();</span><br><span class="line">            <span class="type">byte</span>[] result = baos.toByteArray();</span><br><span class="line">            log.info(<span class="string">&quot;Hessian序列化操作完成,字节数:&#123;&#125;&quot;</span>, result.length);</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;Hessian序列化过程发生异常:&#123;&#125;&quot;</span>, object);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (ho != <span class="literal">null</span>) &#123;</span><br><span class="line">                    ho.close();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                <span class="comment">// don&#x27;t care</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; T <span class="title function_">deserialize</span><span class="params">(<span class="type">byte</span>[] bytes, Class&lt;T&gt; clazz)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (bytes == <span class="literal">null</span> || clazz == <span class="literal">null</span>) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;反序列化参数不能为空&quot;</span>);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(<span class="string">&quot;反序列化参数不能为空&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">Hessian2Input</span> <span class="variable">hi</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">ByteArrayInputStream</span> <span class="variable">bais</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(bytes)) &#123;</span><br><span class="line">            hi = <span class="keyword">new</span> <span class="title class_">Hessian2Input</span>(bais);</span><br><span class="line">            log.info(<span class="string">&quot;Hessian反序列化操作完成&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> (T) hi.readObject();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException  e) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;Hessian反序列化过程发生异常:&#123;&#125;&quot;</span>, clazz);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (hi != <span class="literal">null</span>) &#123;</span><br><span class="line">                    hi.close();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                <span class="comment">// don&#x27;t care</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-Protostuff序列化器"><a href="#4-Protostuff序列化器" class="headerlink" title="4.Protostuff序列化器"></a>4.Protostuff序列化器</h2><p>Protostuff提供了与<code>ProtoBuf</code>相当的性能和效率，特别是在序列化和反序列化大量数据时，不过不像ProtoBuf那样需要预先定义<code>.proto</code>文件，Protostuff可以直接对<code>Java对象</code>进行序列化和反序列化，简化了使用流程。相比ProtoBuf，Protostuff更容易在现有Java项目中集成和使用，减少了学习和开发的成本。</p>
+<p>总体而言，Protostuff是一个高效、灵活的序列化框架，适合那些希望利用ProtoBuf性能但又不想被.proto文件约束的Java项目。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ProtostuffSerializer</span> <span class="keyword">implements</span> <span class="title class_">Serializer</span> &#123;</span><br><span class="line">    <span class="comment">// 避免每次序列化时重新应用缓冲区空间</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">LinkedBuffer</span> <span class="variable">BUFFER</span> <span class="operator">=</span> LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] serialize(Object object) &#123;</span><br><span class="line">        Class&lt;?&gt; clazz = object.getClass();</span><br><span class="line">        <span class="type">Schema</span> <span class="variable">schema</span> <span class="operator">=</span> RuntimeSchema.getSchema(clazz);</span><br><span class="line">        <span class="type">byte</span>[] bytes;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            bytes = ProtostuffIOUtil.toByteArray(object, schema, BUFFER);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            BUFFER.clear();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> bytes;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; T <span class="title function_">deserialize</span><span class="params">(<span class="type">byte</span>[] bytes, Class&lt;T&gt; clazz)</span> &#123;</span><br><span class="line">        Schema&lt;T&gt; schema = RuntimeSchema.getSchema(clazz);</span><br><span class="line">        <span class="type">T</span> <span class="variable">obj</span> <span class="operator">=</span> schema.newMessage();</span><br><span class="line">        ProtostuffIOUtil.mergeFrom(bytes, obj, schema);</span><br><span class="line">        <span class="keyword">return</span> obj;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-Kryo序列化器"><a href="#5-Kryo序列化器" class="headerlink" title="5.Kryo序列化器"></a>5.Kryo序列化器</h2><p>Kryo是一个<code>高性能</code>的序列化&#x2F;反序列化工具，由于其变长存储特性并使用了字节码生成机制，拥有<code>较高的运行速度和较小的字节码体积</code>。另外，Kryo已经是一种非常成熟的序列化实现了，已经在Twitter、Groupon、Yahoo以及多个著名开源项目（如 Hive、Storm）中广泛的使用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KryoSerializer</span> <span class="keyword">implements</span> <span class="title class_">Serializer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(KryoSerializer.class);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Kryo不是线程安全的，每个线程都应该有自己的Kryo的Input和Output，因此使用ThreadLocal存放Kryo对象</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ThreadLocal&lt;Kryo&gt; kryoThreadLocal = ThreadLocal.withInitial(() -&gt; &#123;</span><br><span class="line">        <span class="type">Kryo</span> <span class="variable">kryo</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Kryo</span>();</span><br><span class="line">        kryo.register(OpenrpcRequest.class);</span><br><span class="line">        kryo.register(OpenrpcResponse.class);</span><br><span class="line">        kryo.setReferences(<span class="literal">true</span>); <span class="comment">// 默认值为true,是否关闭注册行为,关闭之后可能存在序列化问题,一般推荐设置为true</span></span><br><span class="line">        kryo.setRegistrationRequired(<span class="literal">false</span>); <span class="comment">// 默认值为false,是否关闭循环引用,可以提高性能,但是一般不推荐设置为true</span></span><br><span class="line">        <span class="keyword">return</span> kryo;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] serialize(Object object) &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">ByteArrayOutputStream</span> <span class="variable">baos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">             <span class="type">Output</span> <span class="variable">output</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Output</span>(baos)) &#123;</span><br><span class="line">            <span class="type">Kryo</span> <span class="variable">kryo</span> <span class="operator">=</span> kryoThreadLocal.get();</span><br><span class="line">            kryo.writeObject(output, object);</span><br><span class="line">            kryoThreadLocal.remove();</span><br><span class="line">            <span class="keyword">return</span> output.toBytes();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;Kryo序列化过程发生异常:&#123;&#125;&quot;</span>, object);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; T <span class="title function_">deserialize</span><span class="params">(<span class="type">byte</span>[] bytes, Class&lt;T&gt; clazz)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span>(<span class="type">ByteArrayInputStream</span> <span class="variable">bais</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(bytes);</span><br><span class="line">            <span class="type">Input</span> <span class="variable">input</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Input</span>(bais)) &#123;</span><br><span class="line">            <span class="type">Kryo</span> <span class="variable">kryo</span> <span class="operator">=</span> kryoThreadLocal.get();</span><br><span class="line">            <span class="type">T</span> <span class="variable">t</span> <span class="operator">=</span> kryo.readObject(input, clazz);</span><br><span class="line">            kryoThreadLocal.remove();</span><br><span class="line">            <span class="keyword">return</span> t;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            log.error(<span class="string">&quot;Kryo反序列化过程发生异常:&#123;&#125;&quot;</span>, clazz);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SerializeException</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-序列化简单工厂"><a href="#6-序列化简单工厂" class="headerlink" title="6.序列化简单工厂"></a>6.序列化简单工厂</h2><p>我们在XML配置文件中可以通过<code>&lt;serializeType type=&quot;hessian&quot;/&gt;</code>自定义配置序列化方案，其实压缩跟序列化类似，我们就不单独说了，不过需要注意一点:</p>
+<blockquote>
+<p>压缩可以自定义配置压缩阈值，因为对于较小的字节数组往往压缩后的体积反而会变大，有些得不偿失，因此我们可以配置压缩阈值如1K，只有当序列化后的字节数组大小超过1K字节后才会压缩，同时压缩其实是牺牲一定的CPU时间以减少网络通信时间。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SerializerFactory</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Map&lt;String, ObjectWrapper&lt;Serializer&gt;&gt; SERIALIZER_PROTOCOL_CACHE = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;(<span class="number">8</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Map&lt;Byte, ObjectWrapper&lt;Serializer&gt;&gt; SERIALIZER_CODE_CACHE = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;(<span class="number">8</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        ObjectWrapper&lt;Serializer&gt; jdkSerializer = <span class="keyword">new</span> <span class="title class_">ObjectWrapper</span>&lt;&gt;((<span class="type">byte</span>) <span class="number">1</span>, <span class="string">&quot;jdk&quot;</span>, <span class="keyword">new</span> <span class="title class_">JdkSerializer</span>());</span><br><span class="line">        ObjectWrapper&lt;Serializer&gt; hessianSerializer = <span class="keyword">new</span> <span class="title class_">ObjectWrapper</span>&lt;&gt;((<span class="type">byte</span>) <span class="number">2</span>, <span class="string">&quot;hessian&quot;</span>, <span class="keyword">new</span> <span class="title class_">HessianSerializer</span>());</span><br><span class="line">        ObjectWrapper&lt;Serializer&gt; kryoSerializer = <span class="keyword">new</span> <span class="title class_">ObjectWrapper</span>&lt;&gt;((<span class="type">byte</span>) <span class="number">3</span>, <span class="string">&quot;kryo&quot;</span>, <span class="keyword">new</span> <span class="title class_">KryoSerializer</span>());</span><br><span class="line">        ObjectWrapper&lt;Serializer&gt; protostuffSerializer = <span class="keyword">new</span> <span class="title class_">ObjectWrapper</span>&lt;&gt;((<span class="type">byte</span>) <span class="number">4</span>, <span class="string">&quot;protostuff&quot;</span>, <span class="keyword">new</span> <span class="title class_">ProtostuffSerializer</span>());</span><br><span class="line">        SERIALIZER_PROTOCOL_CACHE.put(<span class="string">&quot;jdk&quot;</span>, jdkSerializer);</span><br><span class="line">        SERIALIZER_PROTOCOL_CACHE.put(<span class="string">&quot;hessian&quot;</span>, hessianSerializer);</span><br><span class="line">        SERIALIZER_PROTOCOL_CACHE.put(<span class="string">&quot;kryo&quot;</span>, kryoSerializer);</span><br><span class="line">        SERIALIZER_PROTOCOL_CACHE.put(<span class="string">&quot;protostuff&quot;</span>, protostuffSerializer);</span><br><span class="line"></span><br><span class="line">        SERIALIZER_CODE_CACHE.put((<span class="type">byte</span>) <span class="number">1</span>, jdkSerializer);</span><br><span class="line">        SERIALIZER_CODE_CACHE.put((<span class="type">byte</span>) <span class="number">2</span>, hessianSerializer);</span><br><span class="line">        SERIALIZER_CODE_CACHE.put((<span class="type">byte</span>) <span class="number">3</span>, kryoSerializer);</span><br><span class="line">        SERIALIZER_CODE_CACHE.put((<span class="type">byte</span>) <span class="number">4</span>, protostuffSerializer);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ObjectWrapper&lt;Serializer&gt; <span class="title function_">getSerializer</span><span class="params">(String protocol)</span> &#123;</span><br><span class="line">        ObjectWrapper&lt;Serializer&gt; serializerWrapper = SERIALIZER_PROTOCOL_CACHE.get(protocol);</span><br><span class="line">        <span class="keyword">if</span> (serializerWrapper == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;序列化类型不支持&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> serializerWrapper;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ObjectWrapper&lt;Serializer&gt; <span class="title function_">getSerializer</span><span class="params">(<span class="type">byte</span> code)</span> &#123;</span><br><span class="line">        ObjectWrapper&lt;Serializer&gt; serializerWrapper = SERIALIZER_CODE_CACHE.get(code);</span><br><span class="line">        <span class="keyword">if</span> (serializerWrapper == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;序列化类型不支持&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> serializerWrapper;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">addSerializer</span><span class="params">(ObjectWrapper&lt;Serializer&gt; serializerObjectWrapper)</span> &#123;</span><br><span class="line">        SERIALIZER_PROTOCOL_CACHE.put(serializerObjectWrapper.getName(), serializerObjectWrapper);</span><br><span class="line">        SERIALIZER_CODE_CACHE.put(serializerObjectWrapper.getCode(), serializerObjectWrapper);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之序列化应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%BA%8F%E5%88%97%E5%8C%96%E6%8A%BD%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1.序列化抽象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-JDK%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.JDK序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Hessian%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.3.</span> <span class="toc-text">3.Hessian序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Protostuff%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4.Protostuff序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Kryo%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-number">1.5.</span> <span class="toc-text">5.Kryo序列化器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BA%8F%E5%88%97%E5%8C%96%E7%AE%80%E5%8D%95%E5%B7%A5%E5%8E%82"><span class="toc-number">1.6.</span> <span class="toc-text">6.序列化简单工厂</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&text=自研RPC框架之序列化应用"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&is_video=false&description=自研RPC框架之序列化应用"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之序列化应用&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&title=自研RPC框架之序列化应用"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&name=自研RPC框架之序列化应用&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/&t=自研RPC框架之序列化应用"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

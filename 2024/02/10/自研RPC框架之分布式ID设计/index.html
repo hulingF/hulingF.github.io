@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="自研RPC框架之分布式ID设计 借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。  标准版雪花算法的几个缺点：  时钟敏感。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是记录上一次的时间戳，若发现当前时间戳小于">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自研RPC框架之分布式ID设计">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="自研RPC框架之分布式ID设计 借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。  标准版雪花算法的几个缺点：  时钟敏感。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是记录上一次的时间戳，若发现当前时间戳小于">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/before-8c52102c116e08f0b37d947b30008b58.png">
+<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/after-cad00baeb92d348340136601174c9d8c.png">
+<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page1-09fa5360a09c5f6ce7e1c5978f370eb1.png">
+<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page2-0ddae897017478780b7f338cca9daa02.png">
+<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png">
+<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page4-883fee2cd79ec31b7f1d67c9e6362bca.png">
+<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png">
+<meta property="article:published_time" content="2024-02-10T13:31:22.792Z">
+<meta property="article:modified_time" content="2024-02-10T13:49:17.264Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="RPC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://seata.apache.org/zh-cn/assets/images/before-8c52102c116e08f0b37d947b30008b58.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>自研RPC框架之分布式ID设计</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E4%BC%98%E9%9B%85%E5%90%AF%E5%81%9C/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&text=自研RPC框架之分布式ID设计"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&is_video=false&description=自研RPC框架之分布式ID设计"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之分布式ID设计&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&name=自研RPC框架之分布式ID设计&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&t=自研RPC框架之分布式ID设计"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之分布式ID设计</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        自研RPC框架之分布式ID设计
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-10T13:31:22.792Z" class="dt-published" itemprop="datePublished">2024-02-10</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/RPC/" rel="tag">RPC</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="自研RPC框架之分布式ID设计"><a href="#自研RPC框架之分布式ID设计" class="headerlink" title="自研RPC框架之分布式ID设计"></a>自研RPC框架之分布式ID设计</h1><blockquote>
+<p>借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。</p>
+</blockquote>
+<p>标准版雪花算法的几个缺点：</p>
+<ol>
+<li><code>时钟敏感</code>。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是<code>记录上一次的时间戳</code>，若发现当前时间戳小于记录值(意味着出现了时钟回拨)，则<code>拒绝服务</code>，等待时间戳追上记录值。但这也意味着这段时间内该TC将处于不可用状态。</li>
+<li><code>突发性能有上限</code>。标准版雪花算法宣称的QPS很大，约400w&#x2F;s，但严格来说这算耍了个文字游戏~ 因为算法的时间戳单位是毫秒，而分配给序列号的位长度为12，即每毫秒4096个序列空间。所以更准确的描述应该是4096&#x2F;ms。400w&#x2F;s与4096&#x2F;ms的区别在于前者不要求每一毫秒的并发都必须低于4096 (也许有些毫秒会高于4096，有些则低于)。Seata亦遵循此限制，<code>若当前时间戳的序列空间已耗尽，会自旋等待下一个时间戳</code>。</li>
+</ol>
+<p>在较新的版本上，该生成器针对原算法进行了一定的优化改良，很好地解决了上述的2个问题。改进的核心思想是解除与操作系统时间戳的时刻绑定，生成器只在初始化时获取了系统当前的时间戳，作为初始时间戳，但之后就不再与系统时间戳保持同步了。它之后的递增，只由序列号的递增来驱动。比如序列号当前值是4095，下一个请求进来，序列号+1溢出12位空间，序列号重新归零，而溢出的进位则加到时间戳上，从而让时间戳+1。至此，时间戳和序列号实际可视为一个整体了。实际上我们也是这样做的，为了方便这种溢出进位，我们调整了64位ID的位分配策略，由原版的：</p>
+<p><img src="https://seata.apache.org/zh-cn/assets/images/before-8c52102c116e08f0b37d947b30008b58.png" alt="原版位分配策略"></p>
+<p>改成(即时间戳和节点ID换个位置)：</p>
+<p><img src="https://seata.apache.org/zh-cn/assets/images/after-cad00baeb92d348340136601174c9d8c.png" alt="改进版位分配策略"></p>
+<p>这样时间戳和序列号在内存上是连在一块的，在实现上就很容易用一个<code>AtomicLong</code>来同时保存它俩：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * timestamp and sequence mix in one Long</span></span><br><span class="line"><span class="comment"> * highest 11 bit: not used</span></span><br><span class="line"><span class="comment"> * middle  41 bit: timestamp</span></span><br><span class="line"><span class="comment"> * lowest  12 bit: sequence</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> AtomicLong timestampAndSequence;</span><br></pre></td></tr></table></figure>
+
+<p>最高11位可以在初始化时就确定好，之后不再变化：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * business meaning: machine ID (0 ~ 1023)</span></span><br><span class="line"><span class="comment"> * actual layout in memory:</span></span><br><span class="line"><span class="comment"> * highest 1 bit: 0</span></span><br><span class="line"><span class="comment"> * middle 10 bit: workerId</span></span><br><span class="line"><span class="comment"> * lowest 53 bit: all 0</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="type">long</span> workerId;</span><br></pre></td></tr></table></figure>
+
+<p>那么在生产ID时就很简单了：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">long</span> <span class="title function_">nextId</span><span class="params">()</span> &#123;</span><br><span class="line">   <span class="comment">// 获得递增后的时间戳和序列号</span></span><br><span class="line">   <span class="type">long</span> <span class="variable">next</span> <span class="operator">=</span> timestampAndSequence.incrementAndGet();</span><br><span class="line">   <span class="comment">// 截取低53位</span></span><br><span class="line">   <span class="type">long</span> <span class="variable">timestampWithSequence</span> <span class="operator">=</span> next &amp; timestampAndSequenceMask;</span><br><span class="line">   <span class="comment">// 跟先前保存好的高11位进行一个或的位运算</span></span><br><span class="line">   <span class="keyword">return</span> workerId | timestampWithSequence;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>至此，我们可以发现：</p>
+<ol>
+<li>生成器不再有4096&#x2F;ms的突发性能限制了。倘若某个时间戳的序列号空间耗尽，它会直接推进到下一个时间戳，”借用”下一个时间戳的序列号空间(不必担心这种<code>&quot;超前消费&quot;</code>会造成严重后果，下面会阐述理由)。</li>
+<li>生成器弱依赖于操作系统时钟。在运行期间，生成器不受时钟回拨的影响(无论是人为回拨还是机器的时钟漂移)，因为生成器仅在启动时获取了一遍系统时钟，之后两者不再保持同步。唯一可能产生重复ID的只有在重启时的大幅度时钟回拨(人为刻意回拨或者修改操作系统时区，如北京时间改为伦敦时间~ 机器时钟漂移基本是毫秒级的，不会有这么大的幅度)。</li>
+<li>持续不断的”超前消费”会不会使得生成器内的时间戳大大超前于系统的时间戳，从而在重启时造成ID重复？理论上如此，但实际几乎不可能。要达到这种效果，意味该生成器接收的QPS得持续稳定在400w&#x2F;s之上~ 说实话，TC也扛不住这么高的流量，所以说呢，天塌下来有个子高的先扛着，瓶颈一定不在生成器这里。</li>
+</ol>
+<p>此外，我们还调整了下节点ID的生成策略。原版在用户未手动指定节点ID时，会截取本地IPv4地址的低10位作为节点ID。在实践生产中，发现有零散的节点ID重复的现象(多为采用k8s部署的用户)。例如这样的IP就会重复：</p>
+<ul>
+<li>192.168.4.10</li>
+<li>192.168.8.10</li>
+</ul>
+<p>即只要IP的第4个字节和第3个字节的低2位一样就会重复。新版的策略改为优先从本机网卡的MAC地址截取低10位，若本机未配置有效的网卡，则在[0, 1023]中随机挑一个作为节点ID。这样调整后似乎没有新版的用户再报同样的问题了(当然，有待时间的检验，不管怎样，不会比IP截取策略更糟糕)。</p>
+<hr>
+<p>有细心的同学提出了一个问题：新版算法在单节点内部确实是单调递增的，但是在多实例部署时，它就不再是全局单调递增了啊！因为显而易见，节点ID排在高位，那么节点ID大的，生成的ID一定大于节点ID小的，不管时间上谁先谁后。而原版算法，时间戳在高位，并且始终追随系统时钟，可以保证早生成的ID小于晚生成的ID，只有当2个节点恰好在同一时间戳生成ID时，2个ID的大小才由节点ID决定。这样看来，新版算法是不是错的？</p>
+<blockquote>
+<p>这是一个很好的问题！能提出这个问题的同学，说明已经深入思考了标准版雪花算法和新版雪花算法的本质区别，这点值得鼓励！在这里，我们先说结论：新版算法的确不具备全局的单调递增性，但这不影响我们的初衷(减少数据库的页分裂)。这个结论看起来有点违反直觉，但可以被证明。</p>
+</blockquote>
+<p>在证明之前，我们先简单回顾一下数据库关于页分裂的知识。以经典的mysql innodb为例，innodb使用B+树索引，其中，主键索引的叶子节点还保存了数据行的完整记录，叶子节点之间以双向链表的形式串联起来。叶子节点的物理存储形式为数据页，一个数据页内最多可以存储N条行记录(N与行的大小成反比)。如图所示：</p>
+<p><img src="https://seata.apache.org/zh-cn/assets/images/page1-09fa5360a09c5f6ce7e1c5978f370eb1.png" alt="数据页"></p>
+<p>B+树的特性要求，左边的节点应小于右边的节点。如果此时要插入一条ID为25的记录，会怎样呢(假设每个数据页只够存放4条记录)？答案是会引起页分裂，如图：</p>
+<p><img src="https://seata.apache.org/zh-cn/assets/images/page2-0ddae897017478780b7f338cca9daa02.png" alt="页分裂"></p>
+<blockquote>
+<p>页分裂是IO不友好的，需要新建数据页，拷贝转移旧数据页的部分记录等，我们应尽量避免。</p>
+</blockquote>
+<p>理想的情况下，主键ID最好是顺序递增的(例如把主键设置为auto_increment)，这样就只会在当前数据页放满了的时候，才需要新建下一页，双向链表永远是顺序尾部增长的，不会有中间的节点发生分裂的情况。</p>
+<p>最糟糕的情况下，主键ID是随机无序生成的(例如java中一个UUID字符串)，这种情况下，新插入的记录会随机分配到任何一个数据页，如果该页已满，就会触发页分裂。</p>
+<p>如果主键ID由标准版雪花算法生成，最好的情况下，是每个时间戳内只有一个节点在生成ID，这时候算法的效果等同于理想情况的顺序递增，即跟auto_increment无差。最坏的情况下，是每个时间戳内所有节点都在生成ID，这时候算法的效果接近于无序(但仍比UUID的完全无序要好得多，因为workerId只有10位决定了最多只有1024个节点)。实际生产中，算法的效果取决于业务流量，并发度越低，算法越接近理想情况。</p>
+<p>那么，换成新版算法又会如何呢？<br>新版算法从全局角度来看，ID是无序的，但对于每一个workerId，它生成的ID都是严格单调递增的，又因为workerId是有限的，所以最多可划分出1024个子序列，每个子序列都是单调递增的。对于数据库而言，也许它初期接收的ID都是无序的，来自各个子序列的ID都混在一起，就像这样：</p>
+<p><img src="https://seata.apache.org/zh-cn/assets/images/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png" alt="初期"></p>
+<p>如果这时候来了个worker1-seq2，显然会造成页分裂：</p>
+<p><img src="https://seata.apache.org/zh-cn/assets/images/page4-883fee2cd79ec31b7f1d67c9e6362bca.png" alt="首次分裂"></p>
+<p>但分裂之后，有趣的事情发生了，对于worker1而言，后续的seq3，seq4不会再造成页分裂(因为还装得下)，seq5也只需要像顺序增长那样新建页进行链接(区别是这个新页不是在双向链表的尾部)。注意，worker1的后续ID，不会排到worker2及之后的任意节点(因而不会造成后边节点的页分裂)，因为它们总比worker2的ID小；也不会排到worker1当前节点的前边(因而不会造成前边节点的页分裂)，因为worker1的子序列总是单调递增的。在这里，我们称worker1这样的子序列达到了稳态，意为这条子序列已经”稳定”了，它的后续增长只会出现在子序列的尾部，而不会造成其它节点的页分裂。</p>
+<p>同样的事情，可以推广到各个子序列上。无论前期数据库接收到的ID有多乱，经过有限次的页分裂后，双向链表总能达到这样一个稳定的终态：</p>
+<p><img src="https://seata.apache.org/zh-cn/assets/images/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png" alt="终态"></p>
+<p>到达终态后，后续的ID只会在该ID所属的子序列上进行顺序增长，而不会造成页分裂。该状态下的顺序增长与auto_increment的顺序增长的区别是，前者有1024个增长位点(各个子序列的尾部)，后者只有尾部一个。</p>
+<p>到这里，我们可以回答开头所提出的问题了：新算法从全局来看的确不是全局递增的，但该算法是<strong>收敛</strong>的，达到稳态后，新算法同样能达成像全局顺序递增一样的效果。</p>
+<hr>
+<p>以上只提到了序列不停增长的情况，而实践生产中，不光有新数据的插入，也有旧数据的删除。而数据的删除有可能会导致页合并(innodb若发现相邻2个数据页的空间利用率都不到50%，就会把它俩合并)，这对新算法的影响如何呢？</p>
+<blockquote>
+<p>经过上面的流程，我们可以发现，新算法的本质是利用前期的页分裂，把不同的子序列逐渐分离开来，让算法不断收敛到稳态。而页合并则恰好相反，它有可能会把不同的子序列又合并回同一个数据页里，妨碍算法的收敛。尤其是在收敛的前期，频繁的页合并甚至可以让算法永远无法收敛(你刚分离出来我就又把它们合并回去，一夜回到解放前~)！但在收敛之后，只有在各个子序列的尾节点进行的页合并，才有可能破坏稳态(一个子序列的尾节点和下一个子序列的头节点进行合并)。而在子序列其余节点上的页合并，不影响稳态，因为子序列仍然是有序的，只不过长度变短了而已。</p>
+</blockquote>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之分布式ID设计</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&text=自研RPC框架之分布式ID设计"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&is_video=false&description=自研RPC框架之分布式ID设计"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之分布式ID设计&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之分布式ID设计"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&name=自研RPC框架之分布式ID设计&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/&t=自研RPC框架之分布式ID设计"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

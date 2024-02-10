@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="自研RPC框架之负载均衡器设计1.负载均衡器抽象我们的负载均衡器LoadBalancer中可能需要对不同的服务维护不同的服务地址列表，因此单独抽象出一个Selector的概念，由Selector来维护服务对应的服务地址列表信息，LoadBalancer只需要保存服务名与Selector的映射关系即可。 123456789101112131415161718@SPIpublic interface">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自研RPC框架之负载均衡器设计">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="自研RPC框架之负载均衡器设计1.负载均衡器抽象我们的负载均衡器LoadBalancer中可能需要对不同的服务维护不同的服务地址列表，因此单独抽象出一个Selector的概念，由Selector来维护服务对应的服务地址列表信息，LoadBalancer只需要保存服务名与Selector的映射关系即可。 123456789101112131415161718@SPIpublic interface">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-02-10T09:43:21.627Z">
+<meta property="article:modified_time" content="2024-02-10T11:14:54.671Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="RPC">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>自研RPC框架之负载均衡器设计</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&text=自研RPC框架之负载均衡器设计"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&is_video=false&description=自研RPC框架之负载均衡器设计"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之负载均衡器设计&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&name=自研RPC框架之负载均衡器设计&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&t=自研RPC框架之负载均衡器设计"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之负载均衡器设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E6%8A%BD%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1.负载均衡器抽象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A8%A1%E6%9D%BF%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E5%BA%94%E7%94%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.模板设计方法应用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%9A%8F%E6%9C%BA%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.3.</span> <span class="toc-text">3.随机负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%BD%AE%E8%AF%A2%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.4.</span> <span class="toc-text">4.轮询负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.5.</span> <span class="toc-text">5.一致性哈希负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%B9%B3%E6%BB%91%E5%8A%A0%E6%9D%83%E8%BD%AE%E8%AF%A2%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.6.</span> <span class="toc-text">6.平滑加权轮询负载均衡策略</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        自研RPC框架之负载均衡器设计
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-10T09:43:21.627Z" class="dt-published" itemprop="datePublished">2024-02-10</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/RPC/" rel="tag">RPC</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="自研RPC框架之负载均衡器设计"><a href="#自研RPC框架之负载均衡器设计" class="headerlink" title="自研RPC框架之负载均衡器设计"></a>自研RPC框架之负载均衡器设计</h1><h2 id="1-负载均衡器抽象"><a href="#1-负载均衡器抽象" class="headerlink" title="1.负载均衡器抽象"></a>1.负载均衡器抽象</h2><p>我们的负载均衡器LoadBalancer中可能需要对不同的服务维护不同的服务地址列表，因此单独抽象出一个Selector的概念，由Selector来维护服务对应的服务地址列表信息，LoadBalancer只需要保存服务名与Selector的映射关系即可。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SPI</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">LoadBalancer</span> &#123;</span><br><span class="line">    <span class="comment">// 根据服务名获取可用服务地址</span></span><br><span class="line">    InetSocketAddress <span class="title function_">selectServiceAddress</span><span class="params">(String serviceName)</span>;</span><br><span class="line">    <span class="comment">// 根据服务名获取对应的selector选择器</span></span><br><span class="line">    Selector <span class="title function_">selector</span><span class="params">(String serviceName)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Selector</span> &#123;</span><br><span class="line">    <span class="comment">// 负载均衡策略选择的下一个可用服务地址</span></span><br><span class="line">    InetSocketAddress <span class="title function_">getNext</span><span class="params">()</span>;</span><br><span class="line">    <span class="comment">// 获取selector中维护的服务地址列表缓存</span></span><br><span class="line">    List&lt;InetSocketAddress&gt; <span class="title function_">getServiceList</span><span class="params">()</span>;</span><br><span class="line">    <span class="comment">// 新增上线服务地址</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">addServiceAddress</span><span class="params">(InetSocketAddress address)</span>;</span><br><span class="line">    <span class="comment">// 删除下线服务地址</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">removeServiceAddress</span><span class="params">(InetSocketAddress address)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-模板设计方法应用"><a href="#2-模板设计方法应用" class="headerlink" title="2.模板设计方法应用"></a>2.模板设计方法应用</h2><p>我们实现了一个继承LoadBalancer的抽象负载均衡器，其中定义了负载均衡选择算法的<code>模板流程</code>，并预留<code>getSelector</code>抽象方法交给不同类型的负载均衡器实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">AbstractLoadBalancer</span> <span class="keyword">implements</span> <span class="title class_">LoadBalancer</span>&#123;</span><br><span class="line">    <span class="comment">// 每个服务对应的负载均衡选择器</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> Map&lt;String, Selector&gt; selectorMap;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">AbstractLoadBalancer</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.selectorMap = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;(<span class="number">8</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> InetSocketAddress <span class="title function_">selectServiceAddress</span><span class="params">(String serviceName)</span> &#123;</span><br><span class="line">        <span class="type">Selector</span> <span class="variable">selector</span> <span class="operator">=</span> selectorMap.get(serviceName);</span><br><span class="line">        <span class="keyword">if</span> (selector == <span class="literal">null</span>) &#123;</span><br><span class="line">            List&lt;InetSocketAddress&gt; serviceList = <span class="keyword">new</span> <span class="title class_">CopyOnWriteArrayList</span>&lt;&gt;(OpenrpcBootStrap.configuration.getRegistry().lookup(serviceName));</span><br><span class="line">            selector = getSelector(serviceList, serviceName);</span><br><span class="line">            selectorMap.put(serviceName, selector);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> selector.getNext();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Selector <span class="title function_">selector</span><span class="params">(String serviceName)</span> &#123;</span><br><span class="line">        <span class="type">Selector</span> <span class="variable">selector</span> <span class="operator">=</span> selectorMap.get(serviceName);</span><br><span class="line">        <span class="keyword">if</span> (selector == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">DiscoveryException</span>(<span class="string">&quot;服务正在上线或下线&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> selector;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">abstract</span> Selector <span class="title function_">getSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList, String serviceName)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-随机负载均衡策略"><a href="#3-随机负载均衡策略" class="headerlink" title="3.随机负载均衡策略"></a>3.随机负载均衡策略</h2><p>随机负载均衡策略很好理解，就是从服务地址列表中随机选择一个可用服务，需要使用到随机数生成器如Random、SecureRandom、ThreadLocalRandom等，其实现简单高效，不过随机策略不考虑服务器的当前负载或性能，可能会导致某些服务器过载而其他服务器处于低负载状态。而且，虽然长期来看分配可能相对均衡，但短期内可能出现不均衡现象，特别是在服务器性能差异大的情况下更加明显。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RandomLoadBalancer</span> <span class="keyword">extends</span> <span class="title class_">AbstractLoadBalancer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(RandomLoadBalancer.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Selector <span class="title function_">getSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList, String serviceName)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RandomSelector</span>(serviceList);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">RandomSelector</span> <span class="keyword">implements</span> <span class="title class_">Selector</span> &#123;</span><br><span class="line">        <span class="keyword">private</span> List&lt;InetSocketAddress&gt; serviceList;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">RandomSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList)</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (serviceList == <span class="literal">null</span> || serviceList.isEmpty()) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">LoadBalanceException</span>(<span class="string">&quot;未找到任何可用的服务&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="built_in">this</span>.serviceList = serviceList;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> InetSocketAddress <span class="title function_">getNext</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">serverIndex</span> <span class="operator">=</span> ThreadLocalRandom.current().nextInt(serviceList.size());</span><br><span class="line">            log.info(<span class="string">&quot;随机负载均衡选择服务节点:&#123;&#125;&quot;</span>, serviceList.get(serverIndex));</span><br><span class="line">            <span class="keyword">return</span> serviceList.get(serverIndex);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> List&lt;InetSocketAddress&gt; <span class="title function_">getServiceList</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.serviceList;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.serviceList.add(address);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">removeServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.serviceList.remove(address);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-轮询负载均衡策略"><a href="#4-轮询负载均衡策略" class="headerlink" title="4.轮询负载均衡策略"></a>4.轮询负载均衡策略</h2><p>轮询负载均衡策略旨在实现请求分配的均匀性，确保所有服务器都能平等地参与处理请求，但是不考虑服务器的当前负载或性能差异，可能会导致某些服务器过载，尤其是在服务器性能不均等的情况下。而且，在需要会话持久性（Session Persistence）的应用场景中，纯粹的轮询策略可能无法保证用户的连续请求总是被发送到相同的服务器上，除非增加额外的会话跟踪机制。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RoundRobinLoadBalancer</span> <span class="keyword">extends</span> <span class="title class_">AbstractLoadBalancer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(RoundRobinLoadBalancer.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Selector <span class="title function_">getSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList, String serviceName)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RoundRobinSelector</span>(serviceList);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">RoundRobinSelector</span> <span class="keyword">implements</span> <span class="title class_">Selector</span> &#123;</span><br><span class="line">        <span class="keyword">private</span> List&lt;InetSocketAddress&gt; serviceList;</span><br><span class="line">        <span class="keyword">private</span> AtomicInteger index;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">RoundRobinSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.serviceList = serviceList;</span><br><span class="line">            <span class="built_in">this</span>.index = <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(<span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> InetSocketAddress <span class="title function_">getNext</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (serviceList == <span class="literal">null</span> || serviceList.isEmpty()) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">LoadBalanceException</span>(<span class="string">&quot;未找到任何可用的服务&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// (1)仅仅在整型溢出时出现几次的不严格轮询，对于足够大的整型范围这个影响几乎可以忽略不计</span></span><br><span class="line">            <span class="comment">// int nextIndex = Math.abs(index.getAndIncrement() % serviceList.size());</span></span><br><span class="line">            <span class="comment">// (2)或者保证形成环形循环</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">nextIndex</span> <span class="operator">=</span> index.getAndIncrement() &amp; <span class="number">0x7fffffff</span>;</span><br><span class="line">            log.info(<span class="string">&quot;轮询负载均衡选择服务节点:&#123;&#125;&quot;</span>, serviceList.get(nextIndex));</span><br><span class="line">            <span class="keyword">return</span> serviceList.get(nextIndex);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> List&lt;InetSocketAddress&gt; <span class="title function_">getServiceList</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.serviceList;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.serviceList.add(address);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">removeServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.serviceList.remove(address);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-一致性哈希负载均衡策略"><a href="#5-一致性哈希负载均衡策略" class="headerlink" title="5.一致性哈希负载均衡策略"></a>5.一致性哈希负载均衡策略</h2><p>一致性哈希负载均衡策略通过一致性哈希算法来决定如何分配请求到服务器，以达到负载均衡的目的。一致性哈希算法通过将数据和服务器都映射到同一个哈希环上，然后根据请求的哈希值来选择在环上顺时针方向遇到的第一个服务器。通过使用虚拟节点（即在哈希环上为每个实际服务器创建多个虚拟映射点），一致性哈希可以更均匀地分布负载，避免某单一节点成为热点。并且，一致性哈希有助于保持数据的局部性，适合缓存和分布式存储系统，因为它减少了节点变更导致的缓存失效，从而提高了缓存效率。</p>
+<p>但是一致性哈希负载均衡策略存在分配不均匀的风险，尽管虚拟节点机制可以减少这一点，但如果哈希函数选得不好，仍然可能导致不均匀的负载分配。而且，由于其工作原理的复杂性，一致性哈希环境下的问题调试和故障排查可能比较困难。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConsistentHashLoadBalancer</span> <span class="keyword">extends</span> <span class="title class_">AbstractLoadBalancer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(ConsistentHashLoadBalancer.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Selector <span class="title function_">getSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList, String serviceName)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ConsistentHashSelector</span>(serviceList, <span class="number">128</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">ConsistentHashSelector</span> <span class="keyword">implements</span> <span class="title class_">Selector</span> &#123;</span><br><span class="line">        <span class="comment">// 哈希环存储服务节点</span></span><br><span class="line">        <span class="keyword">private</span> SortedMap&lt;Integer, InetSocketAddress&gt; circle = <span class="keyword">new</span> <span class="title class_">TreeMap</span>&lt;&gt;();</span><br><span class="line">        <span class="comment">// 虚拟节点的个数</span></span><br><span class="line">        <span class="keyword">private</span> <span class="type">int</span> <span class="variable">virtualNodes</span> <span class="operator">=</span> <span class="number">128</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">ConsistentHashSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList, <span class="type">int</span> virtualNodes)</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (serviceList == <span class="literal">null</span> || serviceList.isEmpty()) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">LoadBalanceException</span>(<span class="string">&quot;未找到任何可用的服务&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="built_in">this</span>.virtualNodes = virtualNodes;</span><br><span class="line">            <span class="comment">// 每个服务节点转化为若干个虚拟节点挂载到哈希环</span></span><br><span class="line">            <span class="keyword">for</span> (InetSocketAddress inetSocketAddress : serviceList) &#123;</span><br><span class="line">                addNodeToCircle(inetSocketAddress);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> InetSocketAddress <span class="title function_">getNext</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="comment">// 从本地线程变量获取请求对象</span></span><br><span class="line">            <span class="type">RequestPayload</span> <span class="variable">payload</span> <span class="operator">=</span> OpenrpcBootStrap.threadLocal.get().getRequestPayload();</span><br><span class="line">            <span class="comment">// 根据服务名+参数列表进行一致性哈希负载均衡</span></span><br><span class="line">            <span class="type">String</span> <span class="variable">selectKey</span> <span class="operator">=</span> payload.getInterfaceName() + Arrays.stream(payload.getParametersValue());</span><br><span class="line">            <span class="type">int</span> <span class="variable">hash</span> <span class="operator">=</span> hash(selectKey.getBytes(), <span class="number">0</span>, selectKey.length(), <span class="number">0</span>);</span><br><span class="line">            <span class="keyword">if</span> (!circle.containsKey(hash)) &#123;</span><br><span class="line">                <span class="comment">// 顺时针寻找第一个大于请求hash的虚拟节点，如果不存在则选择哈希环中第一个即最小虚拟节点</span></span><br><span class="line">                SortedMap&lt;Integer, InetSocketAddress&gt; tailMap = circle.tailMap(hash);</span><br><span class="line">                hash = tailMap.isEmpty() ? circle.firstKey() : tailMap.firstKey();</span><br><span class="line">            &#125;</span><br><span class="line">            log.info(<span class="string">&quot;一致性哈希负载均衡选择服务节点:&#123;&#125;&quot;</span>, circle.get(hash));</span><br><span class="line">            <span class="keyword">return</span> circle.get(hash);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> List&lt;InetSocketAddress&gt; <span class="title function_">getServiceList</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.circle.values().stream().toList();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            addNodeToCircle(address);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">removeServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            removeNodeFromCircle(address);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">addNodeToCircle</span><span class="params">(InetSocketAddress inetSocketAddress)</span> &#123;</span><br><span class="line">            <span class="comment">// 服务节点泛化为多个虚拟节点，避免节点过少时节点哈希分布不均匀</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; virtualNodes; i++) &#123;</span><br><span class="line">                <span class="type">String</span> <span class="variable">hashStr</span> <span class="operator">=</span> inetSocketAddress + <span class="string">&quot;-&quot;</span> + i;</span><br><span class="line">                <span class="type">int</span> <span class="variable">hash</span> <span class="operator">=</span> hash(hashStr.getBytes(), <span class="number">0</span>, hashStr.length(), <span class="number">0</span>);</span><br><span class="line">                log.info(<span class="string">&quot;插入虚拟节点:&#123;&#125;&quot;</span>, hash);</span><br><span class="line">                circle.put(hash, inetSocketAddress);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">removeNodeFromCircle</span><span class="params">(InetSocketAddress inetSocketAddress)</span> &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; virtualNodes; i++) &#123;</span><br><span class="line">                <span class="type">String</span> <span class="variable">hashStr</span> <span class="operator">=</span> inetSocketAddress + <span class="string">&quot;-&quot;</span> + i;</span><br><span class="line">                <span class="type">int</span> <span class="variable">hash</span> <span class="operator">=</span> hash(hashStr.getBytes(), <span class="number">0</span>, hashStr.length(), <span class="number">0</span>);</span><br><span class="line">                log.info(<span class="string">&quot;删除虚拟节点:&#123;&#125;&quot;</span>, hash);</span><br><span class="line">                circle.remove(hash);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 不要使用String的原生哈希算法，因为其根据底层字节数组进行逐位运算，连续的字符串的哈希值很容易特别接近</span></span><br><span class="line">        <span class="comment">// MurmurHash是一种非加密型哈希函数，以高性能和良好的分散性闻名。它可以生成32位或64位的哈希值，适用于一致性哈希，因为它在不同的输入下产生的哈希值分布非常均匀</span></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">hash</span><span class="params">(<span class="type">byte</span>[] data, <span class="type">int</span> offset, <span class="type">int</span> len, <span class="type">int</span> seed)</span> &#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">final</span> <span class="type">int</span> <span class="variable">c1</span> <span class="operator">=</span> <span class="number">0xcc9e2d51</span>;</span><br><span class="line">            <span class="keyword">final</span> <span class="type">int</span> <span class="variable">c2</span> <span class="operator">=</span> <span class="number">0x1b873593</span>;</span><br><span class="line">            <span class="keyword">final</span> <span class="type">int</span> <span class="variable">c3</span> <span class="operator">=</span> <span class="number">0xe6546b64</span>;</span><br><span class="line">            <span class="keyword">final</span> <span class="type">int</span> <span class="variable">c4</span> <span class="operator">=</span> <span class="number">0x85ebca6b</span>;</span><br><span class="line">            <span class="keyword">final</span> <span class="type">int</span> <span class="variable">c5</span> <span class="operator">=</span> <span class="number">0xc2b2ae35</span>;</span><br><span class="line"></span><br><span class="line">            <span class="type">int</span> <span class="variable">h1</span> <span class="operator">=</span> seed;</span><br><span class="line">            <span class="type">int</span> <span class="variable">roundedEnd</span> <span class="operator">=</span> offset + (len &amp; <span class="number">0xfffffffc</span>); <span class="comment">// round down to 4 byte block</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> offset; i &lt; roundedEnd; i += <span class="number">4</span>) &#123;</span><br><span class="line">                <span class="comment">// little endian load order</span></span><br><span class="line">                <span class="type">int</span> <span class="variable">k1</span> <span class="operator">=</span> (data[i] &amp; <span class="number">0xff</span>) | ((data[i + <span class="number">1</span>] &amp; <span class="number">0xff</span>) &lt;&lt; <span class="number">8</span>) | ((data[i + <span class="number">2</span>] &amp; <span class="number">0xff</span>) &lt;&lt; <span class="number">16</span>) | (data[i + <span class="number">3</span>] &lt;&lt; <span class="number">24</span>);</span><br><span class="line">                k1 *= c1;</span><br><span class="line">                k1 = Integer.rotateLeft(k1, <span class="number">15</span>);</span><br><span class="line">                k1 *= c2;</span><br><span class="line"></span><br><span class="line">                h1 ^= k1;</span><br><span class="line">                h1 = Integer.rotateLeft(h1, <span class="number">13</span>);</span><br><span class="line">                h1 = h1 * <span class="number">5</span> + c3;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// handle any remaining bytes</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">k1</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">switch</span> (len &amp; <span class="number">0x03</span>) &#123;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">                    k1 = (data[roundedEnd + <span class="number">2</span>] &amp; <span class="number">0xff</span>) &lt;&lt; <span class="number">16</span>;</span><br><span class="line">                    <span class="comment">// fall through</span></span><br><span class="line">                <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">                    k1 |= (data[roundedEnd + <span class="number">1</span>] &amp; <span class="number">0xff</span>) &lt;&lt; <span class="number">8</span>;</span><br><span class="line">                    <span class="comment">// fall through</span></span><br><span class="line">                <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">                    k1 |= (data[roundedEnd] &amp; <span class="number">0xff</span>);</span><br><span class="line">                    k1 *= c1;</span><br><span class="line">                    k1 = Integer.rotateLeft(k1, <span class="number">15</span>);</span><br><span class="line">                    k1 *= c2;</span><br><span class="line">                    h1 ^= k1;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// finalization</span></span><br><span class="line">            h1 ^= len;</span><br><span class="line">            h1 ^= (h1 &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">            h1 *= c4;</span><br><span class="line">            h1 ^= (h1 &gt;&gt;&gt; <span class="number">13</span>);</span><br><span class="line">            h1 *= c5;</span><br><span class="line">            h1 ^= (h1 &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> h1;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-平滑加权轮询负载均衡策略"><a href="#6-平滑加权轮询负载均衡策略" class="headerlink" title="6.平滑加权轮询负载均衡策略"></a>6.平滑加权轮询负载均衡策略</h2><p>平滑加权轮询负载均衡策略通过考虑服务器的权重（通常反映了其处理能力或容量），这种策略能更公平地分配负载，确保高性能服务器承担更多的负载。平滑加权轮询允许动态调整服务器权重，以适应服务器性能变化或维护状态，无需中断服务(需要配置中心配合做配置下发工作)。</p>
+<p>NGINX平滑的基于权重轮询算法其实很简单，原文表述如下:</p>
+<blockquote>
+<p>Algorithm is as follows: on each peer selection we increase current_weight of each eligible peer by its weight, select peer with greatest current_weight and reduce its current_weight by total number of weight points distributed among peers.</p>
+</blockquote>
+<p>算法执行2步，选择出1个当前节点。</p>
+<ol>
+<li>每个节点，用它们的当前值加上它们自己的权重。</li>
+<li>选择当前值最大的节点为选中节点，并把它的当前值减去所有节点的权重总和。</li>
+</ol>
+<p>例如<code>&#123;a:5, b:1, c:1&#125;</code>三个节点。一开始我们初始化三个节点的当前值为<code>&#123;0, 0, 0&#125;</code>。 选择过程如下表：</p>
+<table>
+<thead>
+<tr>
+<th align="left">轮数</th>
+<th align="left">选择前的当前权重</th>
+<th align="left">选择节点</th>
+<th align="left">选择后的当前权重</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left">{5, 1, 1}</td>
+<td align="left">a</td>
+<td align="left">{-2, 1, 1}</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left">{3, 2, 2}</td>
+<td align="left">a</td>
+<td align="left">{-4, 2, 2}</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left">{1, 3, 3}</td>
+<td align="left">b</td>
+<td align="left">{1, -4, 3}</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left">{6, -3, 4}</td>
+<td align="left">a</td>
+<td align="left">{-1, -3, 4}</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left">{4, -2, 5}</td>
+<td align="left">c</td>
+<td align="left">{4, -2, -2}</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td align="left">{9, -1, -1}</td>
+<td align="left">a</td>
+<td align="left">{2, -1, -1}</td>
+</tr>
+<tr>
+<td align="left">7</td>
+<td align="left">{7, 0, 0}</td>
+<td align="left">a</td>
+<td align="left">{0, 0, 0}</td>
+</tr>
+</tbody></table>
+<p>我们可以发现，a, b, c选择的次数符合 5:1:1，而且权重大的不会被连续选择。7轮选择后，当前值又回到{0, 0, 0}，以上操作可以一直循环，一样符合平滑和基于权重。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WeightRoundRobinLoadBalancer</span> <span class="keyword">extends</span> <span class="title class_">AbstractLoadBalancer</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Selector <span class="title function_">getSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList, String serviceName)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">WeightRoundRobinSelector</span>(serviceList, serviceName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">WeightRoundRobinSelector</span> <span class="keyword">implements</span> <span class="title class_">Selector</span> &#123;</span><br><span class="line">        <span class="keyword">private</span> List&lt;InetSocketAddress&gt; serviceList;</span><br><span class="line">        <span class="keyword">private</span> List&lt;Element&gt; elementList;</span><br><span class="line">        <span class="keyword">private</span> String serviceName;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">WeightRoundRobinSelector</span><span class="params">(List&lt;InetSocketAddress&gt; serviceList, String serviceName)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.serviceList = serviceList;</span><br><span class="line">            <span class="built_in">this</span>.serviceName = serviceName;</span><br><span class="line">            <span class="built_in">this</span>.elementList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">            <span class="comment">// 通过注册中心拉取节点的权重信息</span></span><br><span class="line">            <span class="keyword">for</span> (InetSocketAddress address : serviceList) &#123;</span><br><span class="line">                <span class="type">int</span> <span class="variable">weight</span> <span class="operator">=</span> OpenrpcBootStrap.configuration.getRegistry().getWeight(serviceName, address);</span><br><span class="line">                <span class="comment">// 初始化时所有Element的当前权重值都为0</span></span><br><span class="line">                elementList.add(<span class="keyword">new</span> <span class="title class_">Element</span>(address, weight, <span class="number">0</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> InetSocketAddress <span class="title function_">getNext</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (serviceList.isEmpty() || elementList.isEmpty()) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">DiscoveryException</span>(<span class="string">&quot;未找到任何可用的服务节点&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="type">int</span> <span class="variable">total</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">            <span class="type">Element</span> <span class="variable">result</span> <span class="operator">=</span> elementList.get(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">for</span> (Element element : elementList) &#123;</span><br><span class="line">                <span class="comment">// 计算总的权值和</span></span><br><span class="line">                total += element.weight;</span><br><span class="line">                <span class="comment">// 每一轮开始各个节点的当前权重都加上节点的初始权重</span></span><br><span class="line">                element.currentWeight += element.weight;</span><br><span class="line">                <span class="comment">// 选择当前轮次当前权重值最大的节点</span></span><br><span class="line">                <span class="keyword">if</span> (result.currentWeight &gt; element.currentWeight) &#123;</span><br><span class="line">                    result = element;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 选择完成后，选中节点的当前权重值需要减去总体权重和</span></span><br><span class="line">            result.currentWeight -= total;</span><br><span class="line">            <span class="keyword">return</span> result.address;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> List&lt;InetSocketAddress&gt; <span class="title function_">getServiceList</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.serviceList;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            serviceList.add(address);</span><br><span class="line">            <span class="type">int</span> <span class="variable">weight</span> <span class="operator">=</span> OpenrpcBootStrap.configuration.getRegistry().getWeight(serviceName, address);</span><br><span class="line">            elementList.add(<span class="keyword">new</span> <span class="title class_">Element</span>(address, weight, <span class="number">0</span>));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">removeServiceAddress</span><span class="params">(InetSocketAddress address)</span> &#123;</span><br><span class="line">            serviceList.remove(address);</span><br><span class="line">            elementList.remove(<span class="keyword">new</span> <span class="title class_">Element</span>(address, <span class="number">0</span>, <span class="number">0</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Element</span> &#123;</span><br><span class="line">        <span class="comment">// 服务节点地址</span></span><br><span class="line">        InetSocketAddress address;</span><br><span class="line">        <span class="comment">// 服务节点的初始权重，不变</span></span><br><span class="line">        <span class="type">int</span> weight;</span><br><span class="line">        <span class="comment">// 服务节点的当前权重，改变</span></span><br><span class="line">        <span class="type">int</span> currentWeight;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Element</span><span class="params">(InetSocketAddress address, <span class="type">int</span> weight, <span class="type">int</span> currentWeight)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.address = address;</span><br><span class="line">            <span class="built_in">this</span>.weight = weight;</span><br><span class="line">            <span class="built_in">this</span>.currentWeight = currentWeight;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">equals</span><span class="params">(Object o)</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="built_in">this</span> == o) <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">if</span> (o == <span class="literal">null</span> || getClass() != o.getClass()) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            <span class="type">Element</span> <span class="variable">element</span> <span class="operator">=</span> (Element) o;</span><br><span class="line">            <span class="keyword">return</span> Objects.equals(address, element.address);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">hashCode</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> Objects.hash(address);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之负载均衡器设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E6%8A%BD%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1.负载均衡器抽象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A8%A1%E6%9D%BF%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E5%BA%94%E7%94%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.模板设计方法应用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%9A%8F%E6%9C%BA%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.3.</span> <span class="toc-text">3.随机负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%BD%AE%E8%AF%A2%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.4.</span> <span class="toc-text">4.轮询负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.5.</span> <span class="toc-text">5.一致性哈希负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%B9%B3%E6%BB%91%E5%8A%A0%E6%9D%83%E8%BD%AE%E8%AF%A2%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="toc-number">1.6.</span> <span class="toc-text">6.平滑加权轮询负载均衡策略</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&text=自研RPC框架之负载均衡器设计"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&is_video=false&description=自研RPC框架之负载均衡器设计"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之负载均衡器设计&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之负载均衡器设计"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&name=自研RPC框架之负载均衡器设计&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%AE%BE%E8%AE%A1/&t=自研RPC框架之负载均衡器设计"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

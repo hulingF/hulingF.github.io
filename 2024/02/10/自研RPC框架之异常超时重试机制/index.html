@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="自研RPC框架之异常&#x2F;超时重试机制1.重试注解12345678910111213141516171819&#x2F;&#x2F; 只能作用于[幂等性]接口上@Target(ElementType.METHOD)@Retention(RetentionPolicy.RUNTIME)public @interface OpenrpcRetry &amp;#123;    &#x2F;&#x2F; 超时时间    int timeout()">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自研RPC框架之异常&#x2F;超时重试机制">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="自研RPC框架之异常&#x2F;超时重试机制1.重试注解12345678910111213141516171819&#x2F;&#x2F; 只能作用于[幂等性]接口上@Target(ElementType.METHOD)@Retention(RetentionPolicy.RUNTIME)public @interface OpenrpcRetry &amp;#123;    &#x2F;&#x2F; 超时时间    int timeout()">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-02-10T12:08:40.350Z">
+<meta property="article:modified_time" content="2024-02-10T12:27:24.140Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="RPC">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>自研RPC框架之异常/超时重试机制</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BA%8F%E5%88%97%E5%8C%96%E5%BA%94%E7%94%A8/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&text=自研RPC框架之异常/超时重试机制"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&is_video=false&description=自研RPC框架之异常/超时重试机制"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之异常/超时重试机制&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&name=自研RPC框架之异常/超时重试机制&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&t=自研RPC框架之异常/超时重试机制"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8-x2F-%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之异常&#x2F;超时重试机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%87%8D%E8%AF%95%E6%B3%A8%E8%A7%A3"><span class="toc-number">1.1.</span> <span class="toc-text">1.重试注解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%8C%87%E6%95%B0%E9%80%80%E9%81%BF%E7%AE%97%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">2.指数退避算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%BC%82%E5%B8%B8%E5%92%8C%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95"><span class="toc-number">1.3.</span> <span class="toc-text">3.异常和超时重试</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        自研RPC框架之异常/超时重试机制
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-10T12:08:40.350Z" class="dt-published" itemprop="datePublished">2024-02-10</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/RPC/" rel="tag">RPC</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="自研RPC框架之异常-x2F-超时重试机制"><a href="#自研RPC框架之异常-x2F-超时重试机制" class="headerlink" title="自研RPC框架之异常&#x2F;超时重试机制"></a>自研RPC框架之异常&#x2F;超时重试机制</h1><h2 id="1-重试注解"><a href="#1-重试注解" class="headerlink" title="1.重试注解"></a>1.重试注解</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 只能作用于[幂等性]接口上</span></span><br><span class="line"><span class="meta">@Target(ElementType.METHOD)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> OpenrpcRetry &#123;</span><br><span class="line">    <span class="comment">// 超时时间</span></span><br><span class="line">    <span class="type">int</span> <span class="title function_">timeout</span><span class="params">()</span> <span class="keyword">default</span> <span class="number">5000</span>;</span><br><span class="line">    <span class="comment">// 重试次数</span></span><br><span class="line">    <span class="type">int</span> <span class="title function_">tryTimes</span><span class="params">()</span> <span class="keyword">default</span> <span class="number">3</span>;</span><br><span class="line">    <span class="comment">// 初始重试间隔</span></span><br><span class="line">    <span class="type">int</span> <span class="title function_">initInterval</span><span class="params">()</span> <span class="keyword">default</span> <span class="number">2000</span>;</span><br><span class="line">    <span class="comment">// 最大重试次数</span></span><br><span class="line">    <span class="type">int</span> <span class="title function_">maxRetries</span><span class="params">()</span> <span class="keyword">default</span> <span class="number">3</span>;</span><br><span class="line">    <span class="comment">// 退避系数</span></span><br><span class="line">    <span class="type">double</span> <span class="title function_">backoffMultiplier</span><span class="params">()</span> <span class="keyword">default</span> <span class="number">1.75</span>;</span><br><span class="line">    <span class="comment">// 抖动因子</span></span><br><span class="line">    <span class="type">double</span> <span class="title function_">jitterFactor</span><span class="params">()</span> <span class="keyword">default</span> <span class="number">0.25</span>;</span><br><span class="line">    <span class="comment">// 异常白名单</span></span><br><span class="line">    Class&lt;? <span class="keyword">extends</span> <span class="title class_">Throwable</span>&gt;[] whiteList() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-指数退避算法"><a href="#2-指数退避算法" class="headerlink" title="2.指数退避算法"></a>2.指数退避算法</h2><p>我们的RPC框架可以针对调用超时和业务异常发起重试，用到的核心算法就是<code>指数退避算法</code>，指数退避算法是一种错误恢复机制，广泛用于计算机网络、分布式系统、以及各种需要<code>自适应重试逻辑</code>的场景中。这种算法通过<code>动态调整重试等待时间</code>来减少冲突或负载，特别是在高并发环境下，可以有效地避免系统过载。</p>
+<p>指数退避算法设定一个初始的重试间隔时间，在每次连续的失败尝试之后，将重试间隔时间乘以一个指数，这意味着每次失败后，等待时间将指数级增加。为了避免多个客户端或实例在相同的时间重试造成的冲突，通常会加入随机化因素，使得重试间隔有一定的随机性。并且，通常会设置一个最大重试间隔时间和最大尝试次数，以避免等待时间增长过长或无限重试。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@AllArgsConstructor</span></span><br><span class="line"><span class="meta">@NoArgsConstructor</span></span><br><span class="line"><span class="meta">@Builder</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ExponentialBackoffRetryPolicy</span> &#123;</span><br><span class="line">    <span class="comment">// 最大重试次数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> maxRetries;</span><br><span class="line">    <span class="comment">// 初始重试间隔</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> initialInterval;</span><br><span class="line">    <span class="comment">// 退避系数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">double</span> backoffMultiplier;</span><br><span class="line">    <span class="comment">// 抖动因子</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">double</span> jitterFactor;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取下一次重试的间隔时间</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">getNextRetryInterval</span><span class="params">(<span class="type">int</span> retryCount)</span> &#123;</span><br><span class="line">        <span class="comment">// 计算指数退避的时间间隔</span></span><br><span class="line">        <span class="type">double</span> <span class="variable">backoff</span> <span class="operator">=</span> initialInterval * Math.pow(backoffMultiplier, retryCount);</span><br><span class="line">        <span class="comment">// 计算抖动时间间隔</span></span><br><span class="line">        <span class="type">double</span> <span class="variable">jitter</span> <span class="operator">=</span> backoff * jitterFactor * (Math.random() * <span class="number">2</span> - <span class="number">1</span>);</span><br><span class="line">        <span class="comment">// 返回指数退避和抖动的总和</span></span><br><span class="line">        <span class="keyword">return</span> (<span class="type">int</span>) (backoff + jitter);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-异常和超时重试"><a href="#3-异常和超时重试" class="headerlink" title="3.异常和超时重试"></a>3.异常和超时重试</h2><p>对于有<code>OpenrpcRetry</code>注解的方法，RPC会解析其中的重试参数，在RPC发起远程调用请求后如果<code>超时时间</code>内没有获得响应，则判断是否需要重试，如果响应的结果是<code>异常白名单</code>中的异常类型，或者响应的结果不是业务异常且没有超过<code>最大重试次数</code>，那么会<code>指数退避等待后发起重试</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object <span class="title function_">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">    log.info(<span class="string">&quot;执行方法:&#123;&#125;&quot;</span>, method.getName());</span><br><span class="line">    <span class="comment">// 超时时间默认5000ms</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">timeout</span> <span class="operator">=</span> <span class="number">5000</span>;</span><br><span class="line">    <span class="comment">// 当前重试次数默认0次</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">retryCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 重试间隔时长默认0ms</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">intervalTime</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">    <span class="type">OpenrpcRetry</span> <span class="variable">retryAnnotation</span> <span class="operator">=</span> method.getAnnotation(OpenrpcRetry.class);</span><br><span class="line">    <span class="comment">// 根据@OpenrpcRetry注解构建重试策略</span></span><br><span class="line">    <span class="type">ExponentialBackoffRetryPolicy</span> <span class="variable">retryPolicy</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="comment">// 根据@OpenrpcRetry注解获取异常白名单列表</span></span><br><span class="line">    List&lt;Class&lt;? <span class="keyword">extends</span> <span class="title class_">Throwable</span>&gt;&gt; whiteList = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (retryAnnotation != <span class="literal">null</span>) &#123;</span><br><span class="line">        retryPolicy = ExponentialBackoffRetryPolicy.builder()</span><br><span class="line">            .maxRetries(Math.min(retryAnnotation.tryTimes(), retryAnnotation.maxRetries()))</span><br><span class="line">            .initialInterval(retryAnnotation.initInterval())</span><br><span class="line">            .backoffMultiplier(retryAnnotation.backoffMultiplier())</span><br><span class="line">            .jitterFactor(retryAnnotation.jitterFactor())</span><br><span class="line">            .build();</span><br><span class="line">        whiteList = Arrays.stream(retryAnnotation.whiteList()).toList();</span><br><span class="line">        intervalTime = retryPolicy.getInitialInterval();</span><br><span class="line">        timeout = retryAnnotation.timeout();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        retryPolicy = ExponentialBackoffRetryPolicy.builder()</span><br><span class="line">            .maxRetries(<span class="number">0</span>)</span><br><span class="line">            .initialInterval(<span class="number">0</span>)</span><br><span class="line">            .backoffMultiplier(<span class="number">1</span>)</span><br><span class="line">            .jitterFactor(<span class="number">0</span>)</span><br><span class="line">            .build();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 超时/异常重试机制</span></span><br><span class="line">    <span class="keyword">while</span>(<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 1.封装报文</span></span><br><span class="line">            <span class="type">RequestPayload</span> <span class="variable">payload</span> <span class="operator">=</span> RequestPayload.builder()</span><br><span class="line">                .interfaceName(interfaceRef.getName())</span><br><span class="line">                .methodName(method.getName())</span><br><span class="line">                .parametersType(method.getParameterTypes())</span><br><span class="line">                .parametersValue(args)</span><br><span class="line">                .returnType(method.getReturnType())</span><br><span class="line">                .build();</span><br><span class="line">            <span class="type">OpenrpcRequest</span> <span class="variable">request</span> <span class="operator">=</span> OpenrpcRequest.builder()</span><br><span class="line">                .requestId(OpenrpcBootStrap.configuration.getIdWorker().nextId())</span><br><span class="line">                .requestType(RequestType.REQUEST.getId())</span><br><span class="line">                .compressType(OpenrpcBootStrap.configuration.getCompressor().getCode())</span><br><span class="line">                .serializeType(OpenrpcBootStrap.configuration.getSerializer().getCode())</span><br><span class="line">                .requestPayload(payload)</span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 2.本地线程变量保存请求对象</span></span><br><span class="line">            OpenrpcBootStrap.threadLocal.set(request);</span><br><span class="line"></span><br><span class="line">            <span class="type">int</span> <span class="variable">tryCount</span> <span class="operator">=</span> <span class="number">3</span>;</span><br><span class="line">            <span class="type">Channel</span> <span class="variable">channel</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">            <span class="keyword">while</span> (tryCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// 3.注册中心拉取服务列表，负载均衡器获取可用服务地址</span></span><br><span class="line">                <span class="type">InetSocketAddress</span> <span class="variable">address</span> <span class="operator">=</span> OpenrpcBootStrap.configuration.getLoadBalancer().selectServiceAddress(interfaceRef.getName() + group);</span><br><span class="line">                log.info(<span class="string">&quot;发现可用服务:&#123;&#125;,&#123;&#125;,&#123;&#125;&quot;</span>, interfaceRef.getName(), method.getName(), address);</span><br><span class="line">                <span class="comment">// 4.从缓存中获取channel</span></span><br><span class="line">                channel = getAvaliableChannel(address);</span><br><span class="line">                <span class="comment">// 5.选中下线服务的无效channel，等待重试</span></span><br><span class="line">                <span class="keyword">if</span> (channel.isActive()) <span class="keyword">break</span>;</span><br><span class="line">                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(<span class="number">100</span>));</span><br><span class="line">                tryCount--;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (tryCount == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NetworkException</span>(<span class="string">&quot;远程服务暂时不可用&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 6.删除本地线程变量的请求对象，防止内存泄漏</span></span><br><span class="line">            OpenrpcBootStrap.threadLocal.remove();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 7.异步发送消息</span></span><br><span class="line">            CompletableFuture&lt;Object&gt; completableFuture = <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;&gt;();</span><br><span class="line">            OpenrpcBootStrap.pendingCache.put(request.getRequestId(), completableFuture);</span><br><span class="line"></span><br><span class="line">            channel.writeAndFlush(request).addListener(<span class="keyword">new</span> <span class="title class_">ChannelFutureListener</span>() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">operationComplete</span><span class="params">(ChannelFuture channelFuture)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">                    <span class="comment">// 发送完成后触发监听器，检测是否发送成功</span></span><br><span class="line">                    <span class="keyword">if</span> (!channelFuture.isSuccess()) &#123;</span><br><span class="line">                        completableFuture.completeExceptionally(channelFuture.cause());</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 8.返回远程调用的执行结果</span></span><br><span class="line">            <span class="type">Object</span> <span class="variable">result</span> <span class="operator">=</span> completableFuture.get(timeout, TimeUnit.MILLISECONDS);</span><br><span class="line">            <span class="comment">// 9.服务调用端执行异常，抛出InvocationTargetException，异常重试机制会检查业务异常白名单</span></span><br><span class="line">            <span class="keyword">if</span> (result <span class="keyword">instanceof</span> InvocationTargetException exception) &#123;</span><br><span class="line">                <span class="keyword">throw</span> exception;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (result == <span class="literal">null</span>) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RequestFailException</span>(<span class="string">&quot;远程调用失败,继续重试:&quot;</span> + retryCount);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="comment">// 检查自定义的异常白名单</span></span><br><span class="line">            <span class="keyword">if</span> (e <span class="keyword">instanceof</span> InvocationTargetException exception) &#123;</span><br><span class="line">                <span class="comment">// 白名单为空，直接抛出业务异常</span></span><br><span class="line">                <span class="keyword">if</span> (whiteList == <span class="literal">null</span> || whiteList.isEmpty()) <span class="keyword">throw</span> exception.getTargetException();</span><br><span class="line">                <span class="type">boolean</span> <span class="variable">isWhite</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">                <span class="comment">// 检查白名单列表</span></span><br><span class="line">                <span class="keyword">for</span> (Class&lt;? <span class="keyword">extends</span> <span class="title class_">Throwable</span>&gt; clazz : whiteList) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (clazz.isInstance(exception)) &#123;</span><br><span class="line">                        isWhite = <span class="literal">true</span>;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (!isWhite) <span class="keyword">throw</span> exception.getTargetException();</span><br><span class="line">            &#125;</span><br><span class="line">            retryCount++;</span><br><span class="line">            <span class="keyword">if</span> (retryCount &gt; retryPolicy.getMaxRetries()) &#123;</span><br><span class="line">                log.error(<span class="string">&quot;远程调用失败:&quot;</span>, e);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 8.等待intervalTime时间后重试请求，随机值可以缓解重试风暴问题</span></span><br><span class="line">            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(intervalTime));</span><br><span class="line">            intervalTime = retryPolicy.getNextRetryInterval(retryCount);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RequestFailException</span>(<span class="string">&quot;远程调用失败&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8-x2F-%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之异常&#x2F;超时重试机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%87%8D%E8%AF%95%E6%B3%A8%E8%A7%A3"><span class="toc-number">1.1.</span> <span class="toc-text">1.重试注解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%8C%87%E6%95%B0%E9%80%80%E9%81%BF%E7%AE%97%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">2.指数退避算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%BC%82%E5%B8%B8%E5%92%8C%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95"><span class="toc-number">1.3.</span> <span class="toc-text">3.异常和超时重试</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&text=自研RPC框架之异常/超时重试机制"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&is_video=false&description=自研RPC框架之异常/超时重试机制"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之异常/超时重试机制&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&title=自研RPC框架之异常/超时重试机制"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&name=自研RPC框架之异常/超时重试机制&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/&t=自研RPC框架之异常/超时重试机制"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

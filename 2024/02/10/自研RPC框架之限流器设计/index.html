@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="自研RPC框架之限流器设计1.限流的必要性限流是一种控制流量的技术，用于保护系统免受突发流量或恶意流量的影响。其基本原理是通过控制请求的速率或数量，确保系统在可承受的范围内运行。我们RPC系统中的限流器都实现了Limiter接口： 123public interface Limiter &amp;#123;    boolean limit();&amp;#125;  2.计数器限流器设计计数器限流器通常在较大的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自研RPC框架之限流器设计">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="自研RPC框架之限流器设计1.限流的必要性限流是一种控制流量的技术，用于保护系统免受突发流量或恶意流量的影响。其基本原理是通过控制请求的速率或数量，确保系统在可承受的范围内运行。我们RPC系统中的限流器都实现了Limiter接口： 123public interface Limiter &amp;#123;    boolean limit();&amp;#125;  2.计数器限流器设计计数器限流器通常在较大的">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210106473.png">
+<meta property="og:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210421254.png">
+<meta property="og:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210615457.png">
+<meta property="article:published_time" content="2024-02-10T13:13:53.119Z">
+<meta property="article:modified_time" content="2024-02-10T13:13:53.305Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="RPC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210106473.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>自研RPC框架之限流器设计</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%BC%82%E5%B8%B8%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&text=自研RPC框架之限流器设计"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&is_video=false&description=自研RPC框架之限流器设计"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之限流器设计&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&name=自研RPC框架之限流器设计&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&t=自研RPC框架之限流器设计"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之限流器设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%99%90%E6%B5%81%E7%9A%84%E5%BF%85%E8%A6%81%E6%80%A7"><span class="toc-number">1.1.</span> <span class="toc-text">1.限流的必要性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%AE%A1%E6%95%B0%E5%99%A8%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.2.</span> <span class="toc-text">2.计数器限流器设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.3.</span> <span class="toc-text">3.滑动窗口限流器设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BB%A4%E7%89%8C%E6%A1%B6%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.4.</span> <span class="toc-text">4.令牌桶限流器设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Guava%E9%99%90%E6%B5%81%E5%99%A8"><span class="toc-number">1.5.</span> <span class="toc-text">5.Guava限流器</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        自研RPC框架之限流器设计
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-10T13:13:53.119Z" class="dt-published" itemprop="datePublished">2024-02-10</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/RPC/" rel="tag">RPC</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="自研RPC框架之限流器设计"><a href="#自研RPC框架之限流器设计" class="headerlink" title="自研RPC框架之限流器设计"></a>自研RPC框架之限流器设计</h1><h2 id="1-限流的必要性"><a href="#1-限流的必要性" class="headerlink" title="1.限流的必要性"></a>1.限流的必要性</h2><p>限流是一种控制流量的技术，用于保护系统免受突发流量或恶意流量的影响。其基本原理是通过控制请求的速率或数量，确保系统在可承受的范围内运行。我们RPC系统中的限流器都实现了<code>Limiter</code>接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Limiter</span> &#123;</span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">limit</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-计数器限流器设计"><a href="#2-计数器限流器设计" class="headerlink" title="2.计数器限流器设计"></a>2.计数器限流器设计</h2><p>计数器限流器通常在较大的时间粒度上进行限流（如每秒、每分钟），难以应对短时间内的突发流量。当每个时间窗口刷新时，所有等待的请求可能同时被放行，导致瞬间<code>流量突刺</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 计数器限流即固定窗口限流器</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CounterLimiter</span> <span class="keyword">implements</span> <span class="title class_">Limiter</span>&#123;</span><br><span class="line">    <span class="comment">// 开始计数时间</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">long</span> <span class="variable">startTimeStamp</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">    <span class="comment">// 请求次数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">requestCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 每秒限制的最大请求数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">maxLimitCount</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">    <span class="comment">// 时间窗口长度(单位ms)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">long</span> <span class="variable">interval</span> <span class="operator">=</span> <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">CounterLimiter</span><span class="params">(<span class="type">int</span> maxLimitCount)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.maxLimitCount = maxLimitCount;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 固定窗口算法存在请求突刺现象</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> true表示限流,false表示放行</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="type">boolean</span> <span class="title function_">limit</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">now</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        <span class="comment">// 处于当前时间窗口内</span></span><br><span class="line">        <span class="keyword">if</span> (now &lt; startTimeStamp + interval) &#123;</span><br><span class="line">            <span class="comment">// 判断当前时间窗口内的请求是否超过限流阈值</span></span><br><span class="line">            <span class="keyword">if</span> (requestCount + <span class="number">1</span> &gt; maxLimitCount) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            requestCount++;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 开启新的时间窗口</span></span><br><span class="line">            startTimeStamp = now;</span><br><span class="line">            <span class="comment">// 重置请求计数器</span></span><br><span class="line">            requestCount = <span class="number">1</span>;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-滑动窗口限流器设计"><a href="#3-滑动窗口限流器设计" class="headerlink" title="3.滑动窗口限流器设计"></a>3.滑动窗口限流器设计</h2><p>简单的基于Java实现的滑动窗口限流器的代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RollingWindowLimiter</span> <span class="keyword">implements</span> <span class="title class_">Limiter</span> &#123;</span><br><span class="line">    <span class="comment">// 记录滑动窗口的队列</span></span><br><span class="line">    <span class="keyword">private</span> LinkedList&lt;Integer&gt; slots = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line">    <span class="comment">// 窗口的单位长度(单位ms)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">windowLength</span> <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line">    <span class="comment">// 滑动窗口的个数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">windowNum</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">    <span class="comment">// 每秒限制的最大请求数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">maxLimitCount</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">    <span class="comment">// 请求计数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">requestCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 存在线程安全问题</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> true表示限流,false表示放行</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="type">boolean</span> <span class="title function_">limit</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// 滑动窗口内的请求数超过限流阈值</span></span><br><span class="line">        <span class="keyword">if</span> ((requestCount + <span class="number">1</span>) &gt; maxLimitCount) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 当前请求处于的单元格(其实就是队尾的最新单元格)请求数递增</span></span><br><span class="line">        slots.set(slots.size() - <span class="number">1</span>, slots.peekLast() + <span class="number">1</span>);</span><br><span class="line">        requestCount++;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RollingWindowLimiter</span><span class="params">(<span class="type">int</span> windowLength, <span class="type">int</span> windowNum, <span class="type">int</span> maxLimitCount)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.windowLength = windowLength;</span><br><span class="line">        <span class="built_in">this</span>.windowNum = windowNum;</span><br><span class="line">        <span class="built_in">this</span>.maxLimitCount = maxLimitCount;</span><br><span class="line">        rolling();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">rolling</span><span class="params">()</span> &#123;</span><br><span class="line">        slots.addLast(<span class="number">0</span>);</span><br><span class="line">        <span class="type">ScheduledExecutorService</span> <span class="variable">executorService</span> <span class="operator">=</span> Executors.newSingleThreadScheduledExecutor();</span><br><span class="line">        executorService.scheduleAtFixedRate(()-&gt; &#123;</span><br><span class="line">            <span class="comment">// 这里存在并发安全问题，如果负载过高，大量请求会阻塞等待加锁，那么时间窗口迟迟无法滑动更新</span></span><br><span class="line">            <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">                <span class="comment">// 滑动窗口</span></span><br><span class="line">                slots.addLast(<span class="number">0</span>);</span><br><span class="line">                <span class="comment">// 移除超出范围的单元格</span></span><br><span class="line">                <span class="keyword">if</span> (slots.size() &gt; windowNum) &#123;</span><br><span class="line">                    requestCount -= slots.getFirst();</span><br><span class="line">                    slots.removeFirst();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="number">0</span>, windowLength, TimeUnit.MILLISECONDS);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>利用Redis，我们就可以实现一个简单的滑动窗口限流的功能。因为滑动窗口和时间有关，所以很容易能想到要基于时间进行统计。那么我们只需要在每一次有请求进来的时候，记录下<code>请求的时间戳</code>和<code>请求的数据</code>，然后在统计窗口内请求的数量时，只需要统计窗口内的被记录的数据量有多少条就行了。</p>
+<p>在Redis中，我们可以基于<code>ZSET</code>来实现这个功能。假如我们限定login接口一分钟只能调用100次:</p>
+<p>那么，我们就可以把login接口这个需要做限流的资源名作为key在redis中进行存储，然后value我们现在ZSET这种数据结构，把他的score设置为当前请求的时间戳,member的话建议用请求的详情的hash进行存储(或者UUID、MD5什么的)，避免在并发时，时间戳一致出现score和member一样导致被zadd幂等的问题。</p>
+<p><img src="/../../AppData/Roaming/Typora/typora-user-images/image-20240210210106473.png" alt="image-20240210210106473"></p>
+<p>所以，我们实现滑动窗口限流的主要思想是:&#x3D;&#x3D;只保留在特定时间窗口内的请求记录，而丢弃窗口之外的记录&#x3D;&#x3D;。</p>
+<p>主要步骤如下:</p>
+<ol>
+<li>定义滑动窗口的时间范围，例如，窗口大小为60秒。</li>
+<li>每次收到一个请求时，我们就定义出一个zset的value然后存储到redis中。</li>
+<li>然后再通过ZREMRANGEBYSCORE命令来删除分值小于窗口起始时间戳(当前时间戳-60s)）的数据。</li>
+<li>最后，再使用ZCARD命令来获取有序集合中的成员数量，即在窗口内的请求量。</li>
+</ol>
+<p><img src="/../../AppData/Roaming/Typora/typora-user-images/image-20240210210421254.png" alt="image-20240210210421254"></p>
+<p>以上代码在高并发情况下，可能会存在原子性的问题，需要考虑加事务或者lua脚本:</p>
+<p><img src="/../../AppData/Roaming/Typora/typora-user-images/image-20240210210615457.png" alt="image-20240210210615457"></p>
+<h2 id="4-令牌桶限流器设计"><a href="#4-令牌桶限流器设计" class="headerlink" title="4.令牌桶限流器设计"></a>4.令牌桶限流器设计</h2><p>令牌桶限流算法是一种灵活且广泛应用的流量控制机制，它允许在保持平均传输速率的前提下，进行一定程度的<code>突发传输</code>。这种算法的核心思想是通过一个固定容量的令牌桶来控制数据的传输速率。系统以恒定的速率往桶中添加令牌，每个传入的请求都需要从桶中获取一个令牌，如果桶中没有令牌可用，则请求被限流。令牌桶限流算法允许突发请求在短时间内通过，而不是简单地以恒定速率处理请求，从而平滑了网络流量。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TokenBucketLimiter</span> <span class="keyword">implements</span> <span class="title class_">Limiter</span> &#123;</span><br><span class="line">    <span class="comment">// 上次计算的时间</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">long</span> <span class="variable">timeStamp</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">    <span class="comment">// 桶的容量</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">capacity</span> <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line">    <span class="comment">// 令牌的生成速度(单位是s)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">rate</span> <span class="operator">=</span> <span class="number">20</span>;</span><br><span class="line">    <span class="comment">// 当前剩余的令牌数量</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">tokens</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TokenBucketLimiter</span><span class="params">(<span class="type">int</span> capacity, <span class="type">int</span> rate)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.capacity = capacity;</span><br><span class="line">        <span class="built_in">this</span>.rate = rate;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="type">boolean</span> <span class="title function_">limit</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">now</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        <span class="comment">// 先添加令牌</span></span><br><span class="line">        tokens = Math.min(capacity, tokens + (<span class="type">int</span>) ((now - timeStamp) / <span class="number">1000</span>) * rate);</span><br><span class="line">        <span class="comment">// 更新计算时间</span></span><br><span class="line">        timeStamp = now;</span><br><span class="line">        <span class="comment">// 令牌消耗完毕</span></span><br><span class="line">        <span class="keyword">if</span> (tokens &lt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 领取令牌</span></span><br><span class="line">        tokens--;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-Guava限流器"><a href="#5-Guava限流器" class="headerlink" title="5.Guava限流器"></a>5.Guava限流器</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SmoothBurstyLimiter</span> <span class="keyword">implements</span> <span class="title class_">Limiter</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> RateLimiter rateLimiter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">SmoothBurstyLimiter</span><span class="params">(<span class="type">double</span> permitsPerSecond)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.rateLimiter = RateLimiter.create(permitsPerSecond);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">limit</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> rateLimiter.tryAcquire();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SmoothWarmingUpLimiter</span> <span class="keyword">implements</span> <span class="title class_">Limiter</span> &#123;</span><br><span class="line">    <span class="comment">// 可用于优雅开机</span></span><br><span class="line">    <span class="keyword">private</span> RateLimiter rateLimiter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">SmoothWarmingUpLimiter</span><span class="params">(<span class="type">double</span> permitsPerSecond, <span class="type">long</span> warmupPeriod, TimeUnit unit)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.rateLimiter = RateLimiter.create(permitsPerSecond, warmupPeriod, unit);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">limit</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> rateLimiter.tryAcquire();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之限流器设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%99%90%E6%B5%81%E7%9A%84%E5%BF%85%E8%A6%81%E6%80%A7"><span class="toc-number">1.1.</span> <span class="toc-text">1.限流的必要性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%AE%A1%E6%95%B0%E5%99%A8%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.2.</span> <span class="toc-text">2.计数器限流器设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.3.</span> <span class="toc-text">3.滑动窗口限流器设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BB%A4%E7%89%8C%E6%A1%B6%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.4.</span> <span class="toc-text">4.令牌桶限流器设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Guava%E9%99%90%E6%B5%81%E5%99%A8"><span class="toc-number">1.5.</span> <span class="toc-text">5.Guava限流器</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&text=自研RPC框架之限流器设计"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&is_video=false&description=自研RPC框架之限流器设计"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=自研RPC框架之限流器设计&body=Check out this article: https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&title=自研RPC框架之限流器设计"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&name=自研RPC框架之限流器设计&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/&t=自研RPC框架之限流器设计"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
