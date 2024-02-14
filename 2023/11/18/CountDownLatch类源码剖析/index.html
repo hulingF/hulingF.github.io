@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/CountDownLatch%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231118163152155.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/CountDownLatch%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231118175503467.png">
 <meta property="article:published_time" content="2023-11-18T04:08:45.049Z">
-<meta property="article:modified_time" content="2023-11-18T12:54:15.058Z">
+<meta property="article:modified_time" content="2024-02-14T07:29:01.967Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="并发编程">
 <meta name="twitter:card" content="summary">
@@ -170,12 +170,11 @@
     <h1 id="CountDownLatch类源码剖析"><a href="#CountDownLatch类源码剖析" class="headerlink" title="CountDownLatch类源码剖析"></a>CountDownLatch类源码剖析</h1><h2 id="一、CountDownLatch类的简介"><a href="#一、CountDownLatch类的简介" class="headerlink" title="一、CountDownLatch类的简介"></a>一、CountDownLatch类的简介</h2><p>CountDownLatch是一种并发包下的<code>同步辅助工具</code>，允许一个或多个线程等待其他线程正在执行的一组操作完成，CountDownLatch以给定的计数初始化。await方法会阻塞，直到当前计数因调用countDown方法而归零，之后所有等待的线程都会被释放，并且await的任何后续调用都会立即返回。这是一种一次性现象即<code>计数无法重置</code>，如果需要重置计数的版本，可以考虑使用CyclicBarrier。CountDownLatch是一种多功能同步工具，可用于多种用途。</p>
 <ol>
 <li>初始化计数为1的CountDownLatch可用作简单的<code>触发器</code>：所有调用await的线程都在触发器上等待，直到调用countDown的线程打开触发器。</li>
-<li>初始化为N的CountDownLatch可用作可用作简单的<code>屏障器</code>，让一个或多个主线程等待，直到N个线程完成某个操作，或某个操作完成N次。</li>
+<li>初始化为N的CountDownLatch可用作可用作简单的<code>屏障器</code>，让一个或多个线程等待，直到N个线程完成某个操作，或某个操作完成N次。</li>
 </ol>
-<p>CountDownLatch的一个有用特性是，它并不要求调用countDown的线程在继续执行之前等待计数归零，它只是阻止任何线程继续执行await操作，直到所有线程都能通过为止。</p>
 <p>下面是一个使用示例：这里有一对类<code>Driver</code>和<code>Worker</code>，其中一组工作线程使用两个倒计时countDownLatch：<br>第一个倒计时countDownLatch是一个启动信号，用于阻止任何工作线程继续运行，直到驱动线程准备好让它们继续运行；<br>第二个倒计时countDownLatch是一个完成信号，允许驱动线程等待所有工作线程完成后才继续执行。</p>
 <p><img src="/../../../../../../imgs/CountDownLatch%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231118123123455.png" alt="image-20231118123123455"></p>
-<p>另一种典型的用法是将问题分成N个部分，每个部分用一个Runnable来描述，Runnable执行该部分并在countDownLatch上倒计时，然后将所有Runnable排成队列交给一个Executor。当所有子部分都完成后，协调线程就可以从await方法返回。(当线程必须以这种方式反复倒计时时，请使用 CyclicBarrier）。</p>
+<p>另一种典型的用法是将问题分成N个部分，每个部分用一个Runnable来描述，Runnable执行该部分并在countDownLatch上倒计时，然后将所有Runnable排成队列交给一个Executor。当所有子部分都完成后，协调线程就可以从await方法返回。(当线程必须以这种方式反复倒计时时，请使用CyclicBarrier）。</p>
 <p><img src="/../../../../../../imgs/CountDownLatch%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231118161900918-1700295542889-1.png" alt="image-20231118161900918"></p>
 <blockquote>
 <p>内存一致性语义的说明：在计数达到零之前，线程中调用countDown之前的操作happen-before另一个线程中相应的await成功返回之后的操作。</p>

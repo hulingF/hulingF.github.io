@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/MyBatis%E6%A0%B8%E5%BF%83%E4%B9%8B%E5%AE%9E%E8%B7%B5%E6%A1%88%E4%BE%8B2/image-20231124175710340.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MyBatis%E6%A0%B8%E5%BF%83%E4%B9%8B%E5%AE%9E%E8%B7%B5%E6%A1%88%E4%BE%8B2/image-20231124180127987.png">
 <meta property="article:published_time" content="2023-11-24T08:13:23.297Z">
-<meta property="article:modified_time" content="2023-11-26T15:43:41.922Z">
+<meta property="article:modified_time" content="2024-02-14T02:54:49.808Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="MyBatis">
 <meta name="twitter:card" content="summary">
@@ -249,9 +249,9 @@
 
 <p><img src="/../../../../../../imgs/MyBatis%E6%A0%B8%E5%BF%83%E4%B9%8B%E5%AE%9E%E8%B7%B5%E6%A1%88%E4%BE%8B2/image-20231124173425751.png" alt="image-20231124173425751"></p>
 <h3 id="4-最佳实践-1"><a href="#4-最佳实践-1" class="headerlink" title="4.最佳实践"></a>4.最佳实践</h3><ul>
-<li>如果返回值是简单类型，需要根据MyBatis的默认别名填写在resultType标签中</li>
-<li>如果返回值是实体类类型，根据数据库表记录字段名与实体类属性名是否一致、是否存在多对一或者一对多关系等决定是否采用resultMap</li>
-<li>如果返回值是Map类型，直接使用SQL查询语句的字段名作为键，字段值作为值形成Map对象返回，对于复杂查询例如多表联查时经常会使用到</li>
+<li>如果返回值是简单类型，需要根据MyBatis的默认别名填写在<code>resultType</code>标签中</li>
+<li>如果返回值是实体类类型，根据数据库表记录字段名与实体类属性名是否一致、是否存在多对一或者一对多关系等决定是否采用<code>resultMap</code></li>
+<li>如果返回值是Map类型，直接使用SQL查询语句的字段名作为键，字段值作为值形成<code>Map</code>对象返回，对于复杂查询例如多表联查时经常会使用到</li>
 </ul>
 <h2 id="四、MyBatis的特殊注意"><a href="#四、MyBatis的特殊注意" class="headerlink" title="四、MyBatis的特殊注意"></a>四、MyBatis的特殊注意</h2><h3 id="1-测试方法-2"><a href="#1-测试方法-2" class="headerlink" title="1.测试方法"></a>1.测试方法</h3><p>我们先来看一下<code>SQLMapper</code>接口，其中包含了需要特殊注意的若干个测试方法，我们下面一一查看：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">SQLMapper</span> &#123;</span><br><span class="line">    <span class="comment">// 模糊查询：搜素场景</span></span><br><span class="line">    List&lt;User&gt; <span class="title function_">getUsersLike</span><span class="params">(<span class="meta">@Param(&quot;username&quot;)</span> String username)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 批量删除：复选删除等场景</span></span><br><span class="line">    <span class="type">int</span> <span class="title function_">deleteMore</span><span class="params">(<span class="meta">@Param(&quot;ids&quot;)</span> String ids)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 动态设置表名：表的水平切分场景</span></span><br><span class="line">    List&lt;User&gt; <span class="title function_">getUsersByTableName</span><span class="params">(<span class="meta">@Param(&quot;tableName&quot;)</span> String tableName)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取自增主键：多表关联等场景</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">insertUser</span><span class="params">(User user)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
