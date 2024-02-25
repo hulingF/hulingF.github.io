@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="大军的秘密花园">
 <meta property="og:description" content="MySQL原理之查询优化篇一、MySQL基于成本的优化我们之前老说MySQL执行一个查询可以有不同的执行方案，它会选择其中成本最低，或者说代价最低的那种方案去真正的执行查询。不过我们之前对成本的描述是非常模糊的，其实在MySQL中一条查询语句的执行成本是由下边这两个方面组成的：  I&#x2F;O成本 我们的表经常使用的MyISAM、InnoDB存储引擎都是将数据和索引都存储到磁盘上的，当我们想查询表中的记">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505d671d4etplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta property="og:image" content="https://hulingf.github.io/2023/12/19/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505d671d4etplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505d7a278atplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505eab86e6tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20231219112601615.png">
@@ -26,18 +26,18 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b165a91ftplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b1e44524tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b17c24e3tplv-t2oaga2asx-jj-mark1890000q75.webp">
-<meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219132732638.png">
+<meta property="og:image" content="https://hulingf.github.io/2023/12/19/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219132732638.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219132854607.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16a8dda5369e68c5tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16a8dda5394d3903tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16ecb503727bb15etplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219151453493.png">
 <meta property="article:published_time" content="2023-12-19T03:57:02.125Z">
-<meta property="article:modified_time" content="2023-12-19T07:45:59.042Z">
+<meta property="article:modified_time" content="2024-02-20T09:57:43.224Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="MySQL原理">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505d671d4etplv-t2oaga2asx-jj-mark1890000q75.webp">
+<meta name="twitter:image" content="https://hulingf.github.io/2023/12/19/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505d671d4etplv-t2oaga2asx-jj-mark1890000q75.webp">
     
     
       
@@ -216,7 +216,7 @@
 <li><code>key1 IN (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)</code>，这个搜索条件可以使用二级索引<code>idx_key1</code>。</li>
 <li><code>key2 &gt; 10 AND key2 &lt; 1000</code>，这个搜索条件可以使用二级索引<code>idx_key2</code>。</li>
 <li><code>key3 &gt; key2</code>，这个搜索条件的索引列由于没有和常数比较，所以并不能使用到索引。</li>
-<li><code>key_part1 LIKE &#39;%hello%&#39;</code>，<code>key_part1</code>通过<code>LIKE</code>操作符和以通配符开头的字符串做比较，不可以适用索引。</li>
+<li><code>key_part1 LIKE &#39;%hello%&#39;</code>，<code>key_part1</code>通过<code>LIKE</code>操作符和以通配符开头的字符串做比较，不可以使用索引。</li>
 <li><code>common_field = &#39;123&#39;</code>，由于该列上压根儿没有索引，所以不会用到索引。</li>
 </ul>
 <p>综上所述，上边的查询语句可能用到的索引，也就是<code>possible keys</code>只有<code>idx_key1</code>和<code>idx_key2</code>。</p>
@@ -261,7 +261,7 @@
 </blockquote>
 <h4 id="1-2-3计算使用不同索引执行查询的代价"><a href="#1-2-3计算使用不同索引执行查询的代价" class="headerlink" title="1.2.3计算使用不同索引执行查询的代价"></a>1.2.3计算使用不同索引执行查询的代价</h4><p>从第1步分析我们得到，上述查询可能使用到<code>idx_key1</code>和<code>idx_key2</code>这两个索引，我们需要分别分析单独使用这些索引执行查询的成本，最后还要分析是否可能使用到索引合并。这里需要提一点的是，<code>MySQL</code>查询优化器先分析使用唯一二级索引的成本，再分析使用普通索引的成本，所以我们也先分析<code>idx_key2</code>的成本，然后再看使用<code>idx_key1</code>的成本。</p>
 <h5 id="使用idx-key2执行查询的成本分析"><a href="#使用idx-key2执行查询的成本分析" class="headerlink" title="使用idx_key2执行查询的成本分析"></a>使用idx_key2执行查询的成本分析</h5><p><code>idx_key2</code>对应的搜索条件是：<code>key2 &gt; 10 AND key2 &lt; 1000</code>，也就是说对应的范围区间就是：<code>(10, 1000)</code>，使用<code>idx_key2</code>搜索的示意图就是这样子：</p>
-<img src="/../../../../../../imgs/MySQL原理之查询优化篇/16998b505d671d4etplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1d6cb8nolj1714dimrf1iu64l99.png-124.3kB" style="zoom:80%;" /> 
+<img src="imgs/MySQL原理之查询优化篇/16998b505d671d4etplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1d6cb8nolj1714dimrf1iu64l99.png-124.3kB" style="zoom:80%;" />
 
 <p>对于使用<code>二级索引 + 回表</code>方式的查询，设计<code>MySQL</code>的大叔计算这种查询的成本依赖两个方面的数据：</p>
 <ul>
@@ -275,7 +275,7 @@
 <li><p>步骤2：然后再根据<code>key2 &lt; 1000</code>这个条件继续从<code>idx_key2</code>对应的<code>B+</code>树索引中找出最后一条满足这个条件的记录，我们把这条记录称之为<code>区间最右记录</code>，这个过程的性能消耗也可以忽略不计的。</p>
 </li>
 <li><p>步骤3：如果<code>区间最左记录</code>和<code>区间最右记录</code>相隔不太远（在<code>MySQL 5.7.21</code>这个版本里，只要相隔不大于10个页面即可），那就可以精确统计出满足<code>key2 &gt; 10 AND key2 &lt; 1000</code>条件的二级索引记录条数。否则只沿着<code>区间最左记录</code>向右读10个页面，计算平均每个页面中包含多少记录，然后用这个平均值乘以<code>区间最左记录</code>和<code>区间最右记录</code>之间的页面数量就可以了。那么问题又来了，怎么估计<code>区间最左记录</code>和<code>区间最右记录</code>之间有多少个页面呢？解决这个问题还得回到<code>B+</code>树索引的结构中来：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505d7a278atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cubndfil1i02ddfas1j3brq9m.png-85.3kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505d7a278atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cubndfil1i02ddfas1j3brq9m.png-85.3kB"> </p>
 <p>如图，我们假设<code>区间最左记录</code>在<code>页b</code>中，<code>区间最右记录</code>在<code>页c</code>中，那么我们想计算<code>区间最左记录</code>和<code>区间最右记录</code>之间的页面数量就相当于计算<code>页b</code>和<code>页c</code>之间有多少页面，而每一条<code>目录项记录</code>都对应一个数据页，所以计算<code>页b</code>和<code>页c</code>之间有多少页面就相当于计算它们父节点（也就是页a）中对应的目录项记录之间隔着几条记录。在一个页面中统计两条记录之间有几条记录的成本就贼小了。</p>
 <p>不过还有问题，如果<code>页b</code>和<code>页c</code>之间的页面实在太多，以至于<code>页b</code>和<code>页c</code>对应的目录项记录都不在一个页面中该咋办？继续递归啊，也就是再统计<code>页b</code>和<code>页c</code>对应的目录项记录所在页之间有多少个页面。之前我们说过一个<code>B+</code>树有4层高已经很了不得了，所以这个统计过程也不是很耗费性能。</p>
 </li>
@@ -319,7 +319,7 @@
 <li><code>[&#39;c&#39;, &#39;c&#39;]</code></li>
 </ul>
 <p>使用<code>idx_key1</code>搜索的示意图就是这样子：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505eab86e6tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cubvsars1i0rvdc11b3118th9830.png-124.1kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16998b505eab86e6tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cubvsars1i0rvdc11b3118th9830.png-124.1kB"></p>
 <p>与使用<code>idx_key2</code>的情况类似，我们也需要计算使用<code>idx_key1</code>时需要访问的范围区间数量以及需要回表的记录数：</p>
 <ul>
 <li><p>范围区间数量</p>
@@ -412,9 +412,9 @@
 <p>假设<code>IN</code>语句中有20000个参数的话，就直接使用统计数据来估算这些参数需要单点区间对应的记录条数了，每个参数大约对应<code>10</code>条记录，所以总共需要回表的记录数就是：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">20000</span> x <span class="number">10</span> <span class="operator">=</span> <span class="number">200000</span></span><br></pre></td></tr></table></figure>
 
-<p>使用统计数据来计算单点区间对应的索引记录条数可比<code>index dive</code>的方式简单多了，但是它的致命弱点就是：不精确！。使用统计数据算出来的查询成本与实际所需的成本可能相差非常大。</p>
+<p>使用统计数据来计算单点区间对应的索引记录条数可比<code>index dive</code>的方式简单多了，但是它的致命弱点就是：不精确！使用统计数据算出来的查询成本与实际所需的成本可能相差非常大。</p>
 <blockquote>
-<p>大家需要注意一下，在MySQL 5.7.3以及之前的版本中，eq_range_index_dive_limit的默认值为10，之后的版本默认值为200。所以如果大家采用的是5.7.3以及之前的版本的话，很容易采用索引统计数据而不是index dive的方式来计算查询成本。当你的查询中使用到了IN查询，但是却实际没有用到索引，就应该考虑一下是不是由于 eq_range_index_dive_limit 值太小导致的。</p>
+<p>大家需要注意一下，在MySQL 5.7.3以及之前的版本中，eq_range_index_dive_limit的默认值为10，之后的版本默认值为200。所以如果大家采用的是5.7.3以及之前的版本的话，很容易采用索引统计数据而不是index dive的方式来计算查询成本。当你的查询中使用到了IN查询，但是却实际没有用到索引，就应该考虑一下是不是由于eq_range_index_dive_limit值太小导致的。</p>
 </blockquote>
 <h3 id="1-4连接查询的成本"><a href="#1-4连接查询的成本" class="headerlink" title="1.4连接查询的成本"></a>1.4连接查询的成本</h3><p>连接查询至少是要有两个表的，只有一个<code>single_table</code>表是不够的，所以为了故事的顺利发展，我们直接构造一个和<code>single_table</code>表一模一样的<code>single_table2</code>表。为了简便起见，我们把<code>single_table</code>表称为<code>s1</code>表，把<code>single_table2</code>表称为<code>s2</code>表。</p>
 <h4 id="1-4-1Condition-filtering介绍"><a href="#1-4-1Condition-filtering介绍" class="headerlink" title="1.4.1Condition filtering介绍"></a>1.4.1Condition filtering介绍</h4><p>我们前边说过，<code>MySQL</code>中连接查询采用的是嵌套循环连接算法，驱动表会被访问一次，被驱动表可能会被访问多次，所以对于两表连接查询来说，它的查询成本由下边两个部分构成：</p>
@@ -537,10 +537,10 @@
 </ul>
 <p>最后优化器会比较这两种方式的最优访问成本，选取那个成本更低的连接顺序去真正的执行查询。从上边的计算过程也可以看出来，连接查询成本占大头的其实是<code>驱动表扇出数 x 单次访问被驱动表的成本</code>，所以我们的优化重点其实是下边这两个部分：</p>
 <ul>
-<li><p>尽量减少驱动表的扇出</p>
+<li><p><strong>尽量减少驱动表的扇出</strong></p>
 </li>
-<li><p>对被驱动表的访问成本尽量低</p>
-<p>这一点对于我们实际书写连接查询语句时十分有用，我们需要尽量在被驱动表的连接列上建立索引，这样就可以使用<code>ref</code>访问方法来降低访问被驱动表的成本了。如果可以，被驱动表的连接列最好是该表的主键或者唯一二级索引列，这样就可以把访问被驱动表的成本降到更低了。</p>
+<li><p><strong>对被驱动表的访问成本尽量低</strong></p>
+<p>这一点对于我们实际书写连接查询语句时十分有用，我们需要<code>尽量在被驱动表的连接列上建立索引</code>，这样就可以使用<code>ref</code>访问方法来降低访问被驱动表的成本了。如果可以，被驱动表的连接列最好是该表的主键或者唯一二级索引列，这样就可以把访问被驱动表的成本降到更低了。</p>
 </li>
 </ul>
 <h4 id="1-4-3多表连接的成本分析"><a href="#1-4-3多表连接的成本分析" class="headerlink" title="1.4.3多表连接的成本分析"></a>1.4.3多表连接的成本分析</h4><p>首先要考虑一下多表连接时可能产生出多少种连接顺序：</p>
@@ -612,12 +612,12 @@
 </li>
 </ul>
 <p>我们从<code>engine_cost</code>表中的内容可以看出来，目前支持的存储引擎成本常数只有两个：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219115949876.png" alt="image-20231219115949876"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219115949876.png" alt="image-20231219115949876"></p>
 <p>大家看完这两个成本常数的默认值是不是有些疑惑，怎么从内存中和从磁盘上读取一个块的默认成本是一样的，脑子瓦特了？这主要是因为在<code>MySQL</code>目前的实现中，并不能准确预测某个查询需要访问的块中有哪些块已经加载到内存中，有哪些块还停留在磁盘上，所以设计<code>MySQL</code>的大叔们很粗暴的认为不管这个块有没有加载到内存中，使用的成本都是<code>1.0</code>，不过随着<code>MySQL</code>的发展，等到可以准确预测哪些块在磁盘上，那些块在内存中的那一天，这两个成本常数的默认值可能会改一改吧。</p>
 <blockquote>
 <p>在MySQL8中，io_block_read_cost的值和memory_block_read_cost的值已经不同了。</p>
 </blockquote>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219115832194.png" alt="image-20231219115832194"></p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219115832194.png" alt="image-20231219115832194"></p>
 <p>与更新<code>server_cost</code>表中的记录一样，我们也可以通过更新<code>engine_cost</code>表中的记录来更改关于存储引擎的成本常数，我们也可以通过为<code>engine_cost</code>表插入新记录的方式来添加只针对某种存储引擎的成本常数：</p>
 <ul>
 <li><p>插入针对某个存储引擎的成本常数</p>
@@ -652,9 +652,9 @@
 </ul>
 <p>我们下边的任务就是看一下这两个表里边都有什么以及表里的数据是如何生成的。</p>
 <h4 id="2-2-1innodb-table-stats"><a href="#2-2-1innodb-table-stats" class="headerlink" title="2.2.1innodb_table_stats"></a>2.2.1innodb_table_stats</h4><p>直接看一下这个<code>innodb_table_stats</code>表中的各个列都是干嘛的：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219131607845.png" alt="image-20231219131607845"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219131607845.png" alt="image-20231219131607845"> </p>
 <p>注意这个表的主键是<code>(database_name,table_name)</code>，也就是innodb_table_stats表的每条记录代表着一个表的统计信息。我们直接看一下这个表里的内容：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219131837979.png" alt="image-20231219131837979"></p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219131837979.png" alt="image-20231219131837979"></p>
 <p>可以看到我们熟悉的<code>single_table</code>表的统计信息就对应着<code>mysql.innodb_table_stats</code>的第三条记录。几个重要统计信息项的值如下：</p>
 <ul>
 <li><code>n_rows</code>的值是<code>9693</code>，表明<code>single_table</code>表中大约有<code>9693</code>条记录，注意这个数据是估计值。</li>
@@ -665,7 +665,7 @@
 <ul>
 <li><p>按照一定算法（并不是纯粹随机的）选取几个叶子节点页面，计算每个页面中主键值记录数量，然后计算平均一个页面中主键值的记录数量乘以全部叶子节点的数量就算是该表的<code>n_rows</code>值。</p>
 <p>可以看出来这个<code>n_rows</code>值精确与否取决于统计时采样的页面数量，设计<code>MySQL</code>的大叔很贴心的为我们准备了一个名为<code>innodb_stats_persistent_sample_pages</code>的系统变量来控制使用永久性的统计数据时，计算统计数据时采样的页面数量。该值设置的越大，统计出的<code>n_rows</code>值越精确，但是统计耗时也就最久；该值设置的越小，统计出的<code>n_rows</code>值越不精确，但是统计耗时特别少。所以在实际使用是需要我们去权衡利弊，该系统变量的默认值是<code>20</code>。</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219132042472.png" alt="image-20231219132042472"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219132042472.png" alt="image-20231219132042472"> </p>
 <p>我们前边说过，不过<code>InnoDB</code>默认是以表为单位来收集和存储统计数据的，我们也可以单独设置某个表的采样页面的数量，设置方式就是在创建或修改表的时候通过指定<code>STATS_SAMPLE_PAGES</code>属性来指明该表的统计数据存储方式：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> 表名 (...) Engine<span class="operator">=</span>InnoDB, STATS_SAMPLE_PAGES <span class="operator">=</span> 具体的采样页面数量;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> 表名 Engine<span class="operator">=</span>InnoDB, STATS_SAMPLE_PAGES <span class="operator">=</span> 具体的采样页面数量;</span><br></pre></td></tr></table></figure>
 
@@ -686,25 +686,25 @@
 </li>
 <li><p>从叶子节点段和非叶子节点段的<code>Segment Header</code>中找到这两个段对应的<code>INODE Entry</code>结构。</p>
 <p>这个是<code>Segment Header</code>结构：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b165a91ftplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cum7dbc812843ac192pfik1raep.png-107.3kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b165a91ftplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cum7dbc812843ac192pfik1raep.png-107.3kB"></p>
 </li>
 <li><p>从对应的<code>INODE Entry</code>结构中可以找到该段对应所有零散的页面地址以及<code>FREE</code>、<code>NOT_FULL</code>、<code>FULL</code>链表的基节点。</p>
 <p>这个是<code>INODE Entry</code>结构：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b1e44524tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cum7f49h1beg5uccbq197n1g1b16.png-173.9kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b1e44524tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cum7f49h1beg5uccbq197n1g1b16.png-173.9kB"> </p>
 </li>
 <li><p>直接统计零散的页面有多少个，然后从那三个链表的<code>List Length</code>字段中读出该段占用的区的大小，每个区占用<code>64</code>个页，所以就可以统计出整个段占用的页面。</p>
 <p>这个是链表基节点的示意图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b17c24e3tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cum7hkiihikm4b88j10461plc1j.png-129.9kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/167e94d5b17c24e3tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cum7hkiihikm4b88j10461plc1j.png-129.9kB"></p>
 </li>
 <li><p>分别计算聚簇索引的叶子结点段和非叶子节点段占用的页面数，它们的和就是<code>clustered_index_size</code>的值，按照同样的套路把其余索引占用的页面数都算出来，加起来之后就是<code>sum_of_other_index_sizes</code>的值。</p>
 </li>
 </ul>
 <p>这里需要大家注意一个问题，我们说一个段的数据在非常多时（超过32个页面），会以<code>区</code>为单位来申请空间，这里头的问题是以区为单位申请空间中有一些页可能并没有使用，但是在统计<code>clustered_index_size</code>和<code>sum_of_other_index_sizes</code>时都把它们算进去了，所以说聚簇索引和其他的索引占用的页面数可能比这两个值要小一些。</p>
 <h4 id="2-2-2innodb-index-stats"><a href="#2-2-2innodb-index-stats" class="headerlink" title="2.2.2innodb_index_stats"></a>2.2.2innodb_index_stats</h4><p>直接看一下这个<code>innodb_index_stats</code>表中的各个列都是干嘛的：</p>
-<img src="/../../../../../../imgs/MySQL原理之查询优化篇/image-20231219132732638.png" alt="image-20231219132732638" style="zoom:80%;" /> 
+<img src="imgs/MySQL原理之查询优化篇/image-20231219132732638.png" alt="image-20231219132732638" style="zoom:80%;" />
 
 <p>注意这个表的主键是<code>(database_name,table_name,index_name,stat_name)</code>，其中的<code>stat_name</code>是指统计项的名称，也就是说innodb_index_stats表的每条记录代表着一个索引的一个统计项。可能这会大家有些懵逼这个统计项到底指什么，别着急，我们直接看一下关于<code>single_table</code>表的索引统计数据都有些什么：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219132854607.png" alt="image-20231219132854607"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219132854607.png" alt="image-20231219132854607"> </p>
 <p>这个结果有点儿多，正确查看这个结果的方式是这样的：</p>
 <ul>
 <li><p>先查看<code>index_name</code>列，这个列说明该记录是哪个索引的统计信息，从结果中我们可以看出来，<code>PRIMARY</code>索引（也就是主键）占了3条记录，<code>idx_key_part</code>索引占了6条记录。</p>
@@ -816,7 +816,7 @@
 </li>
 </ul>
 <p>反正这个锅是甩给用户了，当你选定了<code>innodb_stats_method</code>值之后，优化器即使选择了不是最优的执行计划，那也跟设计<code>MySQL</code>的大叔们没关系了哈～ 当然对于用户的我们来说，最好不在索引列中存放NULL值才是正解。</p>
-<h2 id="三、MySQL基于规则的优化"><a href="#三、MySQL基于规则的优化" class="headerlink" title="三、MySQL基于规则的优化"></a>三、MySQL基于规则的优化</h2><p>家别忘了<code>MySQL</code>本质上是一个软件，设计<code>MySQL</code>的大叔并不能要求使用这个软件的人个个都是数据库高高手，就像我写这本书的时候并不能要求各位在学之前就会了里边儿的知识。</p>
+<h2 id="三、MySQL基于规则的优化"><a href="#三、MySQL基于规则的优化" class="headerlink" title="三、MySQL基于规则的优化"></a>三、MySQL基于规则的优化</h2><p>大家别忘了<code>MySQL</code>本质上是一个软件，设计<code>MySQL</code>的大叔并不能要求使用这个软件的人个个都是数据库高高手，就像我写这本书的时候并不能要求各位在学之前就会了里边儿的知识。</p>
 <p>也就是说我们无法避免某些同学写一些执行起来十分耗费性能的语句。即使是这样，设计<code>MySQL</code>的大叔还是依据一些规则，竭尽全力的把这个很糟糕的语句转换成某种可以比较高效执行的形式，这个过程也可以被称作<code>查询重写</code>（就是人家觉得你写的语句不好，自己再重写一遍）。下面详细唠叨一下一些比较重要的重写规则。</p>
 <h3 id="3-1条件化简"><a href="#3-1条件化简" class="headerlink" title="3.1条件化简"></a>3.1条件化简</h3><p>我们编写的查询语句的搜索条件本质上是一个表达式，这些表达式可能比较繁杂，或者不能高效的执行，<code>MySQL</code>的查询优化器会为我们简化这些表达式。为了方便大家理解，我们后边举例子的时候都使用诸如<code>a</code>、<code>b</code>、<code>c</code>之类的简单字母代表某个表的列名。</p>
 <h4 id="3-1-1移除不必要的括号"><a href="#3-1-1移除不必要的括号" class="headerlink" title="3.1.1移除不必要的括号"></a>3.1.1移除不必要的括号</h4><p>有时候表达式里有许多无用的括号，比如这样：</p>
@@ -1150,10 +1150,10 @@
 <p>当我们把子查询进行物化之后，假设子查询物化表的名称为<code>materialized_table</code>，该物化表存储的子查询结果集的列为<code>m_val</code>，那么这个查询其实可以从下边两种角度来看待：</p>
 <ul>
 <li><p>从表<code>s1</code>的角度来看待，整个查询的意思其实是：对于<code>s1</code>表中的每条记录来说，如果该记录的<code>key1</code>列的值在子查询对应的物化表中，则该记录会被加入最终的结果集。画个图表示一下就是这样：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16a8dda5369e68c5tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cvfj9up26i518t91li5ooq1r0u2d.png-84.9kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16a8dda5369e68c5tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cvfj9up26i518t91li5ooq1r0u2d.png-84.9kB"></p>
 </li>
 <li><p>从子查询物化表的角度来看待，整个查询的意思其实是：对于子查询物化表的每个值来说，如果能在<code>s1</code>表中找到对应的<code>key1</code>列的值与该值相等的记录，那么就把这些记录加入到最终的结果集。画个图表示一下就是这样：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16a8dda5394d3903tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cvfjg3os1oh1e3o5c11dhd1odd2q.png-67.4kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16a8dda5394d3903tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cvfjg3os1oh1e3o5c11dhd1odd2q.png-67.4kB"></p>
 <p>也就是说其实上边的查询就相当于表<code>s1</code>和子查询物化表<code>materialized_table</code>进行内连接：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> s1.<span class="operator">*</span> <span class="keyword">FROM</span> s1 <span class="keyword">INNER</span> <span class="keyword">JOIN</span> materialized_table <span class="keyword">ON</span> key1 <span class="operator">=</span> m_val;</span><br></pre></td></tr></table></figure>
 
@@ -1218,7 +1218,7 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> s1 </span><br><span class="line">    <span class="keyword">WHERE</span> key3 <span class="keyword">IN</span> (<span class="keyword">SELECT</span> key1 <span class="keyword">FROM</span> s2 <span class="keyword">WHERE</span> key1 <span class="operator">&gt;</span> <span class="string">&#x27;a&#x27;</span> <span class="keyword">AND</span> key1 <span class="operator">&lt;</span> <span class="string">&#x27;b&#x27;</span>);</span><br></pre></td></tr></table></figure>
 
 <p>在子查询中，对于<code>s2</code>表的访问可以使用到<code>key1</code>列的索引，而恰好子查询的查询列表处就是<code>key1</code>列，这样在将该查询转换为半连接查询后，如果将<code>s2</code>作为驱动表执行查询的话，那么执行过程就是这样：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16ecb503727bb15etplv-t2oaga2asx-jj-mark1890000q75.webp" alt="img"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/16ecb503727bb15etplv-t2oaga2asx-jj-mark1890000q75.webp" alt="img"> </p>
 <p>如图所示，在<code>s2</code>表的<code>idx_key1</code>索引中，值为<code>&#39;aa&#39;</code>的二级索引记录一共有3条，那么只需要取第一条的值到<code>s1</code>表中查找<code>s1.key3 = &#39;aa&#39;</code>的记录，如果能在<code>s1</code>表中找到对应的记录，那么就把对应的记录加入到结果集。依此类推，其他值相同的二级索引记录，也只需要取第一条记录的值到<code>s1</code>表中找匹配的记录，这种虽然是扫描索引，但只取值相同的记录的第一条去做匹配操作的方式称之为<code>松散扫描</code>。</p>
 </li>
 <li><p>Semi-join Materialization execution strategy</p>
@@ -1298,7 +1298,7 @@
 </li>
 </ul>
 <h5 id="ANY-x2F-ALL子查询优化"><a href="#ANY-x2F-ALL子查询优化" class="headerlink" title="ANY&#x2F;ALL子查询优化"></a>ANY&#x2F;ALL子查询优化</h5><p>如果ANY&#x2F;ALL子查询是不相关子查询的话，它们在很多场合都能转换成我们熟悉的方式去执行，比方说：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219151453493.png" alt="image-20231219151453493"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%AF%87/image-20231219151453493.png" alt="image-20231219151453493"> </p>
 <h5 id="NOT-EXISTS子查询的执行"><a href="#NOT-EXISTS子查询的执行" class="headerlink" title="[NOT] EXISTS子查询的执行"></a>[NOT] EXISTS子查询的执行</h5><p>如果<code>[NOT] EXISTS</code>子查询是不相关子查询，可以先执行子查询，得出该<code>[NOT] EXISTS</code>子查询的结果是<code>TRUE</code>还是<code>FALSE</code>，并重写原先的查询语句，比如对这个查询来说：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> s1 </span><br><span class="line">    <span class="keyword">WHERE</span> <span class="keyword">EXISTS</span> (<span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> s2 <span class="keyword">WHERE</span> key1 <span class="operator">=</span> <span class="string">&#x27;a&#x27;</span>) </span><br><span class="line">        <span class="keyword">OR</span> key2 <span class="operator">&gt;</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
 

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis原理之数据类型1.String  2.List   3.Set   4.ZSet     5.Hash">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis原理之数据类型">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis原理之数据类型1.String  2.List   3.Set   4.ZSet     5.Hash">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174650085-1708769238963-3.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174709255.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174754519.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175012514.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175119833.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175155680.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175350444.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175617900.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175705263.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175736589.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180006820.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180025965.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180359901.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180504427.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180819402.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180940219.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224181046644.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224181105151.png">
+<meta property="article:published_time" content="2024-02-24T10:06:53.193Z">
+<meta property="article:modified_time" content="2024-02-24T10:11:08.333Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174650085-1708769238963-3.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis原理之数据类型</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/22/Java%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%B8%8E%E8%AE%BF%E9%97%AE%E5%AE%9A%E4%BD%8D/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&text=Redis原理之数据类型"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&is_video=false&description=Redis原理之数据类型"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis原理之数据类型&body=Check out this article: https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&name=Redis原理之数据类型&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&t=Redis原理之数据类型"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.</span> <span class="toc-text">Redis原理之数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-String"><span class="toc-number">1.1.</span> <span class="toc-text">1.String</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-List"><span class="toc-number">1.2.</span> <span class="toc-text">2.List</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Set"><span class="toc-number">1.3.</span> <span class="toc-text">3.Set</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-ZSet"><span class="toc-number">1.4.</span> <span class="toc-text">4.ZSet</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Hash"><span class="toc-number">1.5.</span> <span class="toc-text">5.Hash</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis原理之数据类型
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-24T10:06:53.193Z" class="dt-published" itemprop="datePublished">2024-02-24</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis原理之数据类型"><a href="#Redis原理之数据类型" class="headerlink" title="Redis原理之数据类型"></a>Redis原理之数据类型</h1><h2 id="1-String"><a href="#1-String" class="headerlink" title="1.String"></a>1.String</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174650085-1708769238963-3.png" alt="image-20240224174650085"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174709255.png" alt="image-20240224174709255"></p>
+<h2 id="2-List"><a href="#2-List" class="headerlink" title="2.List"></a>2.List</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174754519.png" alt="image-20240224174754519"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175012514.png" alt="image-20240224175012514"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175119833.png" alt="image-20240224175119833"></p>
+<h2 id="3-Set"><a href="#3-Set" class="headerlink" title="3.Set"></a>3.Set</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175155680.png" alt="image-20240224175155680"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175350444.png" alt="image-20240224175350444"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175617900.png" alt="image-20240224175617900"></p>
+<h2 id="4-ZSet"><a href="#4-ZSet" class="headerlink" title="4.ZSet"></a>4.ZSet</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175705263.png" alt="image-20240224175705263"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175736589.png" alt="image-20240224175736589"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180006820.png" alt="image-20240224180006820"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180025965.png" alt="image-20240224180025965"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180359901.png" alt="image-20240224180359901"></p>
+<h2 id="5-Hash"><a href="#5-Hash" class="headerlink" title="5.Hash"></a>5.Hash</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180504427.png" alt="image-20240224180504427"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180819402.png" alt="image-20240224180819402"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180940219.png" alt="image-20240224180940219"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224181046644.png" alt="image-20240224181046644"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224181105151.png" alt="image-20240224181105151"></p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.</span> <span class="toc-text">Redis原理之数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-String"><span class="toc-number">1.1.</span> <span class="toc-text">1.String</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-List"><span class="toc-number">1.2.</span> <span class="toc-text">2.List</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Set"><span class="toc-number">1.3.</span> <span class="toc-text">3.Set</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-ZSet"><span class="toc-number">1.4.</span> <span class="toc-text">4.ZSet</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Hash"><span class="toc-number">1.5.</span> <span class="toc-text">5.Hash</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&text=Redis原理之数据类型"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&is_video=false&description=Redis原理之数据类型"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis原理之数据类型&body=Check out this article: https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&title=Redis原理之数据类型"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&name=Redis原理之数据类型&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/&t=Redis原理之数据类型"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

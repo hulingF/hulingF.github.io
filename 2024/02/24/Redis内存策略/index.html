@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis内存策略 1.内存过期策略 1.1DB结构  1.2过期策略   2.内存淘汰策略2.1淘汰时机 2.2淘汰策略">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis内存策略">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis内存策略 1.内存过期策略 1.1DB结构  1.2过期策略   2.内存淘汰策略2.1淘汰时机 2.2淘汰策略">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183240680.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183310665.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183338949.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183407164.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183530137.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183624650.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183717314.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224185944327.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224190041984.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224190324955.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224191401165.png">
+<meta property="article:published_time" content="2024-02-24T10:12:27.344Z">
+<meta property="article:modified_time" content="2024-02-24T11:14:04.479Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183240680.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis内存策略</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&text=Redis内存策略"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&is_video=false&description=Redis内存策略"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis内存策略&body=Check out this article: https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&name=Redis内存策略&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&t=Redis内存策略"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5"><span class="toc-number">1.</span> <span class="toc-text">Redis内存策略</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%86%85%E5%AD%98%E8%BF%87%E6%9C%9F%E7%AD%96%E7%95%A5"><span class="toc-number">1.1.</span> <span class="toc-text">1.内存过期策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1DB%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1DB结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E8%BF%87%E6%9C%9F%E7%AD%96%E7%95%A5"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2过期策略</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%86%85%E5%AD%98%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5"><span class="toc-number">1.2.</span> <span class="toc-text">2.内存淘汰策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E6%B7%98%E6%B1%B0%E6%97%B6%E6%9C%BA"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1淘汰时机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2淘汰策略</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis内存策略
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-24T10:12:27.344Z" class="dt-published" itemprop="datePublished">2024-02-24</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis内存策略"><a href="#Redis内存策略" class="headerlink" title="Redis内存策略"></a>Redis内存策略</h1><p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183240680.png" alt="image-20240224183240680"></p>
+<h2 id="1-内存过期策略"><a href="#1-内存过期策略" class="headerlink" title="1.内存过期策略"></a>1.内存过期策略</h2><p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183310665.png" alt="image-20240224183310665"></p>
+<h3 id="1-1DB结构"><a href="#1-1DB结构" class="headerlink" title="1.1DB结构"></a>1.1DB结构</h3><p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183338949.png" alt="image-20240224183338949"></p>
+<p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183407164.png" alt="image-20240224183407164"></p>
+<h3 id="1-2过期策略"><a href="#1-2过期策略" class="headerlink" title="1.2过期策略"></a>1.2过期策略</h3><p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183530137.png" alt="image-20240224183530137"></p>
+<p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183624650.png" alt="image-20240224183624650"></p>
+<p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224183717314.png" alt="image-20240224183717314"></p>
+<h2 id="2-内存淘汰策略"><a href="#2-内存淘汰策略" class="headerlink" title="2.内存淘汰策略"></a>2.内存淘汰策略</h2><h3 id="2-1淘汰时机"><a href="#2-1淘汰时机" class="headerlink" title="2.1淘汰时机"></a>2.1淘汰时机</h3><p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224185944327.png" alt="image-20240224185944327"></p>
+<h3 id="2-2淘汰策略"><a href="#2-2淘汰策略" class="headerlink" title="2.2淘汰策略"></a>2.2淘汰策略</h3><p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224190041984.png" alt="image-20240224190041984"></p>
+<p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224190324955.png" alt="image-20240224190324955"></p>
+<p><img src="/imgs/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/image-20240224191401165.png" alt="image-20240224191401165"></p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5"><span class="toc-number">1.</span> <span class="toc-text">Redis内存策略</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%86%85%E5%AD%98%E8%BF%87%E6%9C%9F%E7%AD%96%E7%95%A5"><span class="toc-number">1.1.</span> <span class="toc-text">1.内存过期策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1DB%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1DB结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E8%BF%87%E6%9C%9F%E7%AD%96%E7%95%A5"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2过期策略</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%86%85%E5%AD%98%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5"><span class="toc-number">1.2.</span> <span class="toc-text">2.内存淘汰策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E6%B7%98%E6%B1%B0%E6%97%B6%E6%9C%BA"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1淘汰时机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2淘汰策略</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&text=Redis内存策略"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&is_video=false&description=Redis内存策略"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis内存策略&body=Check out this article: https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&title=Redis内存策略"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&name=Redis内存策略&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/&t=Redis内存策略"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

@@ -49,7 +49,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162509841.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4a99c9a08tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="article:published_time" content="2023-12-16T16:00:00.000Z">
-<meta property="article:modified_time" content="2023-12-22T08:27:48.605Z">
+<meta property="article:modified_time" content="2024-02-20T01:59:34.666Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="MySQL原理">
 <meta name="twitter:card" content="summary">
@@ -214,8 +214,8 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SHOW</span> DATABASES;</span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+</span></span><br><span class="line"><span class="operator">|</span> Database           <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+</span></span><br><span class="line"><span class="operator">|</span> atguigudb          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> character_demo_db  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> huling             <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> information_schema <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> learnjdbc          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> mybatis            <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> mysql              <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> performance_schema <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> sys                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------+</span></span><br><span class="line"><span class="number">9</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
 
 <p>可以看到在我的计算机上当前有9个数据库，其中<code>charset_demo_db</code>、<code>atguigudb</code>、<code>huling</code>、<code>learnjdbc</code>和<code>mybatis</code>数据库是我们自定义的，其余4个数据库是属于MySQL自带的系统数据库。我们再看一下我的计算机上的<code>数据目录</code>下的内容：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172514225.png" alt="image-20231218172514225"></p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172546036.png" alt="image-20231218172546036"></p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172514225.png" alt="image-20231218172514225"></p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218172546036.png" alt="image-20231218172546036"></p>
 <p>当然这个数据目录下的文件和子目录比较多哈，但是如果仔细看的话，除了<code>information_schema</code>这个系统数据库外，其他的数据库在<code>数据目录</code>下都有对应的子目录。这个<code>information_schema</code>比较特殊，设计MySQL的大叔们对它的实现进行了特殊对待，没有使用相应的数据库目录，我们忽略它的存在就好了哈。</p>
 <h4 id="1-3-2表在文件系统中的表示"><a href="#1-3-2表在文件系统中的表示" class="headerlink" title="1.3.2表在文件系统中的表示"></a>1.3.2表在文件系统中的表示</h4><p>我们的数据其实都是以记录的形式插入到表中的，每个表的信息其实可以分为两种：</p>
 <ol>
@@ -235,7 +235,7 @@
 <p>为了更好的管理这些页，设计<code>InnoDB</code>的大叔们提出了一个<code>表空间</code>或者<code>文件空间</code>（英文名：<code>table space</code>或者<code>file space</code>）的概念，这个表空间是一个抽象的概念，它可以对应文件系统上一个或多个真实文件（不同表空间对应的文件数量可能不同）。每一个<code>表空间</code>可以被划分为很多很多很多个<code>页</code>，我们的表数据就存放在某个<code>表空间</code>下的某些页里。设计<code>InnoDB</code>的大叔将表空间划分为几种不同的类型，我们一个一个看一下。</p>
 <p><strong>系统表空间（system tablespace）</strong></p>
 <p>这个所谓的<code>系统表空间</code>可以对应文件系统上一个或多个实际的文件，默认情况下，<code>InnoDB</code>会在<code>数据目录</code>下创建一个名为<code>ibdata1</code>（在你的数据目录下找找看有木有）、大小为<code>12M</code>的文件，这个文件就是对应的<code>系统表空间</code>在文件系统上的表示。怎么才<code>12M</code>？这么点儿还没插多少数据就用完了，哈哈，那是因为这个文件是所谓的<code>自扩展文件</code>，也就是当不够用的时候它会自己增加文件大小～</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173643577.png" alt="image-20231218173643577"></p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173643577.png" alt="image-20231218173643577"></p>
 <p>当然，如果你想让系统表空间对应文件系统上多个实际文件，或者仅仅觉得原来的<code>ibdata1</code>这个文件名难听，那可以在<code>MySQL</code>启动时配置对应的文件路径以及它们的大小，比如我们这样修改一下配置文件：</p>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[server]</span></span><br><span class="line"><span class="attr">innodb_data_file_path</span>=data1:<span class="number">512</span>M<span class="comment">;data2:512M:autoextend</span></span><br></pre></td></tr></table></figure>
 
@@ -243,7 +243,7 @@
 <p>需要注意的一点是，在一个MySQL服务器中，系统表空间只有一份。从MySQL5.5.7到MySQL5.6.6之间的各个版本中，我们表中的数据都会被默认存储到这个<strong>系统表空间</strong>。</p>
 <p><strong>独立表空间(file-per-table tablespace)</strong></p>
 <p>在MySQL5.6.6以及之后的版本中，<code>InnoDB</code>并不会默认的把各个表的数据存储到系统表空间中，而是为每一个表建立一个独立表空间，也就是说我们创建了多少个表，就有多少个独立表空间。使用<code>独立表空间</code>来存储表数据的话，会在该表所属数据库对应的子目录下创建一个表示该<code>独立表空间</code>的文件，文件名和表名相同，只不过添加了一个<code>.ibd</code>的扩展名而已，所以完整的文件名称为<code>表名.ibd</code>。</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173711671.png" alt="image-20231218173711671"></p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231218173711671.png" alt="image-20231218173711671"></p>
 <p>当然我们也可以自己指定使用<code>系统表空间</code>还是<code>独立表空间</code>来存储数据，这个功能由启动参数<code>innodb_file_per_table</code>控制，比如说我们想刻意将表数据都存储到<code>系统表空间</code>时，可以在启动<code>MySQL</code>服务器的时候这样配置：</p>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[server]</span></span><br><span class="line"><span class="attr">innodb_file_per_table</span>=<span class="number">0</span></span><br></pre></td></tr></table></figure>
 
@@ -307,17 +307,17 @@
 </li>
 </ul>
 <h2 id="二、InnoDB的表空间"><a href="#二、InnoDB的表空间" class="headerlink" title="二、InnoDB的表空间"></a>二、InnoDB的表空间</h2><h3 id="2-1回忆一些旧知识"><a href="#2-1回忆一些旧知识" class="headerlink" title="2.1回忆一些旧知识"></a>2.1回忆一些旧知识</h3><h4 id="2-1-1页面类型"><a href="#2-1-1页面类型" class="headerlink" title="2.1.1页面类型"></a>2.1.1页面类型</h4><p>再一次强调，InnoDB是以页为单位管理存储空间的，我们的聚簇索引（也就是完整的表数据）和其他的二级索引都是以<code>B+</code>树的形式保存到表空间的，而<code>B+</code>树的节点就是数据页。我们前边说过，这个数据页的类型名其实是：<code>FIL_PAGE_INDEX</code>，除了这种存放索引数据的页面类型之外，InnoDB也为了不同的目的设计了若干种不同类型的页面，为了唤醒大家的记忆，我们再一次把各种常用的页面类型提出来：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222151342156.png" alt="image-20231222151342156"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222151342156.png" alt="image-20231222151342156"></p>
 <p>因为页面类型前边都有个<code>FIL_PAGE</code>或者<code>FIL_PAGE_TYPE</code>的前缀，为简便起见我们后边唠叨页面类型的时候就把这些前缀省略掉了，比方说<code>FIL_PAGE_TYPE_ALLOCATED</code>类型称为<code>ALLOCATED</code>类型，<code>FIL_PAGE_INDEX</code>类型称为<code>INDEX</code>类型。</p>
 <h4 id="2-1-2页面通用部分"><a href="#2-1-2页面通用部分" class="headerlink" title="2.1.2页面通用部分"></a>2.1.2页面通用部分</h4><p>我们前边说过数据页，也就是<code>INDEX</code>类型的页由7个部分组成，其中的两个部分是所有类型的页面都通用的。当然我不能寄希望于你把我说的话都记住，所以在这里重新强调一遍，任何类型的页面都有下边这种通用的结构：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f33c338667tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crjupisqne61uer17ikh6l1v8k9.png-44.9kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f33c338667tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crjupisqne61uer17ikh6l1v8k9.png-44.9kB"> </p>
 <p>从上图中可以看出，任何类型的页都会包含这两个部分：</p>
 <ul>
 <li><code>File Header</code>：记录页面的一些通用信息</li>
 <li><code>File Trailer</code>：校验页是否完整，保证从内存到磁盘刷新时内容的一致性。</li>
 </ul>
 <p>对于<code>File Trailer</code>我们不再做过多强调，全部忘记了的话可以到将数据页的那一章回顾一下。我们这里再强调一遍<code>File Header</code>的各个组成部分：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222151634969.png" alt="image-20231222151634969"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222151634969.png" alt="image-20231222151634969"> </p>
 <p>现在除了名称里边儿带有<code>LSN</code>的两个字段大家可能看不懂以外，其他的字段肯定都是倍儿熟了，不过我们仍要强调这么几点：</p>
 <ul>
 <li>表空间中的每一个页都对应着一个页号，也就是<code>FIL_PAGE_OFFSET</code>，这个页号由4个字节组成，也就是32个比特位，所以一个表空间最多可以拥有2³²个页，如果按照页的默认大小16KB来算，一个表空间最多支持64TB的数据。表空间的第一个页的页号为0，之后的页号分别是1，2，3…依此类推</li>
@@ -326,9 +326,9 @@
 </ul>
 <p>我们知道<code>InnoDB</code>支持许多种类型的表空间，本章重点关注独立表空间和系统表空间的结构。它们的结构比较相似，但是由于系统表空间中额外包含了一些关于整个系统的信息，所以我们先挑简单一点的独立表空间来唠叨，稍后再说系统表空间的结构。</p>
 <h3 id="2-2区（extent）的概念"><a href="#2-2区（extent）的概念" class="headerlink" title="2.2区（extent）的概念"></a>2.2区（extent）的概念</h3><p>表空间中的页实在是太多了，为了更好的管理这些页面，设计<code>InnoDB</code>的大叔们提出了<code>区</code>（英文名：<code>extent</code>）的概念。对于16KB的页来说，连续的64个页就是一个<code>区</code>，也就是说一个区默认占用1MB空间大小。不论是系统表空间还是独立表空间，都可以看成是由若干个区组成的，每256个区被划分成一组。画个图表示就是这样：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f33c4a1c3atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cri1nutcorp5ghf5c7vqagt1j.png-71.4kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f33c4a1c3atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cri1nutcorp5ghf5c7vqagt1j.png-71.4kB"></p>
 <p>其中<code>extent 0</code> ~ <code>extent 255</code>这256个区算是第一个组，<code>extent 256</code> ~ <code>extent 511</code>这256个区算是第二个组，<code>extent 512</code> ~ <code>extent 767</code>这256个区算是第三个组（上图中并未画全第三个组全部的区，请自行脑补），依此类推可以划分更多的组。这些组的头几个页面的类型都是类似的，就像这样：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f33df9307atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crjo0hl4q8u1dkdofe187b10fa9.png-105.2kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f33df9307atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crjo0hl4q8u1dkdofe187b10fa9.png-105.2kB"></p>
 <p>从上图中我们能得到如下信息：</p>
 <ul>
 <li>第一个组最开始的3个页面的类型是固定的，也就是说<code>extent 0</code>这个区最开始的3个页面的类型是固定的，分别是：<ul>
@@ -349,16 +349,16 @@
 <p>？？啥？？表里的记录多了又怎样？<code>B+</code>树的每一层中的页都会形成一个双向链表呀，<code>File Header</code>中的<code>FIL_PAGE_PREV</code>和<code>FIL_PAGE_NEXT</code>字段不就是为了形成双向链表设置的么？</p>
 <p>是的是的，您说的都对，从理论上说，不引入<code>区</code>的概念只使用<code>页</code>的概念对存储引擎的运行并没啥影响，但是我们来考虑一下下边这个场景：</p>
 <ul>
-<li>我们每向表中插入一条记录，本质上就是向该表的聚簇索引以及所有二级索引代表的<code>B+</code>树的节点中插入数据。而<code>B+</code>树的每一层中的页都会形成一个双向链表，如果是以<code>页</code>为单位来分配存储空间的话，双向链表相邻的两个页之间的物理位置可能离得非常远。我们介绍<code>B+</code>树索引的适用场景的时候特别提到范围查询只需要定位到最左边的记录和最右边的记录，然后沿着双向链表一直扫描就可以了，而如果链表中相邻的两个页物理位置离得非常远，就是所谓的<code>随机I/O</code>。再一次强调，磁盘的速度和内存的速度差了好几个数量级，<code>随机I/O</code>是非常慢的，所以我们应该尽量让链表中相邻的页的物理位置也相邻，这样进行范围查询的时候才可以使用所谓的<code>顺序I/O</code>。</li>
+<li>我们每向表中插入一条记录，本质上就是向该表的聚簇索引以及所有二级索引代表的<code>B+</code>树的节点中插入数据。而<code>B+</code>树的每一层中的页都会形成一个双向链表，如果是以<code>页</code>为单位来分配存储空间的话，双向链表相邻的两个页之间的物理位置可能离得非常远。我们介绍<code>B+</code>树索引的适用场景的时候特别提到范围查询只需要定位到最左边的记录和最右边的记录，然后沿着双向链表一直扫描就可以了，而如果链表中相邻的两个页物理位置离得非常远，就是所谓的<code>随机I/O</code>。再一次强调，磁盘的速度和内存的速度差了好几个数量级，<code>随机I/O</code>是非常慢的，所以<strong>我们应该尽量让链表中相邻的页的物理位置也相邻</strong>，这样进行范围查询的时候才可以使用所谓的<code>顺序I/O</code>。</li>
 </ul>
-<p>所以，所以，所以才引入了<code>区</code>（<code>extent</code>）的概念，一个区就是在物理位置上连续的64个页。在表中数据量大的时候，为某个索引分配空间的时候就不再按照页为单位分配了，而是按照<code>区</code>为单位分配，甚至在表中的数据十分非常特别多的时候，可以一次性分配多个连续的区。虽然可能造成一点点空间的浪费（数据不足填充满整个区），但是从性能角度看，可以消除很多的随机<code>I/O</code>，功大于过嘛！</p>
-<p>事情到这里就结束了么？太天真了，我们提到的范围查询，其实是对<code>B+</code>树叶子节点中的记录进行顺序扫描，而如果不区分叶子节点和非叶子节点，统统把节点代表的页面放到申请到的区中的话，进行范围扫描的效果就大打折扣了。所以设计<code>InnoDB</code>的大叔们对<code>B+</code>树的叶子节点和非叶子节点进行了区别对待，也就是说叶子节点有自己独有的<code>区</code>，非叶子节点也有自己独有的<code>区</code>。存放叶子节点的区的集合就算是一个<code>段</code>（<code>segment</code>），存放非叶子节点的区的集合也算是一个<code>段</code>。也就是说一个索引会生成2个段，一个叶子节点段，一个非叶子节点段。</p>
-<p>默认情况下一个使用<code>InnoDB</code>存储引擎的表只有一个聚簇索引，一个索引会生成2个段，而段是以区为单位申请存储空间的，一个区默认占用1M存储空间，所以默认情况下一个只存了几条记录的小表也需要2M的存储空间么？以后每次添加一个索引都要多申请2M的存储空间么？这对于存储记录比较少的表简直是天大的浪费。设计<code>InnoDB</code>的大叔们都挺节俭的，当然也考虑到了这种情况。这个问题的症结在于到现在为止我们介绍的区都是非常<code>纯粹</code>的，也就是一个区被整个分配给某一个段，或者说区中的所有页面都是为了存储同一个段的数据而存在的，即使段的数据填不满区中所有的页面，那余下的页面也不能挪作他用。现在为了考虑以完整的区为单位分配给某个段对于数据量较小的表太浪费存储空间的这种情况，设计<code>InnoDB</code>的大叔们提出了一个碎片（fragment）区的概念，也就是在一个碎片区中，并不是所有的页都是为了存储同一个段的数据而存在的，而是碎片区中的页可以用于不同的目的，比如有些页用于段A，有些页用于段B，有些页甚至哪个段都不属于。碎片区直属于表空间，并不属于任何一个段。所以此后为某个段分配存储空间的策略是这样的：</p>
+<p>所以，所以，所以才引入了<code>区</code>（<code>extent</code>）的概念，<strong>一个区就是在物理位置上连续的64个页</strong>。在表中数据量大的时候，为某个索引分配空间的时候就不再按照页为单位分配了，而是按照<code>区</code>为单位分配，甚至在表中的数据十分非常特别多的时候，可以一次性分配多个连续的区。虽然可能造成一点点空间的浪费（数据不足填充满整个区），但是从性能角度看，可以消除很多的随机<code>I/O</code>，功大于过嘛！</p>
+<p>事情到这里就结束了么？太天真了，我们提到的范围查询，其实是对<code>B+</code>树叶子节点中的记录进行顺序扫描，而如果不区分叶子节点和非叶子节点，统统把节点代表的页面放到申请到的区中的话，进行范围扫描的效果就大打折扣了。所以设计<code>InnoDB</code>的大叔们对<code>B+</code>树的叶子节点和非叶子节点进行了区别对待，也就是说叶子节点有自己独有的<code>区</code>，非叶子节点也有自己独有的<code>区</code>。存放叶子节点的区的集合就算是一个<code>段</code>（<code>segment</code>），存放非叶子节点的区的集合也算是一个<code>段</code>。<strong>也就是说一个索引会生成2个段，一个叶子节点段，一个非叶子节点段。</strong></p>
+<p>默认情况下一个使用<code>InnoDB</code>存储引擎的表只有一个聚簇索引，一个索引会生成2个段，而段是以区为单位申请存储空间的，一个区默认占用1M存储空间，所以默认情况下一个只存了几条记录的小表也需要2M的存储空间么？以后每次添加一个索引都要多申请2M的存储空间么？这对于存储记录比较少的表简直是天大的浪费。设计InnoDB的大叔们都挺节俭的，当然也考虑到了这种情况。这个问题的症结在于到现在为止我们介绍的区都是非常<code>纯粹</code>的，也就是一个区被整个分配给某一个段，或者说区中的所有页面都是为了存储同一个段的数据而存在的，即使段的数据填不满区中所有的页面，那余下的页面也不能挪作他用。现在为了考虑以完整的区为单位分配给某个段对于数据量较小的表太浪费存储空间的这种情况，设计InnoDB的大叔们提出了一个<code>碎片（fragment）区</code>的概念，<strong>也就是在一个碎片区中，并不是所有的页都是为了存储同一个段的数据而存在的，而是碎片区中的页可以用于不同的目的</strong>，比如有些页用于段A，有些页用于段B，有些页甚至哪个段都不属于。<code>碎片区直属于表空间，并不属于任何一个段</code>。所以此后为某个段分配存储空间的策略是这样的：</p>
 <ul>
-<li>在刚开始向表中插入数据的时候，段是从某个碎片区以单个页面为单位来分配存储空间的。</li>
-<li>当某个段已经占用了32个碎片区页面之后，就会以完整的区为单位来分配存储空间。</li>
+<li>在刚开始向表中插入数据的时候，段是从某个<code>碎片区</code>以<code>单个页面</code>为单位来分配存储空间的。</li>
+<li>当某个段已经占用了<code>32个碎片区页面</code>之后，就会以<code>完整的区</code>为单位来分配存储空间。</li>
 </ul>
-<p>所以现在段不能仅定义为是某些区的集合，更精确的应该是某些零散的页面以及一些完整的区的集合。除了索引的叶子节点段和非叶子节点段之外，<code>InnoDB</code>中还有为存储一些特殊的数据而定义的段，比如回滚段，当然我们现在并不关心别的类型的段，现在只需要知道段是一些零散的页面以及一些完整的区的集合就好了。</p>
+<p><strong>所以现在段不能仅定义为是某些区的集合，更精确的应该是某些零散的页面以及一些完整的区的集合。</strong>除了索引的叶子节点段和非叶子节点段之外，<code>InnoDB</code>中还有为存储一些特殊的数据而定义的段，比如回滚段，当然我们现在并不关心别的类型的段，现在只需要知道段是一些零散的页面以及一些完整的区的集合就好了。</p>
 <h3 id="2-4区的分类"><a href="#2-4区的分类" class="headerlink" title="2.4区的分类"></a>2.4区的分类</h3><p>通过上边一通唠叨，大家知道了表空间的是由若干个区组成的，这些区大体上可以分为4种类型：</p>
 <ul>
 <li>空闲的区：现在还没有用到这个区中的任何页面。</li>
@@ -367,10 +367,10 @@
 <li>附属于某个段的区。每一个索引都可以分为叶子节点段和非叶子节点段，除此之外InnoDB还会另外定义一些特殊作用的段，在这些段中的数据量很大时将使用区来作为基本的分配单位。</li>
 </ul>
 <p>这4种类型的区也可以被称为区的4种状态（<code>State</code>），设计<code>InnoDB</code>的大叔们为这4种状态的区定义了特定的名词儿：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222155131849.png" alt="image-20231222155131849"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222155131849.png" alt="image-20231222155131849"></p>
 <p>需要再次强调一遍的是，处于<code>FREE</code>、<code>FREE_FRAG</code>以及<code>FULL_FRAG</code>这三种状态的区都是独立的，算是直属于表空间；而处于<code>FSEG</code>状态的区是附属于某个段的。</p>
 <p>为了方便管理这些区，设计<code>InnoDB</code>的大叔设计了一个称为<code>XDES Entry</code>的结构（全称就是Extent Descriptor Entry），每一个区都对应着一个<code>XDES Entry</code>结构，这个结构记录了对应的区的一些属性。我们先看图来对这个结构有个大致的了解：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f343654829tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crre79uq9971bsdj9s1i0j11en8a.png-96.2kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f343654829tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crre79uq9971bsdj9s1i0j11en8a.png-96.2kB"> </p>
 <p>从图中我们可以看出，<code>XDES Entry</code>是一个40个字节的结构，大致分为4个部分，各个部分的释义如下：</p>
 <ul>
 <li><p><code>Segment ID</code>（8字节）</p>
@@ -378,7 +378,7 @@
 </li>
 <li><p><code>List Node</code>（12字节）</p>
 <p>这个部分可以将若干个<code>XDES Entry</code>结构串联成一个链表，大家看一下这个<code>List Node</code>的结构：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f3444b1515tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crre8tlh1vmqtfipk663l173q97.png-69.1kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f3444b1515tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crre8tlh1vmqtfipk663l173q97.png-69.1kB"></p>
 <p>如果我们想定位表空间内的某一个位置的话，只需指定页号以及该位置在指定页号中的页内偏移量即可。所以：</p>
 <ul>
 <li><code>Pre Node Page Number</code>和<code>Pre Node Offset</code>的组合就是指向前一个<code>XDES Entry</code>的指针</li>
@@ -418,17 +418,17 @@
 </li>
 </ul>
 <p>上边光是介绍了一堆链表，可我们怎么找到这些链表呢，或者说怎么找到某个链表的头节点或者尾节点在表空间中的位置呢？设计<code>InnoDB</code>的大叔当然考虑了这个问题，他们设计了一个叫<code>List Base Node</code>的结构，翻译成中文就是链表的基节点。这个结构中包含了链表的头节点和尾节点的指针以及这个链表中包含了多少节点的信息，我们画图看一下这个结构的示意图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f388927e1ctplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crrehf6i1jsq1j5cubj1mdoh77a4.png-81.6kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f388927e1ctplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crrehf6i1jsq1j5cubj1mdoh77a4.png-81.6kB"></p>
 <p>我们上边介绍的每个链表都对应这么一个<code>List Base Node</code>结构，其中：</p>
 <ul>
-<li><code>List Length</code>表明该链表一共有多少节点，</li>
+<li><code>List Length</code>表明该链表一共有多少节点。</li>
 <li><code>First Node Page Number</code>和<code>First Node Offset</code>表明该链表的头节点在表空间中的位置。</li>
 <li><code>Last Node Page Number</code>和<code>Last Node Offset</code>表明该链表的尾节点在表空间中的位置。</li>
 </ul>
 <p>一般我们把某个链表对应的<code>List Base Node</code>结构放置在表空间中固定的位置，这样想找定位某个链表就变得so easy啦。</p>
 <p>综上所述，表空间是由若干个区组成的，每个区都对应一个<code>XDES Entry</code>的结构，直属于表空间的区对应的<code>XDES Entry</code>结构可以分成<code>FREE</code>、<code>FREE_FRAG</code>和<code>FULL_FRAG</code>这3个链表；每个段可以附属若干个区，每个段中的区对应的<code>XDES Entry</code>结构可以分成<code>FREE</code>、<code>NOT_FULL</code>和<code>FULL</code>这3个链表。每个链表都对应一个<code>List Base Node</code>的结构，这个结构里记录了链表的头、尾节点的位置以及该链表中包含的节点数。正是因为这些链表的存在，管理这些区才变成了一件so easy的事情。</p>
 <h3 id="2-5段的结构"><a href="#2-5段的结构" class="headerlink" title="2.5段的结构"></a>2.5段的结构</h3><p>我们前边说过，段其实不对应表空间中某一个连续的物理区域，而是一个逻辑上的概念，由若干个零散的页面以及一些完整的区组成。像每个区都有对应的<code>XDES Entry</code>来记录这个区中的属性一样，设计<code>InnoDB</code>的大叔为每个段都定义了一个<code>INODE Entry</code>结构来记录一下段中的属性。大家看一下示意图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4087c4a56tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crrju0cnji91a2fhv91ijb15hgb1.png-111.4kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4087c4a56tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crrju0cnji91a2fhv91ijb15hgb1.png-111.4kB"></p>
 <p>它的各个部分释义如下：</p>
 <ul>
 <li><p><code>Segment ID</code></p>
@@ -448,16 +448,19 @@
 </li>
 </ul>
 <p>结合着这个<code>INODE Entry</code>结构，大家可能对段是一些零散页面和一些完整的区的集合的理解再次深刻一些。</p>
+<blockquote>
+<p>Innodb的INODE Entry结构有些类似于操作系统中文件系统的Inode结构(采用<code>混合索引</code>即前面若干个直接盘块号+随后的一级盘块号+随后的二级盘块号)</p>
+</blockquote>
 <h3 id="2-6各类型页面详细情况"><a href="#2-6各类型页面详细情况" class="headerlink" title="2.6各类型页面详细情况"></a>2.6各类型页面详细情况</h3><p>到现在为止我们已经大概清楚了表空间、段、区、XDES Entry、INODE Entry、各种以<code>XDES Entry</code>为节点的链表的基本概念了，可是总有一种飞在天上不踏实的感觉，每个区对应的<code>XDES Entry</code>结构到底存储在表空间的什么地方？直属于表空间的<code>FREE</code>、<code>FREE_FRAG</code>、<code>FULL_FRAG</code>链表的基节点到底存储在表空间的什么地方？每个段对应的<code>INODE Entry</code>结构到底存在表空间的什么地方？我们前边介绍了每256个连续的区算是一个组，想解决刚才提出来的这些个疑问还得从每个组开头的一些类型相同的页面说起，接下来我们一个页面一个页面的分析，真相马上就要浮出水面了。</p>
 <h4 id="2-6-1FSP-HDR类型"><a href="#2-6-1FSP-HDR类型" class="headerlink" title="2.6.1FSP_HDR类型"></a>2.6.1<code>FSP_HDR</code>类型</h4><p>首先看第一个组的第一个页面，当然也是表空间的第一个页面，页号为<code>0</code>。这个页面的类型是<code>FSP_HDR</code>，它存储了表空间的一些整体属性以及第一个组内256个区的对应的<code>XDES Entry</code>结构，直接看这个类型的页面的示意图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4733af475tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crmfvigk938c8h1hahglr15329.png-146.8kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4733af475tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crmfvigk938c8h1hahglr15329.png-146.8kB"> </p>
 <p>从图中可以看出，一个完整的<code>FSP_HDR</code>类型的页面大致由5个部分组成，各个部分的具体释义如下表：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160202304.png" alt="image-20231222160202304"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160202304.png" alt="image-20231222160202304"></p>
 <p><code>File Header</code>和<code>File Trailer</code>就不再强调了，另外的几个部分中，<code>Empty Space</code>是尚未使用的空间，我们不用管它，重点来看看<code>File Space Header</code>和<code>XDES Entry</code>这两个部分。</p>
 <p>从名字就可以看出来，这个部分是用来存储表空间的一些整体属性的，废话少说，看图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f47508ede5tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crrp2qp310rc10fd33ch716hcp.png-148.1kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f47508ede5tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1crrp2qp310rc10fd33ch716hcp.png-148.1kB"></p>
 <p>哇唔，字段有点儿多哦，不急一个一个慢慢看。下面是各个属性的简单描述：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160401963.png" alt="image-20231222160401963"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160401963.png" alt="image-20231222160401963"></p>
 <p>这里头的<code>Space ID</code>、<code>Not Used</code>、<code>Size</code>这三个字段大家肯定一看就懂，其他的字段我们再详细瞅瞅，为了大家的阅读体验，我就不严格按照实际的字段顺序来解释各个字段了哈。</p>
 <ul>
 <li><p><code>List Base Node for FREE List</code>、<code>List Base Node for FREE_FRAG List</code>、<code>List Base Node for FULL_FRAG List</code>。</p>
@@ -474,7 +477,7 @@
 </li>
 <li><p><code>Space Flags</code></p>
 <p>表空间对于一些布尔类型的属性，或者只需要寥寥几个比特位搞定的属性都放在了这个<code>Space Flags</code>中存储，虽然它只有4个字节，32个比特位大小，却存储了好多表空间的属性，详细情况如下表：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160615003.png" alt="image-20231222160615003"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160615003.png" alt="image-20231222160615003"></p>
 </li>
 <li><p><code>List Base Node for SEG_INODES_FULL List</code>和<code>List Base Node for SEG_INODES_FREE List</code></p>
 <p>每个段对应的<code>INODE Entry</code>结构会集中存放到一个类型为<code>INODE</code>的页中，如果表空间中的段特别多，则会有多个<code>INODE Entry</code>结构，可能一个页放不下，这些<code>INODE</code>类型的页会组成两种列表：</p>
@@ -487,13 +490,13 @@
 </ul>
 <h4 id="2-6-2XDES-Entry部分"><a href="#2-6-2XDES-Entry部分" class="headerlink" title="2.6.2XDES Entry部分"></a>2.6.2XDES Entry部分</h4><p>紧接着<code>File Space Header</code>部分的就是<code>XDES Entry</code>部分了，我们嘴上唠叨过无数次，却从没见过真身的<code>XDES Entry</code>就是在表空间的第一个页面中保存的。我们知道一个<code>XDES Entry</code>结构的大小是40字节，但是一个页面的大小有限，只能存放有限个<code>XDES Entry</code>结构，所以我们才把256个区划分成一组，在每组的第一个页面中存放256个<code>XDES Entry</code>结构。大家回看那个<code>FSP_HDR</code>类型页面的示意图，<code>XDES Entry 0</code>就对应着<code>extent 0</code>，<code>XDES Entry 1</code>就对应着<code>extent 1</code>… 依此类推，<code>XDES Entry255</code>就对应着<code>extent 255</code>。</p>
 <p>因为每个区对应的<code>XDES Entry</code>结构的地址是固定的，所以我们访问这些结构就so easy啦，至于该结构的详细使用情况我们已经唠叨的够明白了，在这就不赘述了。</p>
-<p>我们说过，每一个<code>XDES Entry</code>结构对应表空间的一个区，虽然一个<code>XDES Entry</code>结构只占用40字节，但你抵不住表空间的区的数量也多啊。在区的数量非常多时，一个单独的页可能就不够存放足够多的<code>XDES Entry</code>结构，所以我们把表空间的区分为了若干个组，每组开头的一个页面记录着本组内所有的区对应的<code>XDES Entry</code>结构。由于第一个组的第一个页面有些特殊，因为它也是整个表空间的第一个页面，所以除了记录本组中的所有区对应的<code>XDES Entry</code>结构以外，还记录着表空间的一些整体属性，这个页面的类型就是我们刚刚说完的<code>FSP_HDR</code>类型，整个表空间里只有一个这个类型的页面。除去第一个分组以外，之后的每个分组的第一个页面只需要记录本组内所有的区对应的<code>XDES Entry</code>结构即可，不需要再记录表空间的属性了，为了和<code>FSP_HDR</code>类型做区别，我们把之后每个分组的第一个页面的类型定义为<code>XDES</code>，它的结构和<code>FSP_HDR</code>类型是非常相似的：<img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f475c0ec2atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cs3vmoii1h971aje1iveack1l109.png-149.5kB"> </p>
+<p>我们说过，每一个<code>XDES Entry</code>结构对应表空间的一个区，虽然一个<code>XDES Entry</code>结构只占用40字节，但你抵不住表空间的区的数量也多啊。在区的数量非常多时，一个单独的页可能就不够存放足够多的<code>XDES Entry</code>结构，所以我们把表空间的区分为了若干个组，每组开头的一个页面记录着本组内所有的区对应的<code>XDES Entry</code>结构。由于第一个组的第一个页面有些特殊，因为它也是整个表空间的第一个页面，所以除了记录本组中的所有区对应的<code>XDES Entry</code>结构以外，还记录着表空间的一些整体属性，这个页面的类型就是我们刚刚说完的<code>FSP_HDR</code>类型，整个表空间里只有一个这个类型的页面。除去第一个分组以外，之后的每个分组的第一个页面只需要记录本组内所有的区对应的<code>XDES Entry</code>结构即可，不需要再记录表空间的属性了，为了和<code>FSP_HDR</code>类型做区别，我们把之后每个分组的第一个页面的类型定义为<code>XDES</code>，它的结构和<code>FSP_HDR</code>类型是非常相似的：<img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f475c0ec2atplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cs3vmoii1h971aje1iveack1l109.png-149.5kB"> </p>
 <p>与<code>FSP_HDR</code>类型的页面对比，除了少了<code>File Space Header</code>部分之外，也就是除了少了记录表空间整体属性的部分之外，其余的部分是一样一样的。由于我们上边唠叨的已经够仔细了，对于<code>XDES</code>类型的页面也就不重复唠叨了哈。</p>
 <h4 id="2-6-3IBUF-BITMAP类型"><a href="#2-6-3IBUF-BITMAP类型" class="headerlink" title="2.6.3IBUF_BITMAP类型"></a>2.6.3<code>IBUF_BITMAP</code>类型</h4><p>对比前边介绍表空间的图，每个分组的第二个页面的类型都是<code>IBUF_BITMAP</code>，这种类型的页里边记录了一些有关<code>Change Buffer</code>的东东，由于这个<code>Change Buffer</code>里又包含了贼多的概念，考虑到大家在一章中接受这么多新概念有点呼吸不适，怕大家心脏病犯了所以就把<code>Change Buffer</code>的相关知识放到后边的章节中，大家稍安勿躁哈。</p>
 <h4 id="2-6-4INODE类型"><a href="#2-6-4INODE类型" class="headerlink" title="2.6.4INODE类型"></a>2.6.4<code>INODE</code>类型</h4><p>再次对比前边介绍表空间的图，第一个分组的第三个页面的类型是<code>INODE</code>。我们前边说过设计<code>InnoDB</code>的大叔为每个索引定义了两个段，而且为某些特殊功能定义了些特殊的段。为了方便管理，他们又为每个段设计了一个<code>INODE Entry</code>结构，这个结构中记录了关于这个段的相关属性。而我们这会儿要介绍的这个<code>INODE</code>类型的页就是为了存储<code>INODE Entry</code>结构而存在的。好了，废话少说，直接看图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16ef3a8df380813etplv-t2oaga2asx-jj-mark1890000q75.webp" alt="img"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16ef3a8df380813etplv-t2oaga2asx-jj-mark1890000q75.webp" alt="img"> </p>
 <p>从图中可以看出，一个<code>INODE</code>类型的页面是由这几部分构成的：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160955616.png" alt="image-20231222160955616"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222160955616.png" alt="image-20231222160955616"></p>
 <p>除了<code>File Header</code>、<code>Empty Space</code>、<code>File Trailer</code>这几个老朋友外，我们重点关注<code>List Node for INODE Page List</code>和<code>INODE Entry</code>这两个部分。</p>
 <p>首先看<code>INODE Entry</code>部分，我们前边已经详细介绍过这个结构的组成了，主要包括对应的段内零散页面的地址以及附属于该段的<code>FREE</code>、<code>NOT_FULL</code>和<code>FULL</code>链表的基节点。每个<code>INODE Entry</code>结构占用192字节，一个页面里可以存储<code>85</code>个这样的结构。</p>
 <p>重点看一下<code>List Node for INODE Page List</code>这个玩意儿，因为一个表空间中可能存在超过85个段，所以可能一个<code>INODE</code>类型的页面不足以存储所有的段对应的<code>INODE Entry</code>结构，所以就需要额外的<code>INODE</code>类型的页面来存储这些结构。还是为了方便管理这些<code>INODE</code>类型的页面，设计<code>InnoDB</code>的大叔们将这些<code>INODE</code>类型的页面串联成两个不同的链表：</p>
@@ -507,19 +510,19 @@
 <li>如果<code>SEG_INODES_FREE</code>链表为空，则需要从表空间的<code>FREE_FRAG</code>链表中申请一个页面，修改该页面的类型为<code>INODE</code>，把该页面放到<code>SEG_INODES_FREE</code>链表中，与此同时把该<code>INODE Entry</code>结构放入该页面。</li>
 </ul>
 <h3 id="2-7Segment-Header-结构的运用"><a href="#2-7Segment-Header-结构的运用" class="headerlink" title="2.7Segment Header 结构的运用"></a>2.7Segment Header 结构的运用</h3><p>我们知道一个索引会产生两个段，分别是叶子节点段和非叶子节点段，而每个段都会对应一个<code>INODE Entry</code>结构，那我们怎么知道某个段对应哪个<code>INODE Entry</code>结构呢？所以得找个地方记下来这个对应关系。希望你还记得我们在唠叨数据页，也就是<code>INDEX</code>类型的页时有一个<code>Page Header</code>部分，当然我不能指望你记住，所以把<code>Page Header</code>部分再抄一遍给你看：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161232360.png" alt="image-20231222161232360"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161232360.png" alt="image-20231222161232360"></p>
 <p>其中的<code>PAGE_BTR_SEG_LEAF</code>和<code>PAGE_BTR_SEG_TOP</code>都占用10个字节，它们其实对应一个叫<code>Segment Header</code>的结构，该结构图示如下：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161300378.png" alt="image-20231222161300378"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161300378.png" alt="image-20231222161300378"></p>
 <p>各个部分的具体释义如下：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161319514.png" alt="image-20231222161319514"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161319514.png" alt="image-20231222161319514"></p>
 <p>这样子就很清晰了，<code>PAGE_BTR_SEG_LEAF</code>记录着叶子节点段对应的<code>INODE Entry</code>结构的地址是哪个表空间的哪个页面的哪个偏移量，<code>PAGE_BTR_SEG_TOP</code>记录着非叶子节点段对应的<code>INODE Entry</code>结构的地址是哪个表空间的哪个页面的哪个偏移量。这样子索引和其对应的段的关系就建立起来了。不过需要注意的一点是，因为一个索引只对应两个段，所以只需要在索引的根页面中记录这两个结构即可。</p>
 <h3 id="2-8真实表空间对应的文件大小"><a href="#2-8真实表空间对应的文件大小" class="headerlink" title="2.8真实表空间对应的文件大小"></a>2.8真实表空间对应的文件大小</h3><p>等会儿等会儿，上边的这些概念已经压的快喘不过气了。不过独立表空间有那么大么？我到数据目录里看了，一个新建的表对应的<code>.ibd</code>文件只占用了96K，才6个页面大小，上边的内容该不是扯犊子吧？</p>
 <p>哈，一开始表空间占用的空间自然是很小，因为表里边都没有数据嘛！不过别忘了这些<code>.ibd</code>文件是自扩展的，随着表中数据的增多，表空间对应的文件也逐渐增大。</p>
 <p>了解完了独立表空间的基本结构，系统表空间的结构也就好理解多了，系统表空间的结构和独立表空间基本类似，只不过由于整个MySQL进程只有一个系统表空间，在系统表空间中会额外记录一些有关整个系统信息的页面，所以会比独立表空间多出一些记录这些信息的页面。因为这个系统表空间最牛逼，相当于是表空间之首，所以它的<code>表空间 ID</code>（Space ID）是<code>0</code>。</p>
 <h3 id="2-9系统表空间的整体结构"><a href="#2-9系统表空间的整体结构" class="headerlink" title="2.9系统表空间的整体结构"></a>2.9系统表空间的整体结构</h3><p>系统表空间与独立表空间的一个非常明显的不同之处就是在表空间开头有许多记录整个系统属性的页面，如图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4911220d8tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1csbied27ohe1rgg32gquulplm.png-147.4kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4911220d8tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1csbied27ohe1rgg32gquulplm.png-147.4kB"> </p>
 <p>可以看到，系统表空间和独立表空间的前三个页面（页号分别为<code>0</code>、<code>1</code>、<code>2</code>，类型分别是<code>FSP_HDR</code>、<code>IBUF_BITMAP</code>、<code>INODE</code>）的类型是一致的，只是页号为<code>3</code>～<code>7</code>的页面是系统表空间特有的，我们来看一下这些多出来的页面都是干啥使的：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161557710.png" alt="image-20231222161557710"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161557710.png" alt="image-20231222161557710"></p>
 <p>除了这几个记录系统属性的页面之外，系统表空间的<code>extent 1</code>和<code>extent 2</code>这两个区，也就是页号从<code>64</code>~&#96;191<code>这128个页面被称为</code>Doublewrite buffer&#96;，也就是双写缓冲区。不过上述的大部分知识都涉及到了事务和多版本控制的问题，这些问题我们会放在后边的章节集中唠叨，现在讲述太影响用户体验，所以现在我们只唠叨一下有关InnoDB数据字典的知识，其余的概念在后边再看。</p>
 <h3 id="2-10InnoDB数据字典"><a href="#2-10InnoDB数据字典" class="headerlink" title="2.10InnoDB数据字典"></a>2.10InnoDB数据字典</h3><p>我们平时使用<code>INSERT</code>语句向表中插入的那些记录称之为用户数据，MySQL只是作为一个软件来为我们来保管这些数据，提供方便的增删改查接口而已。但是每当我们向一个表中插入一条记录的时候，MySQL先要校验一下插入语句对应的表存不存在，插入的列和表中的列是否符合，如果语法没有问题的话，还需要知道该表的聚簇索引和所有二级索引对应的根页面是哪个表空间的哪个页面，然后把记录插入对应索引的<code>B+</code>树中。所以说，MySQL除了保存着我们插入的用户数据之外，还需要保存许多额外的信息，比方说：</p>
 <ul>
@@ -531,25 +534,25 @@
 <li>balabala … 还有好多，不一一列举了</li>
 </ul>
 <p>上述这些数据并不是我们使用<code>INSERT</code>语句插入的用户数据，实际上是为了更好的管理我们这些用户数据而不得已引入的一些额外数据，这些数据也称为<code>元数据</code>。InnoDB存储引擎特意定义了一些列的内部系统表（internal system table）来记录这些这些<code>元数据</code>：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161821607.png" alt="image-20231222161821607"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161821607.png" alt="image-20231222161821607"></p>
 <p>这些系统表也被称为<code>数据字典</code>，它们都是以<code>B+</code>树的形式保存在系统表空间的某些页面中，其中<code>SYS_TABLES</code>、<code>SYS_COLUMNS</code>、<code>SYS_INDEXES</code>、<code>SYS_FIELDS</code>这四个表尤其重要，称之为基本系统表（basic system tables），我们先看看这4个表的结构：</p>
-<h4 id="2-10-1SYS-TABLES表"><a href="#2-10-1SYS-TABLES表" class="headerlink" title="2.10.1SYS_TABLES表"></a>2.10.1SYS_TABLES表</h4><p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161917326.png" alt="image-20231222161917326"> </p>
+<h4 id="2-10-1SYS-TABLES表"><a href="#2-10-1SYS-TABLES表" class="headerlink" title="2.10.1SYS_TABLES表"></a>2.10.1SYS_TABLES表</h4><p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222161917326.png" alt="image-20231222161917326"></p>
 <p>这个<code>SYS_TABLES</code>表有两个索引：</p>
 <ul>
 <li>以<code>NAME</code>列为主键的聚簇索引</li>
 <li>以<code>ID</code>列建立的二级索引</li>
 </ul>
-<h4 id="2-10-2SYS-COLUMNS表"><a href="#2-10-2SYS-COLUMNS表" class="headerlink" title="2.10.2SYS_COLUMNS表"></a>2.10.2SYS_COLUMNS表</h4><p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162049089.png" alt="image-20231222162049089"> </p>
+<h4 id="2-10-2SYS-COLUMNS表"><a href="#2-10-2SYS-COLUMNS表" class="headerlink" title="2.10.2SYS_COLUMNS表"></a>2.10.2SYS_COLUMNS表</h4><p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162049089.png" alt="image-20231222162049089"></p>
 <p>这个<code>SYS_COLUMNS</code>表只有一个聚集索引：</p>
 <ul>
 <li>以<code>(TABLE_ID, POS)</code>列为主键的聚簇索引</li>
 </ul>
-<h4 id="2-10-3SYS-INDEXES表"><a href="#2-10-3SYS-INDEXES表" class="headerlink" title="2.10.3SYS_INDEXES表"></a>2.10.3SYS_INDEXES表</h4><p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162121225.png" alt="image-20231222162121225"> </p>
+<h4 id="2-10-3SYS-INDEXES表"><a href="#2-10-3SYS-INDEXES表" class="headerlink" title="2.10.3SYS_INDEXES表"></a>2.10.3SYS_INDEXES表</h4><p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162121225.png" alt="image-20231222162121225"></p>
 <p>这个<code>SYS_INDEXES</code>表只有一个聚集索引：</p>
 <ul>
 <li>以<code>(TABLE_ID, ID)</code>列为主键的聚簇索引</li>
 </ul>
-<h4 id="2-10-4SYS-FIELDS表"><a href="#2-10-4SYS-FIELDS表" class="headerlink" title="2.10.4SYS_FIELDS表"></a>2.10.4SYS_FIELDS表</h4><p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162213036.png" alt="image-20231222162213036"> </p>
+<h4 id="2-10-4SYS-FIELDS表"><a href="#2-10-4SYS-FIELDS表" class="headerlink" title="2.10.4SYS_FIELDS表"></a>2.10.4SYS_FIELDS表</h4><p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162213036.png" alt="image-20231222162213036"></p>
 <p>这个<code>SYS_FIELDS</code>表只有一个聚集索引：</p>
 <ul>
 <li>以<code>(INDEX_ID, POS)</code>列为主键的聚簇索引</li>
@@ -562,9 +565,9 @@
 <li>使用<code>INDEX_ID</code>就可以到<code>SYS_FIELDS</code>表中获取所有索引列的信息。</li>
 </ul>
 <p>也就是说这4个表是表中之表，那这4个表的元数据去哪里获取呢？没法搞了，只能把这4个表的元数据，就是它们有哪些列、哪些索引等信息硬编码到代码中，然后设计<code>InnoDB</code>的大叔又拿出一个固定的页面来记录这4个表的聚簇索引和二级索引对应的<code>B+树</code>位置，这个页面就是页号为<code>7</code>的页面，类型为<code>SYS</code>，记录了<code>Data Dictionary Header</code>，也就是数据字典的头部信息。除了这4个表的5个索引的根页面信息外，这个页号为<code>7</code>的页面还记录了整个InnoDB存储引擎的一些全局属性，说话太啰嗦，直接看这个页面的示意图：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16efe1e5a01aeac9tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="img"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16efe1e5a01aeac9tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="img"> </p>
 <p>可以看到这个页面由下边几个部分组成：</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162509841.png" alt="image-20231222162509841"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162509841.png" alt="image-20231222162509841"> </p>
 <p>可以看到这个页面里竟然有<code>Segment Header</code>部分，意味着设计InnoDB的大叔把这些有关数据字典的信息当成一个段来分配存储空间，我们就姑且称之为<code>数据字典段</code>吧。由于目前我们需要记录的数据字典信息非常少（可以看到<code>Data Dictionary Header</code>部分仅占用了56字节），所以该段只有一个碎片页，也就是页号为<code>7</code>的这个页。</p>
 <p>接下来我们需要细细唠叨一下<code>Data Dictionary Header</code>部分的各个字段：</p>
 <ul>
@@ -585,7 +588,7 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> USE information_schema;</span><br><span class="line">Database changed</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SHOW</span> TABLES <span class="keyword">LIKE</span> <span class="string">&#x27;innodb_sys%&#x27;</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> Tables_in_information_schema (innodb_sys<span class="operator">%</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_DATAFILES                       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_VIRTUAL                         <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_INDEXES                         <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_TABLES                          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_FIELDS                          <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_TABLESPACES                     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_FOREIGN_COLS                    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_COLUMNS                         <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_FOREIGN                         <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> INNODB_SYS_TABLESTATS                      <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------------------------------+</span></span><br><span class="line"><span class="number">10</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
 
 <p>在<code>information_schema</code>数据库中的这些以<code>INNODB_SYS</code>开头的表并不是真正的内部系统表（内部系统表就是我们上边唠叨的以<code>SYS</code>开头的那些表），而是在存储引擎启动时读取这些以<code>SYS</code>开头的系统表，然后填充到这些以<code>INNODB_SYS</code>开头的表中。以<code>INNODB_SYS</code>开头的表和以<code>SYS</code>开头的表中的字段并不完全一样，但供大家参考已经足矣。这些表太多了，我就不唠叨了，大家自个儿动手试着查一查这些表中的数据吧哈～</p>
-<p><img src="/../../../../../../imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4a99c9a08tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1d9ppsbelendcbb13hghhn18pe9.png-3564.2kB"> </p>
+<p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4a99c9a08tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1d9ppsbelendcbb13hghhn18pe9.png-3564.2kB"> </p>
 
   </div>
 </article>

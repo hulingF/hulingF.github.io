@@ -52,7 +52,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171456648.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171542874.png">
 <meta property="article:published_time" content="2024-01-15T04:07:08.073Z">
-<meta property="article:modified_time" content="2024-02-07T07:09:38.191Z">
+<meta property="article:modified_time" content="2024-02-23T10:54:15.517Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
@@ -201,7 +201,7 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <h1 id="Redis高级之分布式缓存"><a href="#Redis高级之分布式缓存" class="headerlink" title="Redis高级之分布式缓存"></a>Redis高级之分布式缓存</h1><h2 id="1-单点Redis的问题"><a href="#1-单点Redis的问题" class="headerlink" title="1.单点Redis的问题"></a>1.单点Redis的问题</h2><p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240115120808799.png" alt="image-20240115120808799"></p>
+    <h1 id="Redis高级之分布式缓存"><a href="#Redis高级之分布式缓存" class="headerlink" title="Redis高级之分布式缓存"></a>Redis高级之分布式缓存</h1><h2 id="1-单点Redis的问题"><a href="#1-单点Redis的问题" class="headerlink" title="1.单点Redis的问题"></a>1.单点Redis的问题</h2><p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240115120808799.png" alt="image-20240115120808799"></p>
 <h2 id="2-Redis持久化"><a href="#2-Redis持久化" class="headerlink" title="2.Redis持久化"></a>2.Redis持久化</h2><p>Redis 提供了<code>不同级别</code>的持久化方式:</p>
 <ul>
 <li>RDB持久化方式能够在指定的时间间隔内对你的数据进行<code>快照存储</code>。</li>
@@ -212,9 +212,9 @@
 <h3 id="2-1RDB"><a href="#2-1RDB" class="headerlink" title="2.1RDB"></a>2.1RDB</h3><p>Redis内部有触发RDB的机制，可以在redis.conf文件中找到，格式如下：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">指定的时间间隔内至少发生指定次数的写操作，则触发RDB后台持久化</span></span><br><span class="line">save &lt;seconds&gt; &lt;changes&gt;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">关闭RDB持久化的方式</span></span><br><span class="line">save &quot;&quot;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">默认Redis的RDB持久化规则设置</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">After 3600 seconds (an hour) <span class="keyword">if</span> at least 1 key changed</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">After 300 seconds (5 minutes) <span class="keyword">if</span> at least 100 keys changed</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">After 60 seconds <span class="keyword">if</span> at least 10000 keys changed</span></span><br><span class="line">save 3600 1 </span><br><span class="line">save 300 100</span><br><span class="line">save 60 10000</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">是否开启RDB文件压缩，默认开启，如果想要节省一些CPU资源可以关闭该选项</span></span><br><span class="line">rdbcompression yes</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">RDB文件的名称</span></span><br><span class="line">dbfilename dump.rdb</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">RDB文件的存放目录（AOF文件同样）</span></span><br><span class="line">dir ./</span><br></pre></td></tr></table></figure>
 
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240116193321614.png" alt="image-20240116193321614"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240116193321614.png" alt="image-20240116193321614"> </p>
 <p>你也可以通过调用<code>SAVE</code>或者<code>BGSAVE</code>，手动让Redis进行数据保存操作。</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240115172902758.png" alt="image-20240115172902758"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240115172902758.png" alt="image-20240115172902758"> </p>
 <p><strong>RDB的优点</strong></p>
 <ul>
 <li>RDB是一个非常<code>紧凑</code>的文件,它保存了某个时间点的数据集,非常适用于<code>数据集的备份</code>,比如你可以在每个小时保存一下过去24小时内的数据,同时每天保存过去30天的数据,这样即使出了问题你也可以根据需求恢复到不同版本的数据集。</li>
@@ -229,8 +229,8 @@
 </ul>
 <h3 id="2-2AOF"><a href="#2-2AOF" class="headerlink" title="2.2AOF"></a>2.2AOF</h3><p>快照功能并不是非常耐久（durable）：如果Redis因为某些原因而造成<code>故障停机</code>，那么服务器将丢失<code>最近写入且仍未保存到快照</code>中的那些数据。从1.1版本开始，Redis增加了一种完全耐久的持久化方式：<code>AOF持久化</code>。</p>
 <p>AOF全称为Append Only File，Redis处理的每一个<code>写命令</code>都会记录在AOF文件，可以看作是命令日志文件。从现在开始，每当Redis执行一个改变数据集的命令时（比如SET），这个命令就会被<code>追加</code>到AOF文件的末尾。这样的话，当Redis重启时，程序就可以通过重新执行AOF文件中的命令来达到<code>重建数据集</code>的目的。</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240116194925765.png" alt="image-20240116194925765"> </p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240115173124670.png" alt="image-20240115173124670"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240116194925765.png" alt="image-20240116194925765"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240115173124670.png" alt="image-20240115173124670"> </p>
 <p>因为AOF的运作方式是不断地将命令追加到文件的末尾，所以随着写入命令的不断增加，AOF文件的<code>体积</code>也会变得<code>越来越大</code>。举个例子，如果你对一个计数器调用了100次INCR，那么仅仅是为了保存这个计数器的当前值，AOF文件就需要使用100条记录（entry）。然而在实际上，只使用一条SET命令已经足以保存计数器的当前值了，其余99条记录实际上都是多余的。</p>
 <p>为了处理这种情况，Redis支持一种有趣的特性：可以在不打断服务客户端的情况下，对AOF文件进行重建（rebuild）。执行<code>bgwriteaof</code>命令，Redis将生成一个新的AOF文件，<code>这个文件包含重建当前数据集所需的最少命令</code>。Redis2.2需要自己手动执行<code>bgwriteaof</code>命令；Redis2.4则可以自动触发AOF重写。</p>
 <p><code>触发阈值</code>可以在配置文件redis.conf中指定:</p>
@@ -285,7 +285,7 @@
 <p>有很多用户都只使用AOF持久化，但并不推荐这种方式：因为定时生成RDB快照（snapshot）非常便于进行数据库备份，并且RDB恢复数据集的速度也要比AOF恢复的速度要快。</p>
 </blockquote>
 <h2 id="3-Redis主从架构"><a href="#3-Redis主从架构" class="headerlink" title="3.Redis主从架构"></a>3.Redis主从架构</h2><h3 id="3-1搭建主从集群"><a href="#3-1搭建主从集群" class="headerlink" title="3.1搭建主从集群"></a>3.1搭建主从集群</h3><p>单节点Redis的并发能力是有上限的，要进一步提高Redis的并发能力，就需要搭建主从集群，实现读写分离。</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240116201712297.png" alt="image-20240116201712297"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240116201712297.png" alt="image-20240116201712297"></p>
 <p>我们开始搭建一主两从的Redis集群:</p>
 <p>(1)创建目录</p>
 <p>我们创建三个文件夹，名字分别叫7001、7002、7003：</p>
@@ -310,7 +310,7 @@
 <p>每个目录都要改，我们一键完成修改（在&#x2F;tmp目录执行下列命令）：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">逐一执行</span></span><br><span class="line">sed -i &#x27;1a replica-announce-ip 192.168.139.166&#x27; 7001/redis.conf</span><br><span class="line">sed -i &#x27;1a replica-announce-ip 192.168.139.166&#x27; 7002/redis.conf</span><br><span class="line">sed -i &#x27;1a replica-announce-ip 192.168.139.166&#x27; 7003/redis.conf</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">或者一键修改</span></span><br><span class="line">printf &#x27;%s\n&#x27; 7001 7002 7003 | xargs -I&#123;&#125; -t sed -i &#x27;1a replica-announce-ip 192.168.139.166&#x27; &#123;&#125;/redis.conf</span><br></pre></td></tr></table></figure>
 
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117125320736.png" alt="image-20240117125320736"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117125320736.png" alt="image-20240117125320736"></p>
 <p>现在三个实例还没有任何关系，要配置主从可以使用<code>replicaof</code>或者<code>slaveof</code>（5.0以前）命令。</p>
 <p>有临时和永久两种模式：</p>
 <ul>
@@ -323,28 +323,28 @@
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">slaveof &lt;masterip&gt; &lt;masterport&gt;</span><br></pre></td></tr></table></figure></li>
 </ul>
 <p><strong><font color='red'>注意</font></strong>：在5.0以后新增命令replicaof，与salveof效果一致。</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117130026291.png" alt="image-20240117130026291"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117130026291.png" alt="image-20240117130026291"></p>
 <h3 id="3-2数据同步原理"><a href="#3-2数据同步原理" class="headerlink" title="3.2数据同步原理"></a>3.2数据同步原理</h3><p>主从同步之间的第一次同步属于<code>全量同步</code>，此时Master节点需要生成内存数据的<code>RDB</code>快照文件并发放给Slave节点，由于生成RDB文件是子进程异步完成的，主进程依然正常处理客户端请求，因此主从全量同步期间Master节点可能会有<code>新数据的写入</code>，这时Master节点需要一块内存缓冲区<code>repl_backlog</code>记录所有写入命令，并<code>增量同步</code>给从节点（重放命令实现落库）。</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117131844958.png" alt="image-20240117131844958"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117131844958.png" alt="image-20240117131844958"></p>
 <p>Master如何判断Slave是不是第一次来同步数据？这里会用到两个很重要的概念：</p>
 <ul>
 <li>Replication Id：简称replid，是数据集的标记，<code>replid一致则说明是同一数据集</code>。每一个Master都有唯一的replid，Slave则会继承Master节点的replid。</li>
-<li>offset：偏移量，随着记录在repl_baklog中的数据增多而逐渐增大。Slave完成同步时也会记录当前同步的offset，如果Slave的offset小于Master的offset，说明Slave数据落后于Master，需要更新。因此Slave做数据同步，必须向Master声明自己的replication id和offset，Master才可以判断到底需要同步哪些数据。</li>
+<li>offset：偏移量，随着记录在repl_backlog中的数据增多而逐渐增大。Slave完成同步时也会记录当前同步的offset，如果Slave的offset小于Master的offset，说明Slave数据落后于Master，需要更新。<strong>因此Slave做数据同步，必须向Master声明自己的replication id和offset，Master才可以判断到底需要同步哪些数据。</strong></li>
 </ul>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117132212741.png" alt="image-20240117132212741"></p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117133808094.png" alt="image-20240117133808094"></p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117134118872.png" alt="image-20240117134118872"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117132212741.png" alt="image-20240117132212741"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117133808094.png" alt="image-20240117133808094"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117134118872.png" alt="image-20240117134118872"></p>
 <p>可以从以下几个方面来优化Redis主从就集群：</p>
 <ol>
 <li>在Master中配置<code>repl-diskless-sync yes</code>(适合于磁盘慢网络带宽高的情况)启用<code>无磁盘复制</code>，避免全量同步时的磁盘IO。</li>
 <li>Redis单节点上的内存占用不要太大，减少RDB导致的过多磁盘IO。</li>
-<li>适当提高<code>repl_backlog</code>的大小，发现Slave宕机时<code>尽快</code>实现故障恢复，尽可能避免全量同步。</li>
+<li>适当提高<code>repl_backlog</code>的大小，发现Slave宕机时<code>尽快</code>实现故障恢复，<strong>尽可能避免全量同步</strong>。</li>
 <li>限制一个Master上的Slave节点数量，如果实在是太多Slave，则可以采用主-从-从链式结构，减少Master压力。</li>
 </ol>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117134810087.png" alt="image-20240117134810087"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117134810087.png" alt="image-20240117134810087"></p>
 <p>简述全量同步和增量同步区别？</p>
 <ul>
-<li>全量同步：Master将完整内存数据生成RDB，发送RDB到Slave。后续命令则记录在repl_baklog，逐个发送给Slave。</li>
+<li>全量同步：Master将完整内存数据生成RDB，发送RDB到Slave。后续命令则记录在repl_backlog，逐个发送给Slave。</li>
 <li>增量同步：Slave提交自己的offset到Master，Master获取repl_baklog中从offset之后的命令给Slave。</li>
 </ul>
 <p>什么时候执行全量同步？</p>
@@ -356,8 +356,8 @@
 <ul>
 <li>Slave节点<code>断开又恢复，并且在repl_baklog中能找到offset时</code>。</li>
 </ul>
-<h2 id="4-Redis哨兵机制"><a href="#4-Redis哨兵机制" class="headerlink" title="4.Redis哨兵机制"></a>4.Redis哨兵机制</h2><h3 id="4-1哨兵的作用与原理"><a href="#4-1哨兵的作用与原理" class="headerlink" title="4.1哨兵的作用与原理"></a>4.1哨兵的作用与原理</h3><p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117140659819.png" alt="image-20240117140659819"> </p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117140835307.png" alt="image-20240117140835307"></p>
+<h2 id="4-Redis哨兵机制"><a href="#4-Redis哨兵机制" class="headerlink" title="4.Redis哨兵机制"></a>4.Redis哨兵机制</h2><h3 id="4-1哨兵的作用与原理"><a href="#4-1哨兵的作用与原理" class="headerlink" title="4.1哨兵的作用与原理"></a>4.1哨兵的作用与原理</h3><p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117140659819.png" alt="image-20240117140659819"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117140835307.png" alt="image-20240117140835307"></p>
 <p>一旦发现master故障，sentinel需要在salve中选择一个作为新的master，选择依据是这样的：</p>
 <ul>
 <li>首先会判断slave节点与master节点断开时间长短，如果超过指定值（down-after-milliseconds*10）则会排除该slave节点；</li>
@@ -365,7 +365,7 @@
 <li>如果slave-prority一样，则判断slave节点的<code>offset</code>值，越大说明数据越新，优先级越高；</li>
 <li>最后是判断slave节点<code>运行id</code>大小，越小优先级越高。</li>
 </ul>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117141403062.png" alt="image-20240117141403062"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117141403062.png" alt="image-20240117141403062"></p>
 <h3 id="4-2搭建哨兵集群"><a href="#4-2搭建哨兵集群" class="headerlink" title="4.2搭建哨兵集群"></a>4.2搭建哨兵集群</h3><p>(1)要在同一台虚拟机开启3个实例，必须准备三份不同的配置文件和目录，配置文件所在目录也就是工作目录。我们创建三个文件夹，名字分别叫s1、s2、s3：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">进入/temp目录</span></span><br><span class="line">cd /temp</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建目录</span></span><br><span class="line">mkdir s1 s2 s3</span><br></pre></td></tr></table></figure>
 
@@ -388,13 +388,13 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sed -i -e &#x27;s/27001/27002/g&#x27; -e &#x27;s/s1/s2/g&#x27; s2/sentinel.conf</span><br><span class="line">sed -i -e &#x27;s/27001/27003/g&#x27; -e &#x27;s/s1/s3/g&#x27; s3/sentinel.conf</span><br></pre></td></tr></table></figure>
 
 <p>(5)为了方便查看日志，我们打开3个ssh窗口，分别启动3个redis实例，启动命令：</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117143848991.png" alt="image-20240117143848991"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117143848991.png" alt="image-20240117143848991"></p>
 <p>(6)测试主节点宕机，查看故障恢复的日志：</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117145042289.png" alt="image-20240117145042289"></p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117145445174.png" alt="image-20240117145445174"></p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117145804462.png" alt="image-20240117145804462"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117145042289.png" alt="image-20240117145042289"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117145445174.png" alt="image-20240117145445174"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117145804462.png" alt="image-20240117145804462"></p>
 <p>(7)再次恢复原来的故障主节点：</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117150117762.png" alt="image-20240117150117762"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117150117762.png" alt="image-20240117150117762"></p>
 <h3 id="4-3RedisTemplate的哨兵模式"><a href="#4-3RedisTemplate的哨兵模式" class="headerlink" title="4.3RedisTemplate的哨兵模式"></a>4.3RedisTemplate的哨兵模式</h3><p>在Sentinel集群监管下的Redis主从集群，其节点会因为自动故障转移而发生变化，Redis的客户端必须感知这种变化，及时更新连接信息。Spring的RedisTemplate底层利用lettuce实现了节点的感知和自动切换。</p>
 <p>(1)在pom文件中引入redis的starter依赖：</p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
@@ -412,7 +412,7 @@
 <li>REPLICA：从slave（replica）节点读取</li>
 <li>REPLICA_PREFERRED：优先从slave（replica）节点读取，所有的slave都不可用才读取master</li>
 </ul>
-<h2 id="5-Redis分片集群"><a href="#5-Redis分片集群" class="headerlink" title="5.Redis分片集群"></a>5.Redis分片集群</h2><h3 id="5-1搭建分片集群"><a href="#5-1搭建分片集群" class="headerlink" title="5.1搭建分片集群"></a>5.1搭建分片集群</h3><p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117153053727.png" alt="image-20240117153053727"></p>
+<h2 id="5-Redis分片集群"><a href="#5-Redis分片集群" class="headerlink" title="5.Redis分片集群"></a>5.Redis分片集群</h2><h3 id="5-1搭建分片集群"><a href="#5-1搭建分片集群" class="headerlink" title="5.1搭建分片集群"></a>5.1搭建分片集群</h3><p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117153053727.png" alt="image-20240117153053727"></p>
 <p>分片集群需要的节点数量较多，这里我们搭建一个最小的分片集群，包含3个master节点，每个master包含一个slave节点，这里我们会在同一台虚拟机中开启6个redis实例，模拟分片集群，信息如下：</p>
 <table>
 <thead>
