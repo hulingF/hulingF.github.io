@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="一面总结(WY)面试体验非常好，网易的面试官很有耐心，遇到不会的问题也会很耐心地一步步提醒，甚至还会告诉你合适的解决方案是什么样的，为善良友好的面试官点赞!! 关于LinkedHashMapLinkedHashMap 和 HashMap 都是 Java 集合框架中的 Map 接口的实现类。它们的最大区别在于迭代元素的顺序。HashMap 迭代元素的顺序是不确定的，而 LinkedHashMap 提">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一面总结(WY)">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="一面总结(WY)面试体验非常好，网易的面试官很有耐心，遇到不会的问题也会很耐心地一步步提醒，甚至还会告诉你合适的解决方案是什么样的，为善良友好的面试官点赞!! 关于LinkedHashMapLinkedHashMap 和 HashMap 都是 Java 集合框架中的 Map 接口的实现类。它们的最大区别在于迭代元素的顺序。HashMap 迭代元素的顺序是不确定的，而 LinkedHashMap 提">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224175705263.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224175736589.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224180006820.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224180025965.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224180359901.png">
+<meta property="article:published_time" content="2024-02-26T14:45:35.312Z">
+<meta property="article:modified_time" content="2024-02-27T08:56:14.395Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224175705263.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>一面总结(WY)</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/24/Redis%E5%86%85%E5%AD%98%E7%AD%96%E7%95%A5/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&text=一面总结(WY)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&is_video=false&description=一面总结(WY)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=一面总结(WY)&body=Check out this article: https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&name=一面总结(WY)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&t=一面总结(WY)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93-WY"><span class="toc-number">1.</span> <span class="toc-text">一面总结(WY)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8ELinkedHashMap"><span class="toc-number">1.0.1.</span> <span class="toc-text">关于LinkedHashMap</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8ERedis%E7%9A%84ZSet%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86"><span class="toc-number">1.0.2.</span> <span class="toc-text">关于Redis的ZSet数据类型的底层原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%AE%95%E6%9C%BA%E6%97%B6%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%AA%E5%AE%8C%E6%88%90%E7%9A%84%E4%BB%BB%E5%8A%A1%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E4%B8%8D%E4%B8%A2%E5%A4%B1"><span class="toc-number">1.0.3.</span> <span class="toc-text">关于服务宕机时线程池未完成的任务如何保证不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8EOpenRPC%E9%A1%B9%E7%9B%AE%E7%9A%84%E5%8E%8B%E6%B5%8B%E6%95%88%E6%9E%9C"><span class="toc-number">1.0.4.</span> <span class="toc-text">关于OpenRPC项目的压测效果</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        一面总结(WY)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-26T14:45:35.312Z" class="dt-published" itemprop="datePublished">2024-02-26</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag">面试</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="一面总结-WY"><a href="#一面总结-WY" class="headerlink" title="一面总结(WY)"></a>一面总结(WY)</h1><p>面试体验非常好，网易的面试官很有耐心，遇到不会的问题也会很耐心地一步步提醒，甚至还会告诉你合适的解决方案是什么样的，为善良友好的面试官点赞!!</p>
+<h3 id="关于LinkedHashMap"><a href="#关于LinkedHashMap" class="headerlink" title="关于LinkedHashMap"></a>关于LinkedHashMap</h3><p><code>LinkedHashMap</code> 和 <code>HashMap</code> 都是 Java 集合框架中的 Map 接口的实现类。它们的最大区别在于迭代元素的顺序。<code>HashMap</code> 迭代元素的顺序是不确定的，而 <code>LinkedHashMap</code> 提供了按照插入顺序或访问顺序迭代元素的功能。此外，<code>LinkedHashMap</code> 内部维护了一个双向链表，用于记录元素的插入顺序或访问顺序，而 <code>HashMap</code> 则没有这个链表。因此，<code>LinkedHashMap</code> 的插入性能可能会比 <code>HashMap</code> 略低，但它提供了更多的功能并且迭代效率相较于 <code>HashMap</code> 更加高效。</p>
+<p><code>LinkedHashMap</code> 可以通过构造函数中的 <code>accessOrder</code> 参数指定按照访问顺序迭代元素。当 <code>accessOrder</code> 为 true 时，每次访问一个元素时，该元素会被移动到链表的末尾，因此下次访问该元素时，它就会成为链表中的最后一个元素，从而实现按照访问顺序迭代元素。</p>
+<p>将 <code>accessOrder</code> 设置为 true 并重写 <code>removeEldestEntry</code> 方法当链表大小超过容量时返回 true，使得每次访问一个元素时，该元素会被移动到链表的末尾。一旦插入操作让 <code>removeEldestEntry</code> 返回 true 时，视为缓存已满，<code>LinkedHashMap</code> 就会将链表首元素移除，由此我们就能实现一个 LRU 缓存。</p>
+<h3 id="关于Redis的ZSet数据类型的底层原理"><a href="#关于Redis的ZSet数据类型的底层原理" class="headerlink" title="关于Redis的ZSet数据类型的底层原理"></a>关于Redis的ZSet数据类型的底层原理</h3><p><img src="/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224175705263.png" alt="image-20240224175705263"></p>
+<p><img src="/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224175736589.png" alt="image-20240224175736589"></p>
+<p><img src="/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224180006820.png" alt="image-20240224180006820"></p>
+<p><img src="/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224180025965.png" alt="image-20240224180025965"></p>
+<p><img src="/imgs/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/image-20240224180359901.png" alt="image-20240224180359901"></p>
+<h3 id="关于服务宕机时线程池未完成的任务如何保证不丢失"><a href="#关于服务宕机时线程池未完成的任务如何保证不丢失" class="headerlink" title="关于服务宕机时线程池未完成的任务如何保证不丢失"></a>关于服务宕机时线程池未完成的任务如何保证不丢失</h3><p>我们知道队列里任务请求如果只在内存，没有持久化的话，机器宕机队列中的请求肯定会丢失。那么是不是可以在任务提交到线程池前，先把任务信息插入到数据库加个状态字段：未提交，当任务提交到线程池后，再更新状态为已提交，任务执行完之后再更新状态为已完成。机器宕机系统重启后，启动一个后台线程去读取未提交和已提交的任务信息，重新提交到线程池，继续执行任务。</p>
+<h3 id="关于OpenRPC项目的压测效果"><a href="#关于OpenRPC项目的压测效果" class="headerlink" title="关于OpenRPC项目的压测效果"></a>关于OpenRPC项目的压测效果</h3>
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93-WY"><span class="toc-number">1.</span> <span class="toc-text">一面总结(WY)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8ELinkedHashMap"><span class="toc-number">1.0.1.</span> <span class="toc-text">关于LinkedHashMap</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8ERedis%E7%9A%84ZSet%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86"><span class="toc-number">1.0.2.</span> <span class="toc-text">关于Redis的ZSet数据类型的底层原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%AE%95%E6%9C%BA%E6%97%B6%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%AA%E5%AE%8C%E6%88%90%E7%9A%84%E4%BB%BB%E5%8A%A1%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E4%B8%8D%E4%B8%A2%E5%A4%B1"><span class="toc-number">1.0.3.</span> <span class="toc-text">关于服务宕机时线程池未完成的任务如何保证不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8EOpenRPC%E9%A1%B9%E7%9B%AE%E7%9A%84%E5%8E%8B%E6%B5%8B%E6%95%88%E6%9E%9C"><span class="toc-number">1.0.4.</span> <span class="toc-text">关于OpenRPC项目的压测效果</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&text=一面总结(WY)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&is_video=false&description=一面总结(WY)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=一面总结(WY)&body=Check out this article: https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&title=一面总结(WY)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&name=一面总结(WY)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/&t=一面总结(WY)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

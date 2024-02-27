@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="LinkedHashMap源码剖析1.整体结构LinkedHashMap 是 Java 提供的一个集合类，它继承自 HashMap，并在 HashMap 基础上维护一条双向链表，具备如下特性:  支持遍历时会按照插入顺序有序进行迭代。 支持按照元素访问顺序排序,适用于封装 LRU 缓存工具。 因为内部使用双向链表维护各个节点，所以遍历时的效率和元素个数成正比，相较于和容量成正比的 HashMap">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LinkedHashMap源码剖析">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="LinkedHashMap源码剖析1.整体结构LinkedHashMap 是 Java 提供的一个集合类，它继承自 HashMap，并在 HashMap 基础上维护一条双向链表，具备如下特性:  支持遍历时会按照插入顺序有序进行迭代。 支持按照元素访问顺序排序,适用于封装 LRU 缓存工具。 因为内部使用双向链表维护各个节点，所以遍历时的效率和元素个数成正比，相较于和容量成正比的 HashMap">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/linkhashmap-structure-overview.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20240227152109323.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20240227152403749.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20240227152839240.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/map-hashmap-linkedhashmap.png">
+<meta property="article:published_time" content="2024-02-27T07:11:06.599Z">
+<meta property="article:modified_time" content="2024-02-27T07:49:10.069Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Java集合">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/linkhashmap-structure-overview.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>LinkedHashMap源码剖析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/26/%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93(WY)/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=LinkedHashMap源码剖析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=LinkedHashMap源码剖析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LinkedHashMap源码剖析&body=Check out this article: https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=LinkedHashMap源码剖析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=LinkedHashMap源码剖析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">LinkedHashMap源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">1.整体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.简单使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%8A%82%E7%82%B9%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.3.</span> <span class="toc-text">3.节点设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">4.构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="toc-number">1.5.</span> <span class="toc-text">5.源码分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%8D%E5%8E%86%E6%80%A7%E8%83%BD"><span class="toc-number">1.6.</span> <span class="toc-text">6.遍历性能</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        LinkedHashMap源码剖析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-27T07:11:06.599Z" class="dt-published" itemprop="datePublished">2024-02-27</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Java%E9%9B%86%E5%90%88/" rel="tag">Java集合</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="LinkedHashMap源码剖析"><a href="#LinkedHashMap源码剖析" class="headerlink" title="LinkedHashMap源码剖析"></a>LinkedHashMap源码剖析</h1><h2 id="1-整体结构"><a href="#1-整体结构" class="headerlink" title="1.整体结构"></a>1.整体结构</h2><p><code>LinkedHashMap</code> 是 Java 提供的一个集合类，它继承自 <code>HashMap</code>，并在 <code>HashMap</code> 基础上维护一条双向链表，具备如下特性:</p>
+<ol>
+<li>支持遍历时会按照插入顺序有序进行迭代。</li>
+<li>支持按照元素访问顺序排序,适用于封装 LRU 缓存工具。</li>
+<li>因为内部使用双向链表维护各个节点，所以遍历时的效率和元素个数成正比，相较于和容量成正比的 HashMap 来说，迭代效率会高很多。</li>
+</ol>
+<p><code>LinkedHashMap</code> 逻辑结构如下图所示，它是在 <code>HashMap</code> 基础上在各个节点之间维护一条双向链表，使得原本散列在不同桶位上的节点、链表、红黑树有序关联起来。</p>
+<p><img src="/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/linkhashmap-structure-overview.png" alt="LinkedHashMap 逻辑结构"></p>
+<h2 id="2-简单使用"><a href="#2-简单使用" class="headerlink" title="2.简单使用"></a>2.简单使用</h2><p>LinkedHashMap 的遍历顺序是有序的，这点跟 HashMap 不同，具体的遍历顺序可以根据 <code>accessOrder</code> 属性配置，默认 false 表示按照<code>插入顺序</code>遍历，true 表示按照<code>访问顺序</code>遍历，结合 <code>removeEldestEntry</code> 方法可以实现一个简单的 LRU 缓存。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 默认按照插入顺序遍历</span></span><br><span class="line">LinkedHashMap&lt;String, String&gt; linkedHashMap = <span class="keyword">new</span> <span class="title class_">LinkedHashMap</span>&lt;&gt;();</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key1&quot;</span>, <span class="string">&quot;val1&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;val2&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key3&quot;</span>, <span class="string">&quot;val3&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key4&quot;</span>, <span class="string">&quot;val4&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key5&quot;</span>, <span class="string">&quot;val5&quot;</span>);</span><br><span class="line"><span class="keyword">for</span> (Map.Entry&lt;String, String&gt; entry : linkedHashMap.entrySet()) &#123;</span><br><span class="line">    System.out.println(entry.getKey() + <span class="string">&quot;-&quot;</span> + entry.getValue());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20240227152109323.png" alt="image-20240227152109323"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 按照访问顺序遍历</span></span><br><span class="line">LinkedHashMap&lt;String, String&gt; linkedHashMap = <span class="keyword">new</span> <span class="title class_">LinkedHashMap</span>&lt;&gt;(<span class="number">16</span>, <span class="number">0.75f</span>, <span class="literal">true</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key1&quot;</span>, <span class="string">&quot;val1&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;val2&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key3&quot;</span>, <span class="string">&quot;val3&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key4&quot;</span>, <span class="string">&quot;val4&quot;</span>);</span><br><span class="line">linkedHashMap.put(<span class="string">&quot;key5&quot;</span>, <span class="string">&quot;val5&quot;</span>);</span><br><span class="line">linkedHashMap.get(<span class="string">&quot;key3&quot;</span>);</span><br><span class="line">linkedHashMap.get(<span class="string">&quot;key1&quot;</span>);</span><br><span class="line"><span class="keyword">for</span> (Map.Entry&lt;String, String&gt; entry : linkedHashMap.entrySet()) &#123;</span><br><span class="line">    System.out.println(entry.getKey() + <span class="string">&quot;-&quot;</span> + entry.getValue());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20240227152403749.png" alt="image-20240227152403749"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LinkedHashMapTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        LRUCache&lt;String, String&gt; cache = <span class="keyword">new</span> <span class="title class_">LRUCache</span>&lt;&gt;(<span class="number">3</span>);</span><br><span class="line">        cache.put(<span class="string">&quot;key1&quot;</span>, <span class="string">&quot;val1&quot;</span>);</span><br><span class="line">        cache.put(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;val2&quot;</span>);</span><br><span class="line">        cache.put(<span class="string">&quot;key3&quot;</span>, <span class="string">&quot;val3&quot;</span>);</span><br><span class="line">        cache.put(<span class="string">&quot;key4&quot;</span>, <span class="string">&quot;val4&quot;</span>);</span><br><span class="line">        cache.put(<span class="string">&quot;key5&quot;</span>, <span class="string">&quot;val5&quot;</span>);</span><br><span class="line">        <span class="keyword">for</span> (Map.Entry&lt;String, String&gt; entry : cache.entrySet()) &#123;</span><br><span class="line">            System.out.println(entry.getKey() + <span class="string">&quot;-&quot;</span> + entry.getValue());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">LRUCache</span>&lt;K, V&gt; <span class="keyword">extends</span> <span class="title class_">LinkedHashMap</span>&lt;K, V&gt; &#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">int</span> capacity;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">LRUCache</span><span class="params">(<span class="type">int</span> capacity)</span> &#123;</span><br><span class="line">            <span class="built_in">super</span>(capacity, <span class="number">0.75f</span>, <span class="literal">true</span>);</span><br><span class="line">            <span class="built_in">this</span>.capacity = capacity;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 判断size超过容量时返回true，告知LinkedHashMap移除最旧的缓存项(即链表的第一个元素)</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> <span class="type">boolean</span> <span class="title function_">removeEldestEntry</span><span class="params">(Map.Entry&lt;K, V&gt; eldest)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> size() &gt; capacity;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20240227152839240.png" alt="image-20240227152839240"></p>
+<h2 id="3-节点设计"><a href="#3-节点设计" class="headerlink" title="3.节点设计"></a>3.节点设计</h2><ul>
+<li><p><code>LinkedHashMap</code> 的节点内部类 <code>Entry</code> 基于 <code>HashMap</code> 的基础上，增加 <code>before</code> 和 <code>after</code> 指针使节点具备双向链表的特性。</p>
+</li>
+<li><p><code>HashMap</code> 的树节点 <code>TreeNode</code> 继承了具备双向链表特性的 <code>LinkedHashMap</code> 的 <code>Entry</code>。</p>
+</li>
+</ul>
+<p><img src="/imgs/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/map-hashmap-linkedhashmap.png" alt="LinkedHashMap 和 HashMap 之间的关系"></p>
+<p>为什么 <code>HashMap</code> 的树节点 <code>TreeNode</code> 要通过 <code>LinkedHashMap</code> 获取双向链表的特性呢?为什么不直接在 <code>Node</code> 上实现前驱和后继指针呢?</p>
+<p>先来回答第一个问题，我们都知道 <code>LinkedHashMap</code> 是在 <code>HashMap</code> 基础上对节点增加双向指针实现双向链表的特性,所以 <code>LinkedHashMap</code> 内部链表转红黑树时，对应的节点会转为树节点 <code>TreeNode</code>,为了保证使用 <code>LinkedHashMap</code> 时树节点具备双向链表的特性，所以树节点 <code>TreeNode</code> 需要继承 <code>LinkedHashMap</code> 的 <code>Entry</code>。</p>
+<p>再来说说第二个问题，我们直接在 <code>HashMap</code> 的节点 <code>Node</code> 上直接实现前驱和后继指针,然后 <code>TreeNode</code> 直接继承 <code>Node</code> 获取双向链表的特性为什么不行呢？其实这样做也是可以的。只不过这种做法会使得使用 <code>HashMap</code> 时存储键值对的节点类 <code>Node</code> 多了两个没有必要的引用，占用没必要的内存空间。</p>
+<p>所以，为了保证 <code>HashMap</code> 底层的节点类 <code>Node</code> 没有多余的引用，又要保证 <code>LinkedHashMap</code> 的节点类 <code>Entry</code> 拥有存储链表的引用，设计者就让 <code>LinkedHashMap</code> 的节点 <code>Entry</code> 去继承 Node 并增加存储前驱后继节点的引用 <code>before</code>、<code>after</code>，让需要用到链表特性的节点去实现需要的逻辑。然后树节点 <code>TreeNode</code> 再通过继承 <code>Entry</code> 获取 <code>before</code>、<code>after</code> 两个指针。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Entry</span>&lt;K,V&gt; <span class="keyword">extends</span> <span class="title class_">HashMap</span>.Node&lt;K,V&gt; &#123;</span><br><span class="line">    Entry&lt;K,V&gt; before, after;</span><br><span class="line">    Entry(<span class="type">int</span> hash, K key, V value, Node&lt;K,V&gt; next) &#123;</span><br><span class="line">        <span class="built_in">super</span>(hash, key, value, next);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是这样做，不也使得使用 <code>HashMap</code> 时的 <code>TreeNode</code> 多了两个没有必要的引用吗?这不也是一种空间的浪费吗？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">TreeNode</span>&lt;K,V&gt; <span class="keyword">extends</span> <span class="title class_">LinkedHashMap</span>.Entry&lt;K,V&gt; &#123;</span><br><span class="line">  <span class="comment">//略</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对于这个问题,引用作者的一段注释，作者们认为在良好的 <code>hashCode</code> 算法时，<code>HashMap</code> 转红黑树的概率不大。就算转为红黑树变为树节点，也可能会因为移除或者扩容将 <code>TreeNode</code> 变为 <code>Node</code>，所以 <code>TreeNode</code> 的使用概率不算很大，对于这一点资源空间的浪费是可以接受的。</p>
+<h2 id="4-构造方法"><a href="#4-构造方法" class="headerlink" title="4.构造方法"></a>4.构造方法</h2><p><code>LinkedHashMap</code> 构造方法有 4 个实现也比较简单，直接调用父类即 <code>HashMap</code> 的构造方法完成初始化。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">LinkedHashMap</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>();</span><br><span class="line">    accessOrder = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">LinkedHashMap</span><span class="params">(<span class="type">int</span> initialCapacity)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>(initialCapacity);</span><br><span class="line">    accessOrder = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">LinkedHashMap</span><span class="params">(<span class="type">int</span> initialCapacity, <span class="type">float</span> loadFactor)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>(initialCapacity, loadFactor);</span><br><span class="line">    accessOrder = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">LinkedHashMap</span><span class="params">(<span class="type">int</span> initialCapacity,</span></span><br><span class="line"><span class="params">    <span class="type">float</span> loadFactor,</span></span><br><span class="line"><span class="params">    <span class="type">boolean</span> accessOrder)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>(initialCapacity, loadFactor);</span><br><span class="line">    <span class="built_in">this</span>.accessOrder = accessOrder;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们上面也提到了，默认情况下 <code>accessOrder</code> 为 false，如果我们要让 <code>LinkedHashMap</code> 实现键值对按照访问顺序排序(即将最近未访问的元素排在链表首部、最近访问的元素移动到链表尾部)，需要调用第 4 个构造方法将 <code>accessOrder</code> 设置为 true。</p>
+<h2 id="5-源码分析"><a href="#5-源码分析" class="headerlink" title="5.源码分析"></a>5.源码分析</h2><p><code>get</code> 方法是 <code>LinkedHashMap</code> 增删改查操作中唯一一个重写的方法， <code>accessOrder</code> 为 true 的情况下， 它会在元素查询完成之后，将当前访问的元素移到链表的末尾。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> V <span class="title function_">get</span><span class="params">(Object key)</span> &#123;</span><br><span class="line">    Node&lt;K,V&gt; e;</span><br><span class="line">    <span class="keyword">if</span> ((e = getNode(hash(key), key)) == <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (accessOrder)</span><br><span class="line">        afterNodeAccess(e);</span><br><span class="line">    <span class="keyword">return</span> e.value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>关键点在于 <code>afterNodeAccess</code> 方法的实现，这个方法负责将元素移动到链表末尾。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> <span class="title function_">afterNodeAccess</span><span class="params">(Node&lt;K,V&gt; e)</span> &#123; <span class="comment">// move node to last</span></span><br><span class="line">    LinkedHashMap.Entry&lt;K,V&gt; last;</span><br><span class="line">    <span class="comment">// 待移动的节点不是链表尾节点</span></span><br><span class="line">    <span class="keyword">if</span> (accessOrder &amp;&amp; (last = tail) != e) &#123;</span><br><span class="line">        <span class="comment">// 记录前驱节点和后继节点</span></span><br><span class="line">        LinkedHashMap.Entry&lt;K,V&gt; p =</span><br><span class="line">            (LinkedHashMap.Entry&lt;K,V&gt;)e, b = p.before, a = p.after;</span><br><span class="line">        <span class="comment">// 断开当前节点与前驱和后继的联系，移动到链表末尾</span></span><br><span class="line">        p.after = <span class="literal">null</span>;</span><br><span class="line">        <span class="keyword">if</span> (b == <span class="literal">null</span>)</span><br><span class="line">            head = a;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            b.after = a;</span><br><span class="line">        <span class="keyword">if</span> (a != <span class="literal">null</span>)</span><br><span class="line">            a.before = b;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            last = b;</span><br><span class="line">        <span class="keyword">if</span> (last == <span class="literal">null</span>)</span><br><span class="line">            head = p;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            p.before = last;</span><br><span class="line">            last.after = p;</span><br><span class="line">        &#125;</span><br><span class="line">        tail = p;</span><br><span class="line">        ++modCount;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>LinkedHashMap</code> 并没有对 <code>remove</code> 方法进行重写，而是直接继承 <code>HashMap</code> 的 <code>remove</code> 方法，为了保证键值对移除后双向链表中的节点也会同步被移除，<code>LinkedHashMap</code> 重写了 <code>HashMap</code> 的空实现方法 <code>afterNodeRemoval</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> <span class="title function_">afterNodeRemoval</span><span class="params">(Node&lt;K,V&gt; e)</span> &#123; <span class="comment">// unlink</span></span><br><span class="line">	<span class="comment">//获取当前节点p、以及e的前驱节点b和后继节点a</span></span><br><span class="line">    LinkedHashMap.Entry&lt;K,V&gt; p =</span><br><span class="line">        (LinkedHashMap.Entry&lt;K,V&gt;)e, b = p.before, a = p.after;</span><br><span class="line">    <span class="comment">//将p的前驱和后继指针都设置为null，使其和前驱、后继节点断开联系</span></span><br><span class="line">    p.before = p.after = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//如果前驱节点为空，则说明当前节点p是链表首节点，让head指针指向后继节点a即可</span></span><br><span class="line">    <span class="keyword">if</span> (b == <span class="literal">null</span>)</span><br><span class="line">        head = a;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    <span class="comment">//如果前驱节点b不为空，则让b直接指向后继节点a</span></span><br><span class="line">        b.after = a;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//如果后继节点为空，则说明当前节点p在链表末端，所以直接让tail指针指向前驱节点a即可</span></span><br><span class="line">    <span class="keyword">if</span> (a == <span class="literal">null</span>)</span><br><span class="line">        tail = b;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    <span class="comment">//反之后继节点的前驱指针直接指向前驱节点</span></span><br><span class="line">        a.before = b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同样的 <code>LinkedHashMap</code> 并没有实现插入方法，而是直接继承 <code>HashMap</code> 的所有插入方法交由用户使用，但为了维护双向链表访问的有序性，它做了这样两件事:</p>
+<ol>
+<li>重写 <code>afterNodeAccess</code>(上文提到过),如果当前被插入的 key 已存在 <code>map</code> 中，因为 <code>LinkedHashMap</code> 的插入操作会将新节点追加至链表末尾，所以对于存在的 key 则调用 <code>afterNodeAccess</code> 将其放到链表末端。</li>
+<li>重写了 <code>HashMap</code> 的 <code>afterNodeInsertion</code> 方法，当 <code>removeEldestEntry</code> 返回 true 时，会将链表首节点移除。</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> <span class="title function_">afterNodeInsertion</span><span class="params">(<span class="type">boolean</span> evict)</span> &#123; <span class="comment">// possibly remove eldest</span></span><br><span class="line">    LinkedHashMap.Entry&lt;K,V&gt; first;</span><br><span class="line">    <span class="comment">//如果evict为true且队首元素不为空以及removeEldestEntry返回true，则说明我们需要最老的元素(即在链表首部的元素)移除。</span></span><br><span class="line">    <span class="keyword">if</span> (evict &amp;&amp; (first = head) != <span class="literal">null</span> &amp;&amp; removeEldestEntry(first)) &#123;</span><br><span class="line">        <span class="comment">//获取链表首部的键值对的key</span></span><br><span class="line">        <span class="type">K</span> <span class="variable">key</span> <span class="operator">=</span> first.key;</span><br><span class="line">        <span class="comment">//调用removeNode将元素从HashMap的bucket中移除，并和LinkedHashMap的双向链表断开，等待gc回收</span></span><br><span class="line">        removeNode(hash(key), key, <span class="literal">null</span>, <span class="literal">false</span>, <span class="literal">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-遍历性能"><a href="#6-遍历性能" class="headerlink" title="6.遍历性能"></a>6.遍历性能</h2><p><code>LinkedHashMap</code> 维护了一个双向链表来记录数据插入的顺序，因此在迭代遍历生成的迭代器的时候，是按照双向链表的路径进行遍历的。这一点相比于 <code>HashMap</code> 那种遍历整个 bucket 的方式来说，高效得多。</p>
+<p>这一点我们可以从两者的迭代器中得以印证，先来看看 <code>HashMap</code> 的迭代器，可以看到 <code>HashMap</code> 迭代键值对时会用到一个 <code>nextNode</code> 方法，该方法会返回 next 指向的下一个元素，并会从 next 开始遍历 bucket 找到下一个 bucket 中不为空的元素 Node。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">EntryIterator</span> <span class="keyword">extends</span> <span class="title class_">HashIterator</span></span><br><span class="line"><span class="keyword">implements</span> <span class="title class_">Iterator</span> &lt; Map.Entry &lt; K, V &gt;&gt; &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> Map.Entry &lt; K, V &gt; next() &#123;</span><br><span class="line">        <span class="keyword">return</span> nextNode();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//获取下一个Node</span></span><br><span class="line"><span class="keyword">final</span> Node &lt; K, V &gt; nextNode() &#123;</span><br><span class="line">    Node &lt; K, V &gt; [] t;</span><br><span class="line">    <span class="comment">//获取下一个元素next</span></span><br><span class="line">    Node &lt; K, V &gt; e = next;</span><br><span class="line">    <span class="keyword">if</span> (modCount != expectedModCount)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">    <span class="keyword">if</span> (e == <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NoSuchElementException</span>();</span><br><span class="line">    <span class="comment">//将next指向bucket中下一个不为空的Node</span></span><br><span class="line">    <span class="keyword">if</span> ((next = (current = e).next) == <span class="literal">null</span> &amp;&amp; (t = table) != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">do</span> &#123;&#125; <span class="keyword">while</span> (index &lt; t.length &amp;&amp; (next = t[index++]) == <span class="literal">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> e;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>相比之下 <code>LinkedHashMap</code> 的迭代器则是直接使用通过 <code>after</code> 指针快速定位到当前节点的后继节点，简洁高效需多。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">LinkedEntryIterator</span> <span class="keyword">extends</span> <span class="title class_">LinkedHashIterator</span></span><br><span class="line"><span class="keyword">implements</span> <span class="title class_">Iterator</span> &lt; Map.Entry &lt; K, V &gt;&gt; &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> Map.Entry &lt; K, V &gt; next() &#123;</span><br><span class="line">        <span class="keyword">return</span> nextNode();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//获取下一个Node</span></span><br><span class="line"><span class="keyword">final</span> LinkedHashMap.Entry &lt; K, V &gt; nextNode() &#123;</span><br><span class="line">    <span class="comment">//获取下一个节点next</span></span><br><span class="line">    LinkedHashMap.Entry &lt; K, V &gt; e = next;</span><br><span class="line">    <span class="keyword">if</span> (modCount != expectedModCount)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">    <span class="keyword">if</span> (e == <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NoSuchElementException</span>();</span><br><span class="line">    <span class="comment">//current 指针指向当前节点</span></span><br><span class="line">    current = e;</span><br><span class="line">    <span class="comment">//next直接当前节点的after指针快速定位到下一个节点</span></span><br><span class="line">    next = e.after;</span><br><span class="line">    <span class="keyword">return</span> e;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">LinkedHashMap源码剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">1.整体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2.简单使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%8A%82%E7%82%B9%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.3.</span> <span class="toc-text">3.节点设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">4.构造方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="toc-number">1.5.</span> <span class="toc-text">5.源码分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%8D%E5%8E%86%E6%80%A7%E8%83%BD"><span class="toc-number">1.6.</span> <span class="toc-text">6.遍历性能</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&text=LinkedHashMap源码剖析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&is_video=false&description=LinkedHashMap源码剖析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LinkedHashMap源码剖析&body=Check out this article: https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&title=LinkedHashMap源码剖析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&name=LinkedHashMap源码剖析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/&t=LinkedHashMap源码剖析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

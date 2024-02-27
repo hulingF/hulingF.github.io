@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="二面总结(AutoMQ)这次面试问了大量关于做项目和实习过程中的思考，回答的不太好，因此打算好好总结一下相关的问题，也是对自己学习内容的整理回顾。 1.关于RPC存在的必要性纯裸TCP本事就可以收发数据，但它是基于字节流的无边界数据流，上层需要定义消息格式用于定义消息边界，因此基于TCP很多应用层的协议崭露头角，例如HTTP和各类RPC协议(RPC本质上不算是协议，而是一种调用方式，而像gRPC和">
+<meta property="og:type" content="article">
+<meta property="og:title" content="二面总结(AutoMQ)">
+<meta property="og:url" content="https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="二面总结(AutoMQ)这次面试问了大量关于做项目和实习过程中的思考，回答的不太好，因此打算好好总结一下相关的问题，也是对自己学习内容的整理回顾。 1.关于RPC存在的必要性纯裸TCP本事就可以收发数据，但它是基于字节流的无边界数据流，上层需要定义消息格式用于定义消息边界，因此基于TCP很多应用层的协议崭露头角，例如HTTP和各类RPC协议(RPC本质上不算是协议，而是一种调用方式，而像gRPC和">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-02-27T11:07:35.614Z">
+<meta property="article:modified_time" content="2024-02-27T15:30:06.504Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>二面总结(AutoMQ)</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&text=二面总结(AutoMQ)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&is_video=false&description=二面总结(AutoMQ)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=二面总结(AutoMQ)&body=Check out this article: https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&name=二面总结(AutoMQ)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&t=二面总结(AutoMQ)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93-AutoMQ"><span class="toc-number">1.</span> <span class="toc-text">二面总结(AutoMQ)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%B3%E4%BA%8ERPC%E5%AD%98%E5%9C%A8%E7%9A%84%E5%BF%85%E8%A6%81%E6%80%A7"><span class="toc-number">1.1.</span> <span class="toc-text">1.关于RPC存在的必要性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%85%B3%E4%BA%8E%E5%AE%9E%E4%B9%A0%E5%86%85%E5%AE%B9%E5%AF%B9%E4%BD%A0%E6%9C%AA%E6%9D%A5%E7%9A%84%E7%BC%96%E7%A0%81%E5%B7%A5%E4%BD%9C%E7%9A%84%E5%90%AF%E7%A4%BA"><span class="toc-number">1.2.</span> <span class="toc-text">2.关于实习内容对你未来的编码工作的启示</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        二面总结(AutoMQ)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-27T11:07:35.614Z" class="dt-published" itemprop="datePublished">2024-02-27</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag">面试</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="二面总结-AutoMQ"><a href="#二面总结-AutoMQ" class="headerlink" title="二面总结(AutoMQ)"></a>二面总结(AutoMQ)</h1><p>这次面试问了大量关于做项目和实习过程中的思考，回答的不太好，因此打算好好总结一下相关的问题，也是对自己学习内容的整理回顾。</p>
+<h2 id="1-关于RPC存在的必要性"><a href="#1-关于RPC存在的必要性" class="headerlink" title="1.关于RPC存在的必要性"></a>1.关于RPC存在的必要性</h2><p>纯裸TCP本事就可以收发数据，但它是基于字节流的<code>无边界</code>数据流，上层需要定义<code>消息格式</code>用于定义消息边界，因此基于TCP很多应用层的协议崭露头角，例如HTTP和各类RPC协议(RPC本质上不算是协议，而是一种调用方式，而像gRPC和Thrift这样的具体实现才是协议，它们是实现了RPC调用的协议。目的是希望程序员能像调用本地方法那样去调用远端的服务方法，同时RPC有很多种实现方式，<strong>不一定非得基于TCP协议</strong>)。</p>
+<p>主流的HTTP&#x2F;1.1协议传输的内容非常冗余，例如请求头中那些信息，如果我们约定好头部的第几位是Content-Type，就不需要每次都真的把”Content-Type”这个字段传过来。而RPC，因为它的<code>可定制程度</code>更高，可以采用<code>紧凑的二进制格式</code>定义RPC协议，采用<code>体积更小的序列化协议</code>去保存结构体数据，同时也<code>不需要像HTTP那样考虑各种浏览器行为</code>，比如302重定向跳转啥的。<strong>因此性能也会更好一些，这也是在公司内部微服务中抛弃HTTP，选择使用RPC的最主要原因。</strong></p>
+<p>其次，很多RPC调用往往是因为<code>服务的拆分</code>或者公司内部的多个服务之间的通信，这其中必然需要网络通信，利用HTTP当然可以，但是我们想要即使服务被拆分了但是<code>使用起来还是跟之前的本地调用一样方便</code>，这时候RPC框架就很合适，我们编码上还是和之前本地调用相差不大。</p>
+<p>而且，很多RPC框架包含了<code>重试机制</code>，<code>路由策略</code>，<code>负载均衡策略</code>，<code>高可用策略</code>，<code>流量控制策略</code>等等。如果应用进程之间只使用HTTP协议通信，显然是无法完成上述功能的。</p>
+<p>总结:RPC主要用于公司内部的服务调用，性能消耗低，传输效率高，服务治理方便。HTTP主要用于对外的环境，浏览器接口调用，APP接口调用，第三方接口调用等。</p>
+<h2 id="2-关于实习内容对你未来的编码工作的启示"><a href="#2-关于实习内容对你未来的编码工作的启示" class="headerlink" title="2.关于实习内容对你未来的编码工作的启示"></a>2.关于实习内容对你未来的编码工作的启示</h2><p>LFI：Linux Fault Injection作为Linux内核内置的原生故障注入机制，提供了多种类型的故障注入如fail_make_request、fail_page_alloc等，默认情况下出于安全的考虑，内核并没有开启故障注入功能，需要我们手动配置内核选项，重新编译内核。Linux内核利用#ifdef等宏对相同的函数的不同实现进行了隔离，并且内核代码中很多流程处理过程中都留了口子如should_fail_request函数，根据内核编译选项选择性对这些口子的实现进行编译，例如默认情况下should_fail_request函数都是直接返回false即默认不走故障注入逻辑判断，当我们开启了CONFIG_FAIL_MAKE_REQUEST内核编译选项后，should_fail_request函数会真正的根据故障注入配置判断故障注入是否触发。</p>
+<p>KRF是对内核空间的系统调用表进行拦截替换的工具</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93-AutoMQ"><span class="toc-number">1.</span> <span class="toc-text">二面总结(AutoMQ)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%B3%E4%BA%8ERPC%E5%AD%98%E5%9C%A8%E7%9A%84%E5%BF%85%E8%A6%81%E6%80%A7"><span class="toc-number">1.1.</span> <span class="toc-text">1.关于RPC存在的必要性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%85%B3%E4%BA%8E%E5%AE%9E%E4%B9%A0%E5%86%85%E5%AE%B9%E5%AF%B9%E4%BD%A0%E6%9C%AA%E6%9D%A5%E7%9A%84%E7%BC%96%E7%A0%81%E5%B7%A5%E4%BD%9C%E7%9A%84%E5%90%AF%E7%A4%BA"><span class="toc-number">1.2.</span> <span class="toc-text">2.关于实习内容对你未来的编码工作的启示</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&text=二面总结(AutoMQ)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&is_video=false&description=二面总结(AutoMQ)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=二面总结(AutoMQ)&body=Check out this article: https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&title=二面总结(AutoMQ)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&name=二面总结(AutoMQ)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/02/27/%E4%BA%8C%E9%9D%A2%E6%80%BB%E7%BB%93(AutoMQ)/&t=二面总结(AutoMQ)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
