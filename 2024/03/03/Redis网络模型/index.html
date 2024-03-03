@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis网络模型与通信协议网络模型Redis到底是单线程还是多线程？  如果仅仅聊Redis的核心业务部分（命令处理），答案是单线程  如果是聊整个Redis，那么答案就是多线程   在Redis版本迭代过程中，在两个重要的时间节点上引入了多线程的支持：  Redis v4.0：引入多线程异步处理一些耗时较旧的任务，例如异步删除命令unlink  Redis v6.0：在核心网络模型中引入多线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis网络模型与通信协议">
+<meta property="og:url" content="https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis网络模型与通信协议网络模型Redis到底是单线程还是多线程？  如果仅仅聊Redis的核心业务部分（命令处理），答案是单线程  如果是聊整个Redis，那么答案就是多线程   在Redis版本迭代过程中，在两个重要的时间节点上引入了多线程的支持：  Redis v4.0：引入多线程异步处理一些耗时较旧的任务，例如异步删除命令unlink  Redis v6.0：在核心网络模型中引入多线程">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110050282.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110205714.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110240412.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110603258.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110742944.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303111512660.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110627676.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303111542285.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303112025131.png">
+<meta property="article:published_time" content="2024-03-03T02:11:48.871Z">
+<meta property="article:modified_time" content="2024-03-03T03:20:32.895Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110050282.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis网络模型与通信协议</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/03/03/%E9%9B%B6%E6%8B%B7%E8%B4%9D%E6%8A%80%E6%9C%AF/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/03/02/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&text=Redis网络模型与通信协议"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&is_video=false&description=Redis网络模型与通信协议"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis网络模型与通信协议&body=Check out this article: https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&name=Redis网络模型与通信协议&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&t=Redis网络模型与通信协议"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E4%B8%8E%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.</span> <span class="toc-text">Redis网络模型与通信协议</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.1.</span> <span class="toc-text">网络模型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.2.</span> <span class="toc-text">通信协议</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis网络模型与通信协议
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-03-03T02:11:48.871Z" class="dt-published" itemprop="datePublished">2024-03-03</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis网络模型与通信协议"><a href="#Redis网络模型与通信协议" class="headerlink" title="Redis网络模型与通信协议"></a>Redis网络模型与通信协议</h1><h2 id="网络模型"><a href="#网络模型" class="headerlink" title="网络模型"></a>网络模型</h2><p><strong>Redis到底是单线程还是多线程？</strong></p>
+<ul>
+<li><p>如果仅仅聊Redis的核心业务部分（<code>命令处理</code>），答案是单线程</p>
+</li>
+<li><p>如果是聊整个Redis，那么答案就是多线程</p>
+</li>
+</ul>
+<p>在Redis版本迭代过程中，在两个重要的时间节点上引入了多线程的支持：</p>
+<ul>
+<li><p>Redis v4.0：引入<code>多线程异步处理一些耗时较旧的任务</code>，例如<code>异步删除命令unlink</code></p>
+</li>
+<li><p>Redis v6.0：在<code>核心网络模型</code>中引入多线程，进一步提高对于多核CPU的利用率</p>
+</li>
+</ul>
+<p>因此，对于Redis的核心网络模型，在Redis 6.0之前确实都是单线程，是利用epoll这样的IO多路复用技术在事件循环中不断处理客户端情况。</p>
+<p><strong>为什么Redis要选择单线程？</strong></p>
+<ul>
+<li>抛开持久化不谈，Redis是<code>纯内存操作</code>，执行速度非常快，它的性能瓶颈是网络延迟而不是执行速度，因此多线程并不会带来巨大的性能提升。</li>
+<li>多线程会导致过多的<code>上下文切换</code>，带来不必要的开销。</li>
+<li>引入多线程会面临<code>线程安全问题</code>，必然要引入线程锁这样的安全手段，实现复杂度增高，而且性能也会大打折扣。</li>
+</ul>
+<p>Redis通过IO多路复用来提高网络性能，并且<code>支持各种不同的多路复用实现</code>，并且将这些实现进行封装，提供了统一的高性能事件库API库 AE：</p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110050282.png" alt="image-20240303110050282"></p>
+<p><strong>Redis单线程网络模型的流程：</strong></p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110205714.png" alt="image-20240303110205714"></p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110240412.png" alt="image-20240303110240412"></p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110603258.png" alt="image-20240303110603258"></p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110742944.png" alt="image-20240303110742944"></p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303111512660.png" alt="image-20240303111512660"></p>
+<p><strong>Redis多线程网络模型的流程：</strong></p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303110627676.png" alt="image-20240303110627676"></p>
+<h2 id="通信协议"><a href="#通信协议" class="headerlink" title="通信协议"></a>通信协议</h2><p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303111542285.png" alt="image-20240303111542285"></p>
+<p><img src="/imgs/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/image-20240303112025131.png" alt="image-20240303112025131"></p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E4%B8%8E%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.</span> <span class="toc-text">Redis网络模型与通信协议</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.1.</span> <span class="toc-text">网络模型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.2.</span> <span class="toc-text">通信协议</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&text=Redis网络模型与通信协议"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&is_video=false&description=Redis网络模型与通信协议"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis网络模型与通信协议&body=Check out this article: https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&title=Redis网络模型与通信协议"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&name=Redis网络模型与通信协议&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/03/Redis%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B/&t=Redis网络模型与通信协议"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
