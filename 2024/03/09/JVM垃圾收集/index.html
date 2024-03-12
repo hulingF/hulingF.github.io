@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="JVM垃圾收集为什么需要垃圾回收想要学习GC，首先需要理解为什么需要GC？  对于高级语言来说，一个基本认知是如果不进行垃圾回收，内存迟早都会被消耗完，因为不断地分配内存空间而不进行回收，就好像不停地生产生活垃圾而从来不打扫一样。 除了释放没用的对象，垃圾回收也可以清除内存里的记录碎片。碎片整理将所占用的堆内存移到堆的一端，以便JVM将整理出的内存分配给新的对象。 随着应用程序所应付的业务越来越庞">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM垃圾收集">
+<meta property="og:url" content="https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="JVM垃圾收集为什么需要垃圾回收想要学习GC，首先需要理解为什么需要GC？  对于高级语言来说，一个基本认知是如果不进行垃圾回收，内存迟早都会被消耗完，因为不断地分配内存空间而不进行回收，就好像不停地生产生活垃圾而从来不打扫一样。 除了释放没用的对象，垃圾回收也可以清除内存里的记录碎片。碎片整理将所占用的堆内存移到堆的一端，以便JVM将整理出的内存分配给新的对象。 随着应用程序所应付的业务越来越庞">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310170338438.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310171821691.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310174936719.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310175618271.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310173051473.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310173519912.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310181110325.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310185655702.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310190633085.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310221945619.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222118218.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222311885.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222516256.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222640915.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222902142.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310223040257.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311093946543.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311095531834.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311100222550.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311101831530.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311102551871.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311103428494.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/%E7%AC%AC17%E7%AB%A0_%E7%BB%8F%E5%85%B8%E7%9A%847%E7%A7%8DGC.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/%E7%AC%AC17%E7%AB%A0_%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%BB%84%E5%90%88.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311152105460.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311152259165.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311193747239.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311195439721.png">
+<meta property="article:published_time" content="2024-03-09T12:00:02.891Z">
+<meta property="article:modified_time" content="2024-03-11T14:27:52.687Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="JVM">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310170338438.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>JVM垃圾收集</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/03/04/MySQL%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E9%9A%94%E7%A6%BB%E7%AD%89%E7%BA%A7%E4%B8%8B%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB%E9%97%AE%E9%A2%98/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&text=JVM垃圾收集"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&is_video=false&description=JVM垃圾收集"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM垃圾收集&body=Check out this article: https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&name=JVM垃圾收集&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&t=JVM垃圾收集"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86"><span class="toc-number">1.</span> <span class="toc-text">JVM垃圾收集</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="toc-number">1.1.</span> <span class="toc-text">为什么需要垃圾回收</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%97%A9%E6%9C%9F%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">1.2.</span> <span class="toc-text">早期垃圾回收机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">1.3.</span> <span class="toc-text">Java垃圾回收机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">垃圾回收相关算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E9%98%B6%E6%AE%B5%E7%9A%84%E7%9B%AE%E7%9A%84"><span class="toc-number">1.4.1.</span> <span class="toc-text">标记阶段的目的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E9%98%B6%E6%AE%B5%EF%BC%9A%E5%BC%95%E7%94%A8%E8%AE%A1%E6%95%B0%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.2.</span> <span class="toc-text">标记阶段：引用计数算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E9%98%B6%E6%AE%B5%EF%BC%9A%E5%8F%AF%E8%BE%BE%E6%80%A7%E5%88%86%E6%9E%90%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.3.</span> <span class="toc-text">标记阶段：可达性分析算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E8%B1%A1%E7%9A%84finalization%E6%9C%BA%E5%88%B6"><span class="toc-number">1.4.4.</span> <span class="toc-text">对象的finalization机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E9%99%A4%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%A0%87%E8%AE%B0-%E6%B8%85%E9%99%A4%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.5.</span> <span class="toc-text">清除阶段：标记-清除算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E9%99%A4%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%A0%87%E8%AE%B0-%E5%A4%8D%E5%88%B6%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.6.</span> <span class="toc-text">清除阶段：标记-复制算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E9%99%A4%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%A0%87%E8%AE%B0-%E6%95%B4%E7%90%86%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.7.</span> <span class="toc-text">清除阶段：标记-整理算法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5"><span class="toc-number">1.5.</span> <span class="toc-text">垃圾回收相关概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#System-gc-%E7%9A%84%E7%90%86%E8%A7%A3"><span class="toc-number">1.5.1.</span> <span class="toc-text">System.gc()的理解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#STW%E7%9A%84%E7%90%86%E8%A7%A3"><span class="toc-number">1.5.2.</span> <span class="toc-text">STW的理解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E8%8A%82%E7%82%B9%E6%9E%9A%E4%B8%BE"><span class="toc-number">1.5.3.</span> <span class="toc-text">根节点枚举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%E6%A6%82%E8%BF%B0"><span class="toc-number">1.5.4.</span> <span class="toc-text">再谈引用概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E5%BC%BA%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.5.</span> <span class="toc-text">再谈引用：强引用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E8%BD%AF%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.6.</span> <span class="toc-text">再谈引用：软引用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E5%BC%B1%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.7.</span> <span class="toc-text">再谈引用：弱引用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E8%99%9A%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.8.</span> <span class="toc-text">再谈引用：虚引用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8"><span class="toc-number">1.6.</span> <span class="toc-text">垃圾回收器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7%E6%AC%BE%E7%BB%8F%E5%85%B8%E7%9A%84%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">1.6.1.</span> <span class="toc-text">7款经典的垃圾收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%9A%84%E7%BB%84%E5%90%88%E5%85%B3%E7%B3%BB"><span class="toc-number">1.6.2.</span> <span class="toc-text">垃圾收集器的组合关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Serial%E6%94%B6%E9%9B%86%E5%99%A8%EF%BC%9A%E4%B8%B2%E8%A1%8C%E5%9B%9E%E6%94%B6"><span class="toc-number">1.6.3.</span> <span class="toc-text">Serial收集器：串行回收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ParNew%E6%94%B6%E9%9B%86%E5%99%A8%EF%BC%9A%E5%B9%B6%E8%A1%8C%E5%9B%9E%E6%94%B6"><span class="toc-number">1.6.4.</span> <span class="toc-text">ParNew收集器：并行回收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Parallel-Scavenge%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">1.6.5.</span> <span class="toc-text">Parallel Scavenge收集器</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        JVM垃圾收集
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-03-09T12:00:02.891Z" class="dt-published" itemprop="datePublished">2024-03-09</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/JVM/" rel="tag">JVM</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="JVM垃圾收集"><a href="#JVM垃圾收集" class="headerlink" title="JVM垃圾收集"></a>JVM垃圾收集</h1><h2 id="为什么需要垃圾回收"><a href="#为什么需要垃圾回收" class="headerlink" title="为什么需要垃圾回收"></a>为什么需要垃圾回收</h2><p><strong>想要学习GC，首先需要理解为什么需要GC？</strong></p>
+<ol>
+<li>对于高级语言来说，一个基本认知是如果不进行垃圾回收，<code>内存迟早都会被消耗完</code>，因为不断地分配内存空间而不进行回收，就好像不停地生产生活垃圾而从来不打扫一样。</li>
+<li>除了释放没用的对象，垃圾回收也可以清除内存里的记录碎片。碎片整理将所占用的堆内存移到堆的一端，<code>以便JVM将整理出的内存分配给新的对象</code>。</li>
+<li>随着应用程序所应付的业务越来越庞大、复杂，用户越来越多，没有GC就不能保证应用程序的正常进行。而经常造成STW的GC又跟不上实际的需求，所以才会不断地尝试对GC进行优化。</li>
+</ol>
+<h2 id="早期垃圾回收机制"><a href="#早期垃圾回收机制" class="headerlink" title="早期垃圾回收机制"></a>早期垃圾回收机制</h2><p>在早期的C&#x2F;C++时代，垃圾回收基本上是手工进行的。开发人员可以使用new关键字进行内存申请，并使用delete关键字进行内存释放。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MibBridge *pBridge= <span class="keyword">new</span> cmBaseGroupBridge（）；</span><br><span class="line"><span class="comment">//如果注册失败，使用Delete释放该对象所占内存区域</span></span><br><span class="line"><span class="keyword">if</span>（pBridge-&gt;Register（kDestroy）！=NO ERROR）</span><br><span class="line">  <span class="keyword">delete</span> pBridge；</span><br></pre></td></tr></table></figure>
+
+<p>这种方式可以灵活控制内存释放的时间，但是会给开发人员带来<strong>频繁申请和释放内存的管理负担</strong>。倘若有一处内存区间由于程序员编码的问题忘记被回收，那么就会产生<strong>内存泄漏</strong>，垃圾对象永远无法被清除，随着系统运行时间的不断增长，垃圾对象所耗内存可能持续上升，直到出现内存溢出并造成<strong>应用程序崩溃</strong>。</p>
+<p>有了垃圾回收机制后，上述代码极有可能变成这样</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MibBridge *pBridge = <span class="keyword">new</span> <span class="built_in">cmBaseGroupBridge</span>(); </span><br><span class="line">pBridge-&gt;<span class="built_in">Register</span>(kDestroy);</span><br></pre></td></tr></table></figure>
+
+<p>现在，除了Java以外，C#、Python、Ruby等语言都使用了自动垃圾回收的思想，也是未来发展趋势，可以说这种自动化的内存分配和来及回收方式已经成为了现代开发语言必备的标准。</p>
+<h2 id="Java垃圾回收机制"><a href="#Java垃圾回收机制" class="headerlink" title="Java垃圾回收机制"></a>Java垃圾回收机制</h2><p><strong>自动内存管理的优点</strong></p>
+<ol>
+<li>自动内存管理，无需开发人员手动参与内存的分配与回收，这样降低内存泄漏和内存溢出的风险</li>
+<li>没有垃圾回收器，Java也会和C++一样，各种悬垂指针，野指针，泄露问题让你头疼不已。</li>
+<li>自动内存管理机制，<code>将程序员从繁重的内存管理中释放出来</code>，可以更专心地专注于业务开发</li>
+</ol>
+<p><strong>关于自动内存管理的担忧</strong></p>
+<ol>
+<li>对于Java开发人员而言，自动内存管理就像是一个黑匣子，如果过度依赖于“自动”，那么这将会是一场灾难，最严重的就会<strong>弱化Java开发人员在程序出现内存溢出时定位问题和解决问题的能力</strong>。</li>
+<li>此时，了解JVM的自动内存分配和内存回收原理就显得非常重要，只有在真正了解JVM是如何管理内存后，我们才能够在遇见<code>OutofMemoryError</code>时，快速地根据错误异常日志定位问题和解决问题。</li>
+<li>当需要排查各种内存溢出、内存泄漏问题时，当垃圾收集成为系统达到更高并发量的瓶颈时，我们就必须对这些“自动化”的技术<strong>实施必要的监控和调节</strong>。</li>
+</ol>
+<blockquote>
+<p>频繁收集年轻代，较少收集老年代，基本不动方法区！</p>
+</blockquote>
+<h2 id="垃圾回收相关算法"><a href="#垃圾回收相关算法" class="headerlink" title="垃圾回收相关算法"></a>垃圾回收相关算法</h2><h3 id="标记阶段的目的"><a href="#标记阶段的目的" class="headerlink" title="标记阶段的目的"></a>标记阶段的目的</h3><p>垃圾标记阶段：<code>主要是为了判断对象是否存活</code></p>
+<ol>
+<li>在堆里存放着几乎所有的Java对象实例，在GC执行垃圾回收之前，首先需要区分出内存中哪些是存活对象，哪些是已经死亡的对象。只有被标记为己经死亡的对象，GC才会在执行垃圾回收时，释放掉其所占用的内存空间，因此这个过程我们可以称为垃圾标记阶段。</li>
+<li>那么在JVM中究竟是如何标记一个死亡对象呢？<strong>简单来说，当一个对象已经不再被任何的存活对象继续引用时，就可以宣判为已经死亡。</strong></li>
+<li>判断对象存活一般有两种方式：<code>引用计数算法</code>和<code>可达性分析算法</code>。</li>
+</ol>
+<h3 id="标记阶段：引用计数算法"><a href="#标记阶段：引用计数算法" class="headerlink" title="标记阶段：引用计数算法"></a>标记阶段：引用计数算法</h3><ol>
+<li>引用计数算法（Reference Counting）比较简单，对每个对象保存一个整型的引用计数器属性，用于记录对象被引用的情况。</li>
+<li>对于一个对象A，只要有任何一个对象引用了A，则A的引用计数器就加1；当引用失效时，引用计数器就减1。只要对象A的引用计数器的值为0，即表示对象A不可能再被使用，可进行回收。</li>
+<li>优点：实现简单，垃圾对象便于辨识；判定效率高，回收没有延迟性。</li>
+<li>缺点：<ol>
+<li>它需要单独的字段存储计数器，这样的做法增加了<strong>存储空间的开销</strong>。</li>
+<li>每次赋值都需要更新计数器，伴随着加法和减法操作，这增加了<strong>时间开销</strong>。</li>
+<li>引用计数器有一个严重的问题，即<strong>无法处理循环引用</strong>的情况。这是一条致命缺陷，导致在Java的垃圾回收器中没有使用这类算法。</li>
+</ol>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -XX:+PrintGCDetails</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloReferenceCounter</span> &#123;</span><br><span class="line">    <span class="comment">//这个成员属性唯一的作用就是占用一点内存</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">byte</span>[] bigSize = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">5</span> * <span class="number">1024</span> * <span class="number">1024</span>];<span class="comment">//5MB</span></span><br><span class="line">    <span class="type">Object</span> <span class="variable">reference</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">HelloReferenceCounter</span> <span class="variable">obj1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HelloReferenceCounter</span>();</span><br><span class="line">        <span class="type">HelloReferenceCounter</span> <span class="variable">obj2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HelloReferenceCounter</span>();</span><br><span class="line">        obj1.reference = obj2;</span><br><span class="line">        obj2.reference = obj1;</span><br><span class="line"></span><br><span class="line">        obj1 = <span class="literal">null</span>;</span><br><span class="line">        obj2 = <span class="literal">null</span>;</span><br><span class="line">        System.gc();</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>如果不小心直接把<code>obj1.reference</code>和<code>obj2.reference</code>置为null。则在Java堆中的两块内存依然保持着互相引用，无法被回收</li>
+</ul>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310170338438.png" alt="image-20240310170338438"></p>
+<p>如果使用引用计数算法，那么这两个对象将会无法回收。而现在两个对象被回收了，说明Java使用的不是引用计数算法来进行标记的。</p>
+<ol>
+<li>引用计数算法，是很多语言的资源回收选择，例如因人工智能而更加火热的Python，它更是同时支持引用计数和垃圾收集机制。</li>
+<li>具体哪种最优是要看场景的，业界有大规模实践中仅保留引用计数机制，以提高吞吐量的尝试。</li>
+<li>Java并没有选择引用计数，是因为其存在一个基本的难题，也就是很难处理循环引用关系。</li>
+<li>Python如何解决循环引用？<ul>
+<li><code>手动解除</code>：很好理解，就是在合适的时机，解除引用关系。</li>
+<li><code>使用弱引用weakref</code>，weakref是Python提供的标准库，旨在解决循环引用。</li>
+</ul>
+</li>
+</ol>
+<h3 id="标记阶段：可达性分析算法"><a href="#标记阶段：可达性分析算法" class="headerlink" title="标记阶段：可达性分析算法"></a>标记阶段：可达性分析算法</h3><p>可达性分析算法：也可以称为<code>根搜索算法</code>、<code>追踪性垃圾收集</code>。</p>
+<ol>
+<li>相对于引用计数算法而言，可达性分析算法不仅同样具备实现简单和执行高效等特点，更重要的是该算法可以有效地<strong>解决在引用计数算法中循环引用的问题，防止内存泄漏的发生</strong>。</li>
+<li>相较于引用计数算法，这里的可达性分析就是Java、C#选择的。这种类型的垃圾收集通常也叫作追踪性垃圾收集（Tracing Garbage Collection）。</li>
+</ol>
+<p><strong>可达性分析实现思路</strong></p>
+<ul>
+<li>所谓”GCRoots”根集合就是一组必须活跃的引用</li>
+<li>其基本思路如下：<ul>
+<li>可达性分析算法是以根对象集合（GCRoots）为起始点，按照从上至下的方式<strong>搜索被根对象集合所连接的目标对象是否可达。</strong></li>
+<li>使用可达性分析算法后，内存中的存活对象都会被根对象集合直接或间接连接着，搜索所走过的路径称为<strong>引用链</strong>（Reference Chain）</li>
+<li>如果目标对象没有任何引用链相连，则是不可达的，就意味着该对象己经死亡，可以标记为垃圾对象。</li>
+<li>在可达性分析算法中，只有能够被根对象集合直接或者间接连接的对象才是存活对象。</li>
+</ul>
+</li>
+</ul>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310171821691.png" alt="image-20240310171821691"></p>
+<p><strong>GC Roots可以是哪些元素？</strong></p>
+<ol>
+<li>在虚拟机栈（栈帧中的本地变量表）中引用的对象，譬如各个线程被调用的方法堆栈中使用到的参数、局部变量、临时变量等。</li>
+<li>本地方法栈内JNI（通常说的本地方法）引用的对象</li>
+<li>方法区中类静态属性引用的对象，比如：Java类的引用类型静态变量</li>
+<li>方法区中常量引用的对象，比如：字符串常量池（StringTable）里的引用</li>
+<li>所有被同步锁synchronized持有的对象</li>
+<li>Java虚拟机内部的引用，基本数据类型对应的Class对象，一些常驻的异常对象（如：NullPointerException、OutofMemoryError），系统类加载器。</li>
+<li>反映Java虚拟机内部情况的JMXBean、JVMTI中注册的回调、本地代码缓存等。</li>
+</ol>
+<p>除了这些固定的GC Roots集合以外，根据用户所选用的垃圾收集器以及当前回收的内存区域不同，还可以有其他对象“临时性”地加入，共同构成完整GC Roots集合。譬如后文将会提到的分代收集和局部回收（Partial GC），如果只针对Java堆中某一块区域发起垃圾收集时（如最典型的只针对新生代的垃圾收集），必须考虑到内存区域是虚拟机自己的实现细节（在用户视角里任何内存区域都是不可见的），更不是孤立封闭的，所以某个区域里的对象完全有可能被位于堆中其他区域的对象所引用，这时候就需要将这些关联区域的对象也一并加入GC Roots集合中去，才能保证可达性分析的正确性。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloGCRoots</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        List&lt;Object&gt; numList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        <span class="type">Date</span> <span class="variable">birth</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Date</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">            numList.add(String.valueOf(i));</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">10</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;数据添加完毕，请操作：&quot;</span>);</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Scanner</span>(System.in).next();</span><br><span class="line">        numList = <span class="literal">null</span>;</span><br><span class="line">        birth = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;numList、birth已置空，请操作：&quot;</span>);</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Scanner</span>(System.in).next();</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;结束&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310174936719.png" alt="image-20240310174936719"></p>
+<p>当numList、birth已置空时，再次查看对应的堆dump文件，发现GC Roots中main线程中的这两个变量已经不见：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310175618271.png" alt="image-20240310175618271"></p>
+<h3 id="对象的finalization机制"><a href="#对象的finalization机制" class="headerlink" title="对象的finalization机制"></a>对象的finalization机制</h3><p>对象销毁前的回调函数：<code>finalize()</code></p>
+<ol>
+<li>Java语言提供了对象终止（finalization）机制来允许开发人员提供<code>对象被销毁之前的自定义处理逻辑</code>。</li>
+<li>当垃圾回收器发现没有引用指向一个对象，即垃圾回收此对象之前，总会先调用这个对象的finalize()方法。</li>
+<li>finalize()方法允许在子类中被重写，用于在对象被回收时进行资源释放。通常在这个方法中进行一些<code>资源释放和清理的工作</code>，比如关闭文件、套接字和数据库连接等。</li>
+</ol>
+<p><strong>生存还是死亡？</strong></p>
+<p>由于finalize()方法的存在，<strong>虚拟机中的对象一般处于三种可能的状态。</strong></p>
+<ol>
+<li>如果从所有的根节点都无法访问到某个对象，说明对象己经不再使用了。一般来说，此对象需要被回收。但事实上，也并非是“非死不可”的，这时候它们暂时处于“缓刑”阶段。一个无法触及的对象有可能在某一个条件下“复活”自己，如果这样，那么对它立即进行回收就是不合理的。为此，定义虚拟机中的对象可能的三种状态。如下：<ol>
+<li>可触及的：从根节点开始，可以到达这个对象。</li>
+<li>可复活的：对象的所有引用都被释放，但是对象有可能在finalize()中复活。</li>
+<li>不可触及的：对象的finalize()被调用，并且没有复活，那么就会进入不可触及状态。不可触及的对象不可能被复活，因为<code>finalize()只会被调用一次</code>。</li>
+</ol>
+</li>
+<li>以上3种状态中，是由于finalize()方法的存在，进行的区分。只有在对象不可触及时才可以被回收。</li>
+</ol>
+<p><strong>具体过程</strong></p>
+<p>判定一个对象objA是否可回收，至少要经历两次标记过程：</p>
+<ol>
+<li>如果对象objA到GC Roots没有引用链，则进行第一次标记。</li>
+<li>进行筛选，判断此对象是否有必要执行finalize()方法<ol>
+<li>如果对象objA<code>没有重写finalize()方法</code>，或者<code>finalize()方法已经被虚拟机调用过</code>，则虚拟机视为“没有必要执行”，objA被判定为不可触及的。</li>
+<li>如果对象objA<code>重写了finalize()方法，且还未执行过</code>，那么objA会被插入到<code>F-Queue队列</code>中，<strong>由一个虚拟机自动创建的、低优先级的Finalizer线程触发其finalize()方法执行</strong>。</li>
+<li><code>finalize()方法是对象逃脱死亡的最后机会</code>，稍后GC会对F-Queue队列中的对象进行第二次标记。如果objA在finalize()方法中与引用链上的任何一个对象建立了联系，那么在第二次标记时，objA会被移出“即将回收”集合。之后，对象会再次出现没有引用存在的情况。在这个情况下，finalize()方法不会被再次调用，对象会直接变成不可触及的状态，也就是说，一个对象的finalize()方法只会被调用一次。</li>
+</ol>
+</li>
+</ol>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310173051473.png" alt="image-20240310173051473"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloFinalizer</span> &#123;</span><br><span class="line">    <span class="comment">// 类静态变量，属于GC Root集合</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Object obj;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// finalize方法只能被调用一次</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">finalize</span><span class="params">()</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">        <span class="built_in">super</span>.finalize();</span><br><span class="line">        System.out.println(<span class="string">&quot;调用当前类重写的finalize()方法&quot;</span>);</span><br><span class="line">        <span class="comment">//当前待回收的对象在finalize()方法中与引用链上的一个对象obj建立了联系</span></span><br><span class="line">        obj = <span class="built_in">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            obj = <span class="keyword">new</span> <span class="title class_">HelloFinalizer</span>();</span><br><span class="line">            <span class="comment">// 对象第一次成功拯救自己</span></span><br><span class="line">            obj = <span class="literal">null</span>;</span><br><span class="line">            System.gc();</span><br><span class="line">            System.out.println(<span class="string">&quot;第1次 gc&quot;</span>);</span><br><span class="line">            <span class="comment">// 因为Finalizer线程优先级很低，暂停2秒，以等待它</span></span><br><span class="line">            Thread.sleep(<span class="number">2000</span>);</span><br><span class="line">            <span class="keyword">if</span> (obj == <span class="literal">null</span>) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;obj is dead&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;obj is still alive&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(<span class="string">&quot;第2次 gc&quot;</span>);</span><br><span class="line">            <span class="comment">// 下面这段代码与上面的完全相同，但是这次自救却失败了</span></span><br><span class="line">            obj = <span class="literal">null</span>;</span><br><span class="line">            System.gc();</span><br><span class="line">            <span class="comment">// 因为Finalizer线程优先级很低，暂停2秒，以等待它</span></span><br><span class="line">            Thread.sleep(<span class="number">2000</span>);</span><br><span class="line">            <span class="keyword">if</span> (obj == <span class="literal">null</span>) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;obj is dead&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;obj is still alive&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310173519912.png" alt="image-20240310173519912"></p>
+<h3 id="清除阶段：标记-清除算法"><a href="#清除阶段：标记-清除算法" class="headerlink" title="清除阶段：标记-清除算法"></a>清除阶段：标记-清除算法</h3><p>当成功区分出内存中存活对象和死亡对象后，GC接下来的任务就是执行垃圾回收，释放掉无用对象所占用的内存空间，以便有足够的可用内存空间为新对象分配内存。</p>
+<p>标记-清除算法（Mark-Sweep）是一种非常基础和常见的垃圾收集算法，该算法被J.McCarthy等人在1960年提出并并应用于Lisp语言。</p>
+<p>当堆中的有效内存空间被耗尽的时候，就会停止整个程序（也被称为STW），然后进行两项工作，第一项则是标记，第二项则是清除：</p>
+<ol>
+<li>标记：Collector<code>从引用根节点开始遍历</code>，标记所有被引用的对象。一般是在对象的Header中记录为可达对象。<ul>
+<li>注意：<strong>标记的是被引用的对象，也就是可达对象，并非标记的是即将被清除的垃圾对象</strong></li>
+</ul>
+</li>
+<li>清除：Collector<code>对堆内存从头到尾进行线性的遍历</code>，如果发现某个对象在其Header中没有标记为可达对象，则将其回收。</li>
+</ol>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310181110325.png" alt="image-20240310181110325"></p>
+<p>之所以说它是最基础的收集算法，是因为后续的收集算法大多都是以标记-清除算法为基础，对其缺点进行改进而得到的。它的主要缺点有两个：第一个是<code>执行效率不稳定</code>，如果Java堆中包含大量对象，而且其中大部分是需要被回收的，这时必须进行大量标记和清除的动作，导致标记和清除两个过程的执行效率都随对象数量增长而降低；第二个是<code>内存空间的碎片化问题</code>，标记、清除之后会产生大量不连续的内存碎片，空间碎片太多可能会导致当以后在程序运行过程中需要分配较大对象时无法找到足够的连续内存而不得不提前触发另一次垃圾收集动作。</p>
+<h3 id="清除阶段：标记-复制算法"><a href="#清除阶段：标记-复制算法" class="headerlink" title="清除阶段：标记-复制算法"></a>清除阶段：标记-复制算法</h3><p>标记-复制算法常被简称为复制算法。为了解决标记-清除算法面对<code>大量可回收对象时执行效率低</code>的问题，1969年Fenichel提出了一种称为“半区复制”（Semispace Copying）的垃圾收集算法，它将可用内存按容量划分为大小相等的两块，每次只使用其中的一块。当这一块的内存用完了，就将还存活着的对象复制到另外一块上面，然后再把已使用过的内存空间一次清理掉。<strong>如果内存中多数对象都是存活的，这种算法将会产生大量的内存间复制的开销，但对于多数对象都是可回收的情况，算法需要复制的就是占少数的存活对象，而且每次都是针对整个半区进行内存回收，分配内存时也就不用考虑有空间碎片的复杂情况，只要移动堆顶指针，按顺序分配即可。</strong>这样实现简单，运行高效，不过其缺陷也显而易见，这种复制回收算法的代价是<code>将可用内存缩小为了原来的一半，空间浪费未免太多了一点</code>。</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310185655702.png" alt="image-20240310185655702"></p>
+<p>现在的商用Java虚拟机大多都优先采用了这种收集算法去回收新生代，IBM公司曾有一项专门研究对新生代“朝生夕灭”的特点做了更量化的诠释——<strong>新生代中的对象有98%熬不过第一轮收集</strong>。因此 并不需要按照1∶1的比例来划分新生代的内存空间。</p>
+<p>在1989年，Andrew Appel针对具备“朝生夕灭”特点的对象，提出了一种更优化的半区复制分代策略，现在称为“Appel式回收”。HotSpot虚拟机的Serial、ParNew等新生代收集器均采用了这种策略来设计新生代的内存布局。Appel式回收的具体做法是<code>把新生代分为一块较大的Eden空间和两块较小的Survivor空间</code>，每次分配内存只使用Eden和其中一块Survivor。发生垃圾收集时，将Eden和Survivor中仍然存活的对象一次性复制到另外一块Survivor空间上，然后直接清理掉Eden和已用过的那块Survivor空间。HotSpot虚拟机默认Eden和Survivor的大小比例是8∶1，也即每次新生代中可用内存空间为整个新生代容量的90%（Eden的80%加上一个Survivor的10%），只有一个Survivor空间，即10%的新生代是会被“浪费”的。当然，98%的对象可被回收仅仅是“普通场景”下测得的数据，任何人都没有办法百分百保证每次回收都只有不多于10%的对象存活，因此Appel式回收还有一个<code>充当罕见情况的“逃生门”的安全设计</code>，当Survivor空间不足以容纳一次Minor GC之后存活的对象时，就需要依赖其他内存区域（实际上大多就是老年代）进行<code>分配担保（Handle Promotion）</code>。</p>
+<h3 id="清除阶段：标记-整理算法"><a href="#清除阶段：标记-整理算法" class="headerlink" title="清除阶段：标记-整理算法"></a>清除阶段：标记-整理算法</h3><p>标记-复制算法在<code>对象存活率较高时就要进行较多的复制操作</code>，效率将会降低。更关键的是，如果不想浪费50%的空间，就需要有额外的空间进行<code>分配担保</code>，以应对被使用的内存中所有对象都100%存活的极端情况，所以在老年代一般不能直接选用这种算法。</p>
+<p>针对老年代对象的存亡特征，1974年Edward Lueders提出了另外一种有针对性的“标记-整理”（Mark-Compact）算法，其中的标记过程仍然与“标记-清除”算法一样，但后续步骤不是直接对可回收对象进行清理，而是让所有存活的对象都向内存空间一端移动，然后直接清理掉边界以外的内存。</p>
+<p>标记-清除算法与标记-整理算法的本质差异在于前者是一种非移动式的回收算法，而后者是移动式的。是否移动回收后的存活对象是一项优缺点并存的风险决策：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310190633085.png" alt="image-20240310190633085"></p>
+<p><strong>如果移动存活对象，尤其是在老年代这种每次回收都有大量对象存活区域，移动存活对象并更新所有引用这些对象的地方将会是一种极为负重的操作，而且这种对象移动操作必须全程暂停用户应用程序才能进行，这就更加让使用者不得不小心翼翼地权衡其弊端了</strong>，像这样的停顿被最初的虚拟机设计者形象地描述为“Stop The World”。</p>
+<p>但如果跟标记-清除算法那样完全不考虑移动和整理存活对象的话，弥散于堆中的存活对象导致的空间碎片化问题就只能依赖更为复杂的内存分配器和内存访问器来解决。譬如通过“分区空闲分配链表”来解决内存分配问题（计算机硬盘存储大文件就不要求物理连续的磁盘空间，能够在碎片化的硬盘上存储和访问就是通过硬盘分区表实现的）。内存的访问是用户程序最频繁的操作，甚至都没有之一，假如在这个环节上增加了额外的负担，势必会直接影响应用程序的吞吐量。</p>
+<p>基于以上两点，是否移动对象都存在弊端，<code>移动则内存回收时会更复杂，不移动则内存分配时会更复杂</code>。<code>从垃圾收集的停顿时间来看，不移动对象停顿时间会更短，甚至可以不需要停顿，但是从整个程序的吞吐量来看，移动对象会更划算</code>。此语境中，吞吐量的实质是赋值器（Mutator，可以理解为使用垃圾收集的用户程序）与收集器的效率总和。即使不移动对象会使得收集器的效率提升一些，但因内存分配和访问相比垃圾收集频率要高得多，这部分的耗时增加，总吞吐量仍然是下降的。<strong>HotSpot虚拟机里面关注吞吐量的Parallel Scavenge收集器是基于标记-整理算法的，而关注延迟的CMS收集器则是基于标记-清除算法的，这也从侧面印证这点。</strong></p>
+<p>另外，还有一种“和稀泥式”解决方案可以不在内存分配和访问上增加太大额外负担，做法是让虚拟机平时多数时间都采用标记-清除算法，暂时容忍内存碎片的存在，直到内存空间的碎片化程度已经大到影响对象分配时，再采用标记-整理算法收集一次，以获得规整的内存空间。前面提到的基于标记-清除算法的CMS收集器面临空间碎片过多时采用的就是这种处理办法。</p>
+<h2 id="垃圾回收相关概念"><a href="#垃圾回收相关概念" class="headerlink" title="垃圾回收相关概念"></a>垃圾回收相关概念</h2><h3 id="System-gc-的理解"><a href="#System-gc-的理解" class="headerlink" title="System.gc()的理解"></a>System.gc()的理解</h3><ol>
+<li>在默认情况下，通过System.gc()者Runtime.getRuntime().gc()的调用，会显式触发<code>Full GC</code>，同时对老年代和新生代包括方法区进行回收，尝试释放被丢弃对象占用的内存。</li>
+<li>然而System.gc()调用附带一个<code>免责声明</code>，无法保证对垃圾收集器的调用(不能确保立即生效)。</li>
+<li>JVM实现者可以通过System.gc()调用来决定JVM的GC行为。<strong>而一般情况下，垃圾回收应该是自动进行的，无须手动触发</strong>，否则就太过于麻烦了。在一些特殊情况下，如我们正在编写一个<code>性能基准</code>，我们可以在运行之间调用System.gc()</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LocalVarGC</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localVarGC1</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];<span class="comment">//10MB</span></span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localVarGC2</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];</span><br><span class="line">        buffer = <span class="literal">null</span>;</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localVarGC3</span><span class="params">()</span> &#123;</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localVarGC4</span><span class="params">()</span> &#123;</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">int</span> <span class="variable">value</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localVarGC5</span><span class="params">()</span> &#123;</span><br><span class="line">        localVarGC1();</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">LocalVarGC</span> <span class="variable">local</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LocalVarGC</span>();</span><br><span class="line">        local.localVarGC1();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试<code>localVarGC1</code>的效果，因为buffer变量属于GC Roots集合，因此其关联的数组并不会被GC回收：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310221945619.png" alt="image-20240310221945619"></p>
+<p>测试<code>localVarGC2</code>的效果，因为buffer变量指向null，因此数组变成不可达对象，可以被GC回收：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222118218.png" alt="image-20240310222118218"></p>
+<p>测试<code>localVarGC3</code>的效果，因为即使GC发生时已经超出buffer变量作用域了，但是当前栈帧的局部变量表依然保留着buffer引用：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222311885.png" alt="image-20240310222311885"></p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222516256.png" alt="image-20240310222516256"></p>
+<blockquote>
+<p>局部变量最大槽数为2，即this引用与buffer引用</p>
+</blockquote>
+<p>测试<code>localVarGC4</code>的效果，因为value变量占据了局部变量表中原buffer变量的位置，因此buffer变量引用的数组也就不可达了，可以被GC回收：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222640915.png" alt="image-20240310222640915"></p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310222902142.png" alt="image-20240310222902142"></p>
+<p>测试<code>localVarGC5</code>的效果，因为localVarGC1执行完后其线程栈帧便会弹出，自然栈帧内的局部变量表中的buffer变量也就不再属于GC Roots集合了，数组对象也需要被GC回收了：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240310223040257.png" alt="image-20240310223040257"></p>
+<h3 id="STW的理解"><a href="#STW的理解" class="headerlink" title="STW的理解"></a>STW的理解</h3><ol>
+<li>Stop-the-World，简称STW，指的是GC事件发生过程中，会产生应用程序的停顿。<strong>停顿产生时整个应用程序线程都会被暂停，没有任何响应</strong>，有点像卡死的感觉，这个停顿称为STW。</li>
+<li>可达性分析算法中枚举根节点（GC Roots）会导致所有Java执行线程停顿，为什么需要停顿所有Java执行线程呢？<ul>
+<li>分析工作必须在一个能确保一致性的快照中进行</li>
+<li>一致性指整个分析期间整个执行系统看起来像被冻结在某个时间点上</li>
+<li><strong>如果出现分析过程中对象引用关系还在不断变化，则分析结果的准确性无法保证</strong></li>
+</ul>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloStopTheWorld</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">WorkThread</span> <span class="keyword">extends</span> <span class="title class_">Thread</span> &#123;</span><br><span class="line">        List&lt;<span class="type">byte</span>[]&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;<span class="type">byte</span>[]&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                    <span class="keyword">for</span>(<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>;i &lt; <span class="number">1000</span>;i++)&#123;</span><br><span class="line">                        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span>];</span><br><span class="line">                        list.add(buffer);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span>(list.size() &gt; <span class="number">10000</span>)&#123;</span><br><span class="line">                        list.clear();</span><br><span class="line">                        <span class="comment">//会触发FULL GC，进而会出现STW事件</span></span><br><span class="line">                        System.gc();</span><br><span class="line">                     </span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">                ex.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">PrintThread</span> <span class="keyword">extends</span> <span class="title class_">Thread</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">final</span> <span class="type">long</span> <span class="variable">startTime</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                    <span class="comment">// 每秒打印时间信息</span></span><br><span class="line">                    <span class="type">long</span> <span class="variable">t</span> <span class="operator">=</span> System.currentTimeMillis() - startTime;</span><br><span class="line">                    System.out.println(t / <span class="number">1000</span> + <span class="string">&quot;.&quot;</span> + t % <span class="number">1000</span>);</span><br><span class="line">                    Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">                ex.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">WorkThread</span> <span class="variable">w</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">WorkThread</span>();</span><br><span class="line">        <span class="type">PrintThread</span> <span class="variable">p</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PrintThread</span>();</span><br><span class="line">        w.start();</span><br><span class="line">        p.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>查看时间循环打印信息，发现第一次打印相差1.7s，出现了明显的停顿，这就是STW：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311093946543.png" alt="image-20240311093946543"></p>
+<h3 id="根节点枚举"><a href="#根节点枚举" class="headerlink" title="根节点枚举"></a>根节点枚举</h3><p>我们以可达性分析算法中从GC Roots集合找引用链这个操作作为介绍虚拟机高效实现的第一个例子。固定可作为GC Roots的节点主要在<code>全局性的引用（例如常量或类静态属性）</code>与<code>执行上下文（例如栈帧中的本地变量表）</code>中，尽管目标明确，但查找过程要做到高效并非一件容易的事情，现在Java应用越做越庞大，光是方法区的大小就常有数百上千兆，里面的类、常量等更是恒河沙数，若要逐个检查以这里为起源的引用肯定得消耗不少时间。</p>
+<p><strong>迄今为止，所有收集器在根节点枚举这一步骤时都是必须暂停用户线程的</strong>，因此毫无疑问根节点枚举与之前提及的整理内存碎片一样会面临相似的“Stop The World”的困扰。现在可达性分析算法耗时最长的查找引用链的过程已经可以做到与用户线程一起并发，但根节点枚举始终还是必须在一个能保障一致性的快照中才得以进行——这里“一致性”的意思是<code>整个枚举期间执行子系统看起来就像被冻结在某个时间点上，不会出现分析过程中，根节点集合的对象引用关系还在不断变化的情况，若这点不能满足的话，分析结果准确性也就无法保证</code>。这是导致垃圾收集过程必须停顿所有用户线程的其中一个重要原因，即使是号称停顿时间可控，或者（几乎）不会发生停顿的CMS、G1、ZGC等收集器，枚举根节点时也是必须要停顿的。</p>
+<p>由于目前主流Java虚拟机使用的都是准确式垃圾收集，所以当用户线程停顿下来之后，其实并不需要一个不漏地检查完所有执行上下文和全局的引用位置，<strong>虚拟机应当是有办法直接得到哪些地方存放着对象引用的</strong>。在HotSpot的解决方案里，是使用一组称为<code>OopMap</code>的数据结构来达到这个目的。<strong>一旦类加载动作完成的时候，HotSpot就会把对象内什么偏移量上是什么类型的数据计算出来，在即时编译过程中，也会在特定的位置记录下栈里和寄存器里哪些位置是引用。这样收集器在扫描时就可以直接得知这些信息了，并不需要真正一个不漏地从方法区等GC Roots开始查找。</strong></p>
+<p>下面代码清单是HotSpot虚拟机客户端模式下生成的一段String::hashCode()方法的本地代码，可以看到在0x026eb7a9处的call指令有OopMap记录，它指明了EBX寄存器和栈中偏移量为16的内存区域中各有一个普通对象指针（Ordinary Object Pointer，OOP）的引用，有效范围为从call指令开始直到0x026eb730（指令流的起始位置）+142（OopMap记录的偏移量）&#x3D;0x026eb7be，即hlt指令为止。</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311095531834.png" alt="image-20240311095531834"></p>
+<h3 id="再谈引用概述"><a href="#再谈引用概述" class="headerlink" title="再谈引用概述"></a>再谈引用概述</h3><p>我们希望能描述这样一类对象：当内存空间还足够时，则能保留在内存中；如果内存空间在进行垃圾收集后还是很紧张，则可以抛弃这些对象。</p>
+<p>在JDK1.2版之后，Java对引用的概念进行了扩充，将引用分为：</p>
+<ul>
+<li>强引用（Strong Reference）</li>
+<li>软引用（Soft Reference）</li>
+<li>弱引用（Weak Reference）</li>
+<li>虚引用（Phantom Reference）</li>
+</ul>
+<p>这4种引用强度依次逐渐减弱。除强引用外，其他3种引用均可以在<code>java.lang.ref</code>包中找到它们的身影。如下图，显示了这3种引用类型对应的类，开发人员可以在应用程序中直接使用它们。</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311100222550.png" alt="image-20240311100222550"></p>
+<p>Reference子类中只有终结器引用是包内可见的，其他3种引用类型均为public，可以在应用程序中直接使用:</p>
+<ol>
+<li>强引用（StrongReference）：最传统的“引用”的定义，是指在程序代码之中普遍存在的引用赋值，即类似“<code>object obj = new Object()</code>”这种引用关系。无论任何情况下，只要强引用关系还存在，垃圾收集器就永远不会回收掉被引用的对象。宁可报OOM，也不会GC强引用。</li>
+<li>软引用（SoftReference）：在系统<code>将要发生内存溢出</code>之前，将会把这些对象列入回收范围之中进行第二次回收。如果这次回收后还没有足够的内存，才会抛出内存溢出异常。</li>
+<li>弱引用（WeakReference）：被弱引用关联的对象<code>只能生存到下一次垃圾收集之前</code>。当垃圾收集器工作时，无论内存空间是否足够，都会回收掉被弱引用关联的对象。</li>
+<li>虚引用（PhantomReference）：一个对象是否有虚引用的存在，完全不会对其生存时间构成影响，也无法通过虚引用来获得一个对象的实例。<strong>为一个对象设置虚引用关联的唯一目的就是能在这个对象被收集器回收时收到一个系统通知</strong>。</li>
+</ol>
+<h3 id="再谈引用：强引用"><a href="#再谈引用：强引用" class="headerlink" title="再谈引用：强引用"></a>再谈引用：强引用</h3><ol>
+<li>在Java程序中，最常见的引用类型是强引用（普通系统99%以上都是强引用），也就是我们最常见的普通对象引用，也是<code>默认的引用类型</code>。当在Java语言中使用new操作符创建一个新的对象，并将其赋值给一个变量的时候，这个变量就成为指向该对象的一个强引用。</li>
+<li><strong>只要强引用的对象是可触及的，垃圾收集器就永远不会回收掉被引用的对象。</strong>只要强引用的对象是可达的，JVM宁可报OOM，也不会回收强引用。</li>
+<li>对于一个普通的对象，如果没有其他的引用关系，只要超过了引用的作用域或者显式地将相应（强）引用赋值为null，就是可以当做垃圾被收集了，当然具体回收时机还是要看垃圾收集策略。</li>
+<li>相对的，软引用、弱引用和虚引用的对象是软可触及、弱可触及和虚可触及的，在一定条件下，都是可以被回收的。所以，<code>强引用是造成Java内存泄漏的主要原因</code>。</li>
+</ol>
+<h3 id="再谈引用：软引用"><a href="#再谈引用：软引用" class="headerlink" title="再谈引用：软引用"></a>再谈引用：软引用</h3><p><strong>软引用（Soft Reference）：内存不足即回收</strong></p>
+<ol>
+<li>软引用是用来描述一些还有用，但非必需的对象。只被软引用关联着的对象，在<code>系统将要发生内存溢出异常前</code>，会把这些对象列进回收范围之中进行第二次回收，如果这次回收还没有足够的内存，才会抛出内存溢出异常。注意，这里的第一次回收是不可达的对象。</li>
+<li>软引用通常用来实现<code>内存敏感的缓存</code>。比如：高速缓存就有用到软引用。如果还有空闲内存，就可以暂时保留缓存，当内存不足时清理掉，这样就保证了使用缓存的同时，不会耗尽内存。</li>
+<li>垃圾回收器在某个时刻决定回收软可达的对象的时候，会清理软引用，并可选地把引用存放到一个引用队列（Reference Queue）。</li>
+<li>一句话概括：当内存足够时，不会回收软引用可达的对象。内存不够时，会回收软引用的可达对象</li>
+</ol>
+<p>在JDK1.2版之后提供了<code>SoftReference</code>类来实现软引用:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();<span class="comment">// 声明强引用</span></span><br><span class="line">SoftReference&lt;Object&gt; sf = <span class="keyword">new</span> <span class="title class_">SoftReference</span>&lt;&gt;(obj);</span><br><span class="line">obj = <span class="literal">null</span>; <span class="comment">//销毁强引用</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SoftReferenceTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">User</span><span class="params">(<span class="type">int</span> id, String name)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.id = id;</span><br><span class="line">            <span class="built_in">this</span>.name = name;</span><br><span class="line">            <span class="built_in">this</span>.address = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span> * <span class="number">1024</span> * <span class="number">5</span>];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="type">int</span> id;</span><br><span class="line">        <span class="keyword">public</span> String name;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">byte</span>[] address;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;[id=&quot;</span> + id + <span class="string">&quot;, name=&quot;</span> + name + <span class="string">&quot;] &quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">// 创建对象，建立软引用</span></span><br><span class="line">        SoftReference&lt;User&gt; userSoftRef = <span class="keyword">new</span> <span class="title class_">SoftReference</span>&lt;User&gt;(<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">1</span>, <span class="string">&quot;hhh&quot;</span>));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 从软引用中重新获得强引用对象</span></span><br><span class="line">        System.out.println(userSoftRef.get());</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;---目前内存还不紧张---&quot;</span>);</span><br><span class="line">        System.gc();</span><br><span class="line">        System.out.println(<span class="string">&quot;After GC:&quot;</span>);</span><br><span class="line">        <span class="comment">// 垃圾回收之后获得软引用中的对象</span></span><br><span class="line">        <span class="comment">// 由于堆空间内存足够，所有不会回收软引用的可达对象</span></span><br><span class="line">        System.out.println(userSoftRef.get());</span><br><span class="line">        System.out.println(<span class="string">&quot;---下面开始内存紧张了---&quot;</span>);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 让系统认为内存资源紧张、不够</span></span><br><span class="line">            <span class="type">byte</span>[] b = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span> * <span class="number">1024</span> * <span class="number">30</span>];</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="comment">// 再次从软引用中获取数据</span></span><br><span class="line">            <span class="comment">// 在报OOM之前，垃圾回收器会回收软引用的可达对象</span></span><br><span class="line">            System.out.println(userSoftRef.get());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>JVM参数:<code>-Xms30m -Xmx30m</code>，在JVM内存不足时，会清理软引用对象：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311101831530.png" alt="image-20240311101831530"></p>
+<h3 id="再谈引用：弱引用"><a href="#再谈引用：弱引用" class="headerlink" title="再谈引用：弱引用"></a>再谈引用：弱引用</h3><p><strong>弱引用（Weak Reference）：发现即回收</strong></p>
+<ol>
+<li>弱引用也是用来描述那些非必需对象，<code>只被弱引用关联的对象只能生存到下一次垃圾收集发生为止</code>。在系统GC时，只要发现弱引用，不管系统堆空间内存是否充足，都会回收掉只被弱引用关联的对象。</li>
+<li>但是，由于垃圾回收器的线程通常优先级很低，因此，并不一定能很快地发现持有弱引用的对象。在这种情况下，弱引用对象可以存在较长的时间。</li>
+<li>弱引用和软引用一样，在构造弱引用时，也可以指定一个引用队列，当弱引用对象被回收时，就会加入指定的引用队列，通过这个队列可以跟踪对象的回收情况。</li>
+<li><code>软引用、弱引用都非常适合来保存那些可有可无的缓存数据</code>。如果这么做，<strong>当系统内存不足时，这些缓存数据会被回收，不会导致内存溢出。而当内存资源充足时，这些缓存数据又可以存在相当长的时间，从而起到加速系统的作用</strong>。</li>
+</ol>
+<p>在JDK1.2版之后提供了<code>WeakReference</code>类来实现弱引用:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 声明强引用</span></span><br><span class="line"><span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line">WeakReference&lt;Object&gt; sf = <span class="keyword">new</span> <span class="title class_">WeakReference</span>&lt;&gt;(obj);</span><br><span class="line">obj = <span class="literal">null</span>; <span class="comment">//销毁强引用</span></span><br></pre></td></tr></table></figure>
+
+<p>弱引用对象与软引用对象的最大不同就在于，当GC在进行回收时，需要通过算法检查是否回收软引用对象，而对于弱引用对象，GC总是进行回收。弱引用对象更容易、更快被GC回收。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WeakReferenceTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">User</span><span class="params">(<span class="type">int</span> id, String name)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.id = id;</span><br><span class="line">            <span class="built_in">this</span>.name = name;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="type">int</span> id;</span><br><span class="line">        <span class="keyword">public</span> String name;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;[id=&quot;</span> + id + <span class="string">&quot;, name=&quot;</span> + name + <span class="string">&quot;] &quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">//构造了弱引用</span></span><br><span class="line">        WeakReference&lt;User&gt; userWeakRef = <span class="keyword">new</span> <span class="title class_">WeakReference</span>&lt;User&gt;(<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">1</span>, <span class="string">&quot;hhh&quot;</span>));</span><br><span class="line">        <span class="comment">//从弱引用中重新获取对象</span></span><br><span class="line">        System.out.println(userWeakRef.get());</span><br><span class="line"></span><br><span class="line">        System.gc();</span><br><span class="line">        <span class="comment">// 不管当前内存空间足够与否，都会回收它的内存</span></span><br><span class="line">        System.out.println(<span class="string">&quot;After GC:&quot;</span>);</span><br><span class="line">        <span class="comment">//重新尝试从弱引用中获取对象</span></span><br><span class="line">        System.out.println(userWeakRef.get());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311102551871.png" alt="image-20240311102551871"></p>
+<h3 id="再谈引用：虚引用"><a href="#再谈引用：虚引用" class="headerlink" title="再谈引用：虚引用"></a>再谈引用：虚引用</h3><p><strong>虚引用（Phantom Reference）：对象回收跟踪</strong></p>
+<ol>
+<li>一个对象是否有虚引用的存在，完全不会决定对象的生命周期。如果一个对象仅持有虚引用，那么它和没有引用几乎是一样的，随时都可能被垃圾回收器回收。</li>
+<li>它不能单独使用，也无法通过虚引用来获取被引用的对象。当试图通过虚引用的get()方法取得对象时，总是null。</li>
+<li>为一个对象设置虚引用关联的唯一目的在于<code>跟踪垃圾回收过程</code>。比如：能在这个对象被收集器回收时收到一个系统通知。</li>
+<li><code>虚引用必须和引用队列一起使用</code>。虚引用在创建时必须提供一个引用队列作为参数。当垃圾回收器准备回收一个对象时，如果发现它还有虚引用，就会在回收对象后，将这个虚引用加入引用队列，以通知应用程序对象的回收情况。</li>
+</ol>
+<p>在JDK1.2版之后提供了<code>PhantomReference</code>类来实现虚引用:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 声明强引用</span></span><br><span class="line"><span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line"><span class="comment">// 声明引用队列</span></span><br><span class="line"><span class="type">ReferenceQueue</span> <span class="variable">phantomQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReferenceQueue</span>();</span><br><span class="line"><span class="comment">// 声明虚引用（还需要传入引用队列）</span></span><br><span class="line">PhantomReference&lt;Object&gt; sf = <span class="keyword">new</span> <span class="title class_">PhantomReference</span>&lt;&gt;(obj, phantomQueue);</span><br><span class="line">obj = <span class="literal">null</span>; </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PhantomReferenceTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> PhantomReferenceTest obj;<span class="comment">//当前类对象的声明</span></span><br><span class="line">    <span class="keyword">static</span> ReferenceQueue&lt;PhantomReferenceTest&gt; phantomQueue = <span class="literal">null</span>;<span class="comment">//引用队列</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">CheckRefQueue</span> <span class="keyword">extends</span> <span class="title class_">Thread</span> &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (phantomQueue != <span class="literal">null</span>) &#123;</span><br><span class="line">                    PhantomReference&lt;PhantomReferenceTest&gt; objt = <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        objt = (PhantomReference&lt;PhantomReferenceTest&gt;) phantomQueue.remove();</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (objt != <span class="literal">null</span>) &#123;</span><br><span class="line">                        System.out.println(<span class="string">&quot;追踪垃圾回收过程：PhantomReferenceTest实例被GC了&quot;</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CheckRefQueue</span>();</span><br><span class="line">        t.setDaemon(<span class="literal">true</span>);</span><br><span class="line">        t.start();</span><br><span class="line"></span><br><span class="line">        phantomQueue = <span class="keyword">new</span> <span class="title class_">ReferenceQueue</span>&lt;&gt;();</span><br><span class="line">        obj = <span class="keyword">new</span> <span class="title class_">PhantomReferenceTest</span>();</span><br><span class="line">        <span class="comment">// 构造了PhantomReferenceTest对象的虚引用，并指定了引用队列</span></span><br><span class="line">        PhantomReference&lt;PhantomReferenceTest&gt; phantomRef = <span class="keyword">new</span> <span class="title class_">PhantomReference</span>&lt;PhantomReferenceTest&gt;(obj, phantomQueue);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 不可获取虚引用中的对象</span></span><br><span class="line">            System.out.println(phantomRef.get());</span><br><span class="line">            <span class="comment">// 将强引用去除</span></span><br><span class="line">            obj = <span class="literal">null</span>;</span><br><span class="line">            <span class="comment">// 一旦将obj对象回收，就会将此虚引用存放到引用队列中</span></span><br><span class="line">            System.gc();</span><br><span class="line">            Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311103428494.png" alt="image-20240311103428494"></p>
+<h2 id="垃圾回收器"><a href="#垃圾回收器" class="headerlink" title="垃圾回收器"></a>垃圾回收器</h2><p><strong>吞吐量 vs 暂停时间</strong></p>
+<ol>
+<li>高吞吐量较好，因为这会让应用程序的最终用户感觉只有应用程序线程在做“生产性”工作。直觉上，吞吐量越高程序运行越快。</li>
+<li>低暂停时间较好，是从最终用户的角度来看，不管是GC还是其他原因导致一个应用被挂起始终是不好的。这取决于应用程序的类型，有时候甚至短暂的200毫秒暂停都可能打断终端用户体验。因此，具有较低的暂停时间是非常重要的，特别是对于一个交互式应用程序。</li>
+<li>不幸的是”高吞吐量”和”低暂停时间”是一对相互竞争的目标。<ul>
+<li>因为如果选择吞吐量优先，那么<strong>必然需要降低内存回收的执行频率</strong>，但是这样会导致GC需要更长的暂停时间来执行内存回收。</li>
+<li>如果选择低延迟优先，那么为了降低每次执行内存回收时的暂停时间，也<strong>只能频繁地执行内存回收</strong>，但这又引起了程序吞吐量的下降。</li>
+</ul>
+</li>
+<li>在设计GC算法时，我们必须确定我们的目标：一个GC算法只可能针对两个目标之一（即只专注于较大吞吐量或最小暂停时间），或尝试找到一个二者的折衷。</li>
+<li>现在标准：<strong>在可控的停顿时间内，最大化吞吐量</strong>。</li>
+</ol>
+<h3 id="7款经典的垃圾收集器"><a href="#7款经典的垃圾收集器" class="headerlink" title="7款经典的垃圾收集器"></a>7款经典的垃圾收集器</h3><ol>
+<li>串行回收器：Serial、Serial old</li>
+<li>并行回收器：ParNew、Parallel Scavenge、Parallel old</li>
+<li>并发回收器：CMS、G1</li>
+</ol>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/%E7%AC%AC17%E7%AB%A0_%E7%BB%8F%E5%85%B8%E7%9A%847%E7%A7%8DGC.jpg" alt="第17章_经典的7种GC"></p>
+<h3 id="垃圾收集器的组合关系"><a href="#垃圾收集器的组合关系" class="headerlink" title="垃圾收集器的组合关系"></a>垃圾收集器的组合关系</h3><p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/%E7%AC%AC17%E7%AB%A0_%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%BB%84%E5%90%88.jpg" alt="第17章_垃圾收集器组合"></p>
+<p>虽然我们会对各个收集器进行比较，但并非为了挑选一个最好的收集器出来。没有一种放之四海皆准、任何场景下都适用的完美收集器存在，更加没有万能的收集器。所以<code>我们选择的只是对具体应用最合适的收集器</code>。</p>
+<blockquote>
+<p>JDK14中已经删除了CMS垃圾回收器，推荐的垃圾收集器组合方案：</p>
+<ol>
+<li>Serial GC+Serial Old GC（适合单CPU的Client模式的JVM）</li>
+<li>Parallel Scavenge GC+Parallel Old GC（适合多CPU的Server模式的JVM）</li>
+<li>G1 GC（JDK9默认的垃圾收集器）</li>
+</ol>
+</blockquote>
+<p><code>-XX:+PrintCommandLineFlags</code>：查看命令行相关参数（包含使用的垃圾收集器）</p>
+<p>使用命令行指令：<code>jinfo -flag</code> 相关垃圾回收器参数 进程ID</p>
+<p>JDK8的环境：</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311152105460.png" alt="image-20240311152105460"></p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311152259165.png" alt="image-20240311152259165"></p>
+<h3 id="Serial收集器：串行回收"><a href="#Serial收集器：串行回收" class="headerlink" title="Serial收集器：串行回收"></a>Serial收集器：串行回收</h3><p>Serial收集器是最基础、历史最悠久的收集器，曾经（在JDK 1.3.1之前）是HotSpot虚拟机新生代收集器的唯一选择。大家只看名字就能够猜到，这个收集器是一个<code>单线程工作</code>的收集器，但它的“单线程”的意义并不仅仅是说明它只会使用一个处理器或一条收集线程去完成垃圾收集工作，更重要的是强调在它进行垃圾收集时，必须暂停其他所有工作线程，直到它收集结束。“Stop The World”这个词语也许听起来很酷，但这项工作是由虚拟机在后台自动发起和自动完成的，在用户不可知、不可控的情况 下把用户的正常工作的线程全部停掉，这对很多应用来说都是不能接受的。</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311193747239.png" alt="image-20240311193747239"></p>
+<p>迄今为止，它依然是HotSpot虚拟机运行在<code>客户端模式</code>下的默认新生代收集器，有着优于其他收集器的地方，那就是<code>简单而高效</code>（与其他收集器的单线程相比），对于内存资源受限的环境，它是所有收集器里额外内存消耗（Memory Footprint）最小的；<strong>对于单核处理器或处理器核心数较少的环境来说，Serial收集器由于没有线程交互的开销，专心做垃圾收集自然可以获得最高的单线程收集效率</strong>。在用户桌面的应用场景以及近年来流行的部分微服务应用中，分配给虚拟机管理的内存一般来说并不会特别大，收集几十兆甚至一两百兆的新生代（仅仅是指新生代使用的内存，桌面应用甚少超过这个容量），垃圾收集的停顿时间完全可以控制在十几、几十毫秒，最多一百多毫秒以内，只要不是频繁发生收集，这点停顿时间对许多用户来说是完全可以接受的。所以，Serial收集器对于运行在客户端模式下的虚拟机来说是一个很好的选择。</p>
+<h3 id="ParNew收集器：并行回收"><a href="#ParNew收集器：并行回收" class="headerlink" title="ParNew收集器：并行回收"></a>ParNew收集器：并行回收</h3><p>ParNew收集器实质上是Serial收集器的<code>多线程并行版本</code>，除了同时使用多条线程进行垃圾收集之外，其余的行为包括Serial收集器可用的所有控制参数（例如：-XX:SurvivorRatio、-XX:PretenureSizeThreshold、-XX:HandlePromotionFailure等）、收集算法、Stop The World、对象分配规则、回收策略等都与Serial收集器完全一致，在实现上这两种收集器也共用了相当多的代码。</p>
+<p><img src="/imgs/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/image-20240311195439721.png" alt="image-20240311195439721"></p>
+<p>ParNew收集器除了支持多线程并行收集之外，其他与Serial收集器相比并没有太多创新之处，但它却是不少运行在服务端模式下的HotSpot虚拟机，尤其是JDK 7之前的遗留系统中首选的新生代收集器，其中有一个与功能、性能无关但其实很重要的原因是：<strong>除了Serial收集器外，目前只有它能与CMS收集器配合工作</strong>。</p>
+<p>在JDK 5发布时，HotSpot推出了一款在强交互应用中几乎可称为具有划时代意义的垃圾收集器——CMS收集器。这款收集器是HotSpot虚拟机中第一款真正意义上支持并发的垃圾收集器，它首次实现了让垃圾收集线程与用户线程（基本上）同时工作。</p>
+<p>遗憾的是，CMS作为老年代的收集器，却无法与JDK 1.4.0中已经存在的新生代收集器Parallel Scavenge配合工作，所以在JDK 5中使用CMS来收集老年代的时候，新生代只能选择ParNew或者Serial收集器中的一个。(除了一个面向低延迟一个面向高吞吐量的目标不一致外，技术上的原因是Parallel Scavenge收集器及后面提到的G1收集器等都没有使用HotSpot中原本设计的垃圾收集器的分代框架，而选择另外独立实现。Serial、ParNew收集器则共用了这部分的框架代码)</p>
+<p>ParNew收集器是激活CMS后（使用<code>-XX:+UseConcMarkSweepGC</code>选项）的默认新生代收集器，也可以使用<code>-XX:+/-UseParNewGC</code>选项来强制指定或者禁用它。<strong>ParNew收集器在单核心处理器的环境中绝对不会有比Serial收集器更好的效果，甚至由于存在线程交互的开销，该收集器在通过超线程（Hyper-Threading）技术实现的伪双核处理器环境中都不能百分之百保证超越Serial收集器</strong>。当然，随着可以被使用的处理器核心数量的增加，ParNew对于垃圾收集时系统资源的高效利用还是很有好处的。它默认开启的收集线程数与处理器核心数量相同，在处理器核心非常多（譬如32个，现在CPU都是多核加超线程设计，服务器达到或超过32个逻辑核心的情况非常普遍）的环境中，可以使用<code>-XX:ParallelGCThreads</code>参数来限制垃圾收集的线程数。</p>
+<h3 id="Parallel-Scavenge收集器"><a href="#Parallel-Scavenge收集器" class="headerlink" title="Parallel Scavenge收集器"></a>Parallel Scavenge收集器</h3><p>Parallel Scavenge收集器也是一款新生代收集器，它同样是基于标记-复制算法实现的收集器，也是 能够并行收集的多线程收集器……Parallel Scavenge的诸多特性从表面上看和ParNew非常相似，那它有什么特别之处呢？</p>
+<p>Parallel Scavenge收集器的特点是它的关注点与其他收集器不同，<code>CMS等收集器</code>的关注点是<code>尽可能地缩短垃圾收集时用户线程的停顿时间</code>，而<code>Parallel Scavenge收集器</code>的目标则是<code>达到一个可控制的吞吐量（Throughput）</code>。所谓吞吐量就是处理器用于运行用户代码的时间与处理器总消耗时间的比值。</p>
+<p>如果虚拟机完成某个任务，用户代码加上垃圾收集总共耗费了100分钟，其中垃圾收集花掉1分钟，那吞吐量就是99%。停顿时间越短就越适合需要与用户交互或需要保证服务响应质量的程序，良好的响应速度能提升用户体验；而高吞吐量则可以最高效率地利用处理器资源，尽快完成程序的运算任务，主要适合在后台运算而不需要太多交互的分析任务。</p>
+<p>Parallel Scavenge收集器提供了两个参数用于精确控制吞吐量，分别是控制最大垃圾收集停顿时间的<code>-XX:MaxGCPauseMillis</code>参数以及直接设置吞吐量大小的<code>-XX:GCTimeRatio</code>参数。</p>
+<p><code>-XX:MaxGCPauseMillis</code>参数允许的值是一个大于0的毫秒数，收集器将<code>尽力保证内存回收花费的时间不超过用户设定值</code>。不过大家不要异想天开地认为如果把这个参数的值设置得更小一点就能使得系统的垃圾收集速度变得更快，<strong>垃圾收集停顿时间缩短是以牺牲吞吐量和新生代空间为代价换取的</strong>：系统把新生代调得小一些，收集300MB新生代肯定比收集500MB快，但这也直接导致垃圾收集发生得更频繁，原来10秒收集一次、每次停顿100毫秒，现在变成5秒收集一次、每次停顿70毫秒。停顿时间的确在下降，但吞吐量也降下来了。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86"><span class="toc-number">1.</span> <span class="toc-text">JVM垃圾收集</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="toc-number">1.1.</span> <span class="toc-text">为什么需要垃圾回收</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%97%A9%E6%9C%9F%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">1.2.</span> <span class="toc-text">早期垃圾回收机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">1.3.</span> <span class="toc-text">Java垃圾回收机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">垃圾回收相关算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E9%98%B6%E6%AE%B5%E7%9A%84%E7%9B%AE%E7%9A%84"><span class="toc-number">1.4.1.</span> <span class="toc-text">标记阶段的目的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E9%98%B6%E6%AE%B5%EF%BC%9A%E5%BC%95%E7%94%A8%E8%AE%A1%E6%95%B0%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.2.</span> <span class="toc-text">标记阶段：引用计数算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E9%98%B6%E6%AE%B5%EF%BC%9A%E5%8F%AF%E8%BE%BE%E6%80%A7%E5%88%86%E6%9E%90%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.3.</span> <span class="toc-text">标记阶段：可达性分析算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E8%B1%A1%E7%9A%84finalization%E6%9C%BA%E5%88%B6"><span class="toc-number">1.4.4.</span> <span class="toc-text">对象的finalization机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E9%99%A4%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%A0%87%E8%AE%B0-%E6%B8%85%E9%99%A4%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.5.</span> <span class="toc-text">清除阶段：标记-清除算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E9%99%A4%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%A0%87%E8%AE%B0-%E5%A4%8D%E5%88%B6%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.6.</span> <span class="toc-text">清除阶段：标记-复制算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E9%99%A4%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%A0%87%E8%AE%B0-%E6%95%B4%E7%90%86%E7%AE%97%E6%B3%95"><span class="toc-number">1.4.7.</span> <span class="toc-text">清除阶段：标记-整理算法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5"><span class="toc-number">1.5.</span> <span class="toc-text">垃圾回收相关概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#System-gc-%E7%9A%84%E7%90%86%E8%A7%A3"><span class="toc-number">1.5.1.</span> <span class="toc-text">System.gc()的理解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#STW%E7%9A%84%E7%90%86%E8%A7%A3"><span class="toc-number">1.5.2.</span> <span class="toc-text">STW的理解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E8%8A%82%E7%82%B9%E6%9E%9A%E4%B8%BE"><span class="toc-number">1.5.3.</span> <span class="toc-text">根节点枚举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%E6%A6%82%E8%BF%B0"><span class="toc-number">1.5.4.</span> <span class="toc-text">再谈引用概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E5%BC%BA%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.5.</span> <span class="toc-text">再谈引用：强引用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E8%BD%AF%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.6.</span> <span class="toc-text">再谈引用：软引用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E5%BC%B1%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.7.</span> <span class="toc-text">再谈引用：弱引用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8%EF%BC%9A%E8%99%9A%E5%BC%95%E7%94%A8"><span class="toc-number">1.5.8.</span> <span class="toc-text">再谈引用：虚引用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8"><span class="toc-number">1.6.</span> <span class="toc-text">垃圾回收器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7%E6%AC%BE%E7%BB%8F%E5%85%B8%E7%9A%84%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">1.6.1.</span> <span class="toc-text">7款经典的垃圾收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%9A%84%E7%BB%84%E5%90%88%E5%85%B3%E7%B3%BB"><span class="toc-number">1.6.2.</span> <span class="toc-text">垃圾收集器的组合关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Serial%E6%94%B6%E9%9B%86%E5%99%A8%EF%BC%9A%E4%B8%B2%E8%A1%8C%E5%9B%9E%E6%94%B6"><span class="toc-number">1.6.3.</span> <span class="toc-text">Serial收集器：串行回收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ParNew%E6%94%B6%E9%9B%86%E5%99%A8%EF%BC%9A%E5%B9%B6%E8%A1%8C%E5%9B%9E%E6%94%B6"><span class="toc-number">1.6.4.</span> <span class="toc-text">ParNew收集器：并行回收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Parallel-Scavenge%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">1.6.5.</span> <span class="toc-text">Parallel Scavenge收集器</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&text=JVM垃圾收集"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&is_video=false&description=JVM垃圾收集"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM垃圾收集&body=Check out this article: https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&title=JVM垃圾收集"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&name=JVM垃圾收集&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/09/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/&t=JVM垃圾收集"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

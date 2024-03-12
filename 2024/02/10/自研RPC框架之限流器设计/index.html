@@ -13,15 +13,15 @@
 <meta property="og:site_name" content="大军的秘密花园">
 <meta property="og:description" content="自研RPC框架之限流器设计1.限流的必要性限流是一种控制流量的技术，用于保护系统免受突发流量或恶意流量的影响。其基本原理是通过控制请求的速率或数量，确保系统在可承受的范围内运行。我们RPC系统中的限流器都实现了Limiter接口： 123public interface Limiter &amp;#123;    boolean limit();&amp;#125;  2.计数器限流器设计计数器限流器通常在较大的">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210106473.png">
-<meta property="og:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210421254.png">
-<meta property="og:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210615457.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/image-20240210210106473.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/image-20240210210421254.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/image-20240210210615457.png">
 <meta property="article:published_time" content="2024-02-10T13:13:53.119Z">
-<meta property="article:modified_time" content="2024-02-10T13:13:53.305Z">
+<meta property="article:modified_time" content="2024-03-12T07:22:25.068Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="RPC">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://hulingf.github.io/AppData/Roaming/Typora/typora-user-images/image-20240210210106473.png">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/image-20240210210106473.png">
     
     
       
@@ -178,18 +178,18 @@
 <p>利用Redis，我们就可以实现一个简单的滑动窗口限流的功能。因为滑动窗口和时间有关，所以很容易能想到要基于时间进行统计。那么我们只需要在每一次有请求进来的时候，记录下<code>请求的时间戳</code>和<code>请求的数据</code>，然后在统计窗口内请求的数量时，只需要统计窗口内的被记录的数据量有多少条就行了。</p>
 <p>在Redis中，我们可以基于<code>ZSET</code>来实现这个功能。假如我们限定login接口一分钟只能调用100次:</p>
 <p>那么，我们就可以把login接口这个需要做限流的资源名作为key在redis中进行存储，然后value我们现在ZSET这种数据结构，把他的score设置为当前请求的时间戳,member的话建议用请求的详情的hash进行存储(或者UUID、MD5什么的)，避免在并发时，时间戳一致出现score和member一样导致被zadd幂等的问题。</p>
-<p><img src="/../../AppData/Roaming/Typora/typora-user-images/image-20240210210106473.png" alt="image-20240210210106473"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/image-20240210210106473.png" alt="image-20240210210106473"></p>
 <p>所以，我们实现滑动窗口限流的主要思想是:&#x3D;&#x3D;只保留在特定时间窗口内的请求记录，而丢弃窗口之外的记录&#x3D;&#x3D;。</p>
 <p>主要步骤如下:</p>
 <ol>
 <li>定义滑动窗口的时间范围，例如，窗口大小为60秒。</li>
 <li>每次收到一个请求时，我们就定义出一个zset的value然后存储到redis中。</li>
-<li>然后再通过ZREMRANGEBYSCORE命令来删除分值小于窗口起始时间戳(当前时间戳-60s)）的数据。</li>
-<li>最后，再使用ZCARD命令来获取有序集合中的成员数量，即在窗口内的请求量。</li>
+<li>然后再通过<code>ZREMRANGEBYSCORE</code>命令来删除分值小于窗口起始时间戳(当前时间戳-60s)）的数据。</li>
+<li>最后，再使用<code>ZCARD</code>命令来获取有序集合中的成员数量，即在窗口内的请求量。</li>
 </ol>
-<p><img src="/../../AppData/Roaming/Typora/typora-user-images/image-20240210210421254.png" alt="image-20240210210421254"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/image-20240210210421254.png" alt="image-20240210210421254"></p>
 <p>以上代码在高并发情况下，可能会存在原子性的问题，需要考虑加事务或者lua脚本:</p>
-<p><img src="/../../AppData/Roaming/Typora/typora-user-images/image-20240210210615457.png" alt="image-20240210210615457"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E9%99%90%E6%B5%81%E5%99%A8%E8%AE%BE%E8%AE%A1/image-20240210210615457.png" alt="image-20240210210615457"></p>
 <h2 id="4-令牌桶限流器设计"><a href="#4-令牌桶限流器设计" class="headerlink" title="4.令牌桶限流器设计"></a>4.令牌桶限流器设计</h2><p>令牌桶限流算法是一种灵活且广泛应用的流量控制机制，它允许在保持平均传输速率的前提下，进行一定程度的<code>突发传输</code>。这种算法的核心思想是通过一个固定容量的令牌桶来控制数据的传输速率。系统以恒定的速率往桶中添加令牌，每个传入的请求都需要从桶中获取一个令牌，如果桶中没有令牌可用，则请求被限流。令牌桶限流算法允许突发请求在短时间内通过，而不是简单地以恒定速率处理请求，从而平滑了网络流量。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TokenBucketLimiter</span> <span class="keyword">implements</span> <span class="title class_">Limiter</span> &#123;</span><br><span class="line">    <span class="comment">// 上次计算的时间</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">long</span> <span class="variable">timeStamp</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">    <span class="comment">// 桶的容量</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">capacity</span> <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line">    <span class="comment">// 令牌的生成速度(单位是s)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">rate</span> <span class="operator">=</span> <span class="number">20</span>;</span><br><span class="line">    <span class="comment">// 当前剩余的令牌数量</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">tokens</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TokenBucketLimiter</span><span class="params">(<span class="type">int</span> capacity, <span class="type">int</span> rate)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.capacity = capacity;</span><br><span class="line">        <span class="built_in">this</span>.rate = rate;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="type">boolean</span> <span class="title function_">limit</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">now</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        <span class="comment">// 先添加令牌</span></span><br><span class="line">        tokens = Math.min(capacity, tokens + (<span class="type">int</span>) ((now - timeStamp) / <span class="number">1000</span>) * rate);</span><br><span class="line">        <span class="comment">// 更新计算时间</span></span><br><span class="line">        timeStamp = now;</span><br><span class="line">        <span class="comment">// 令牌消耗完毕</span></span><br><span class="line">        <span class="keyword">if</span> (tokens &lt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 领取令牌</span></span><br><span class="line">        tokens--;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 

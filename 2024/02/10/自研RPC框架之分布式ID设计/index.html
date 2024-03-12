@@ -13,19 +13,19 @@
 <meta property="og:site_name" content="大军的秘密花园">
 <meta property="og:description" content="自研RPC框架之分布式ID设计 借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。  标准版雪花算法的几个缺点：  时钟敏感。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是记录上一次的时间戳，若发现当前时间戳小于">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/before-8c52102c116e08f0b37d947b30008b58.png">
-<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/after-cad00baeb92d348340136601174c9d8c.png">
-<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page1-09fa5360a09c5f6ce7e1c5978f370eb1.png">
-<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page2-0ddae897017478780b7f338cca9daa02.png">
-<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png">
-<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page4-883fee2cd79ec31b7f1d67c9e6362bca.png">
-<meta property="og:image" content="https://seata.apache.org/zh-cn/assets/images/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/before-8c52102c116e08f0b37d947b30008b58.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/after-cad00baeb92d348340136601174c9d8c.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page1-09fa5360a09c5f6ce7e1c5978f370eb1.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page2-0ddae897017478780b7f338cca9daa02.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page4-883fee2cd79ec31b7f1d67c9e6362bca.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png">
 <meta property="article:published_time" content="2024-02-10T13:31:22.792Z">
-<meta property="article:modified_time" content="2024-02-10T13:49:17.264Z">
+<meta property="article:modified_time" content="2024-03-06T05:30:58.147Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="RPC">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://seata.apache.org/zh-cn/assets/images/before-8c52102c116e08f0b37d947b30008b58.png">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/before-8c52102c116e08f0b37d947b30008b58.png">
     
     
       
@@ -179,9 +179,9 @@
 <li><code>突发性能有上限</code>。标准版雪花算法宣称的QPS很大，约400w&#x2F;s，但严格来说这算耍了个文字游戏~ 因为算法的时间戳单位是毫秒，而分配给序列号的位长度为12，即每毫秒4096个序列空间。所以更准确的描述应该是4096&#x2F;ms。400w&#x2F;s与4096&#x2F;ms的区别在于前者不要求每一毫秒的并发都必须低于4096 (也许有些毫秒会高于4096，有些则低于)。Seata亦遵循此限制，<code>若当前时间戳的序列空间已耗尽，会自旋等待下一个时间戳</code>。</li>
 </ol>
 <p>在较新的版本上，该生成器针对原算法进行了一定的优化改良，很好地解决了上述的2个问题。改进的核心思想是解除与操作系统时间戳的时刻绑定，生成器只在初始化时获取了系统当前的时间戳，作为初始时间戳，但之后就不再与系统时间戳保持同步了。它之后的递增，只由序列号的递增来驱动。比如序列号当前值是4095，下一个请求进来，序列号+1溢出12位空间，序列号重新归零，而溢出的进位则加到时间戳上，从而让时间戳+1。至此，时间戳和序列号实际可视为一个整体了。实际上我们也是这样做的，为了方便这种溢出进位，我们调整了64位ID的位分配策略，由原版的：</p>
-<p><img src="https://seata.apache.org/zh-cn/assets/images/before-8c52102c116e08f0b37d947b30008b58.png" alt="原版位分配策略"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/before-8c52102c116e08f0b37d947b30008b58.png" alt="原版位分配策略"></p>
 <p>改成(即时间戳和节点ID换个位置)：</p>
-<p><img src="https://seata.apache.org/zh-cn/assets/images/after-cad00baeb92d348340136601174c9d8c.png" alt="改进版位分配策略"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/after-cad00baeb92d348340136601174c9d8c.png" alt="改进版位分配策略"></p>
 <p>这样时间戳和序列号在内存上是连在一块的，在实现上就很容易用一个<code>AtomicLong</code>来同时保存它俩：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * timestamp and sequence mix in one Long</span></span><br><span class="line"><span class="comment"> * highest 11 bit: not used</span></span><br><span class="line"><span class="comment"> * middle  41 bit: timestamp</span></span><br><span class="line"><span class="comment"> * lowest  12 bit: sequence</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> AtomicLong timestampAndSequence;</span><br></pre></td></tr></table></figure>
 
@@ -209,9 +209,9 @@
 <p>这是一个很好的问题！能提出这个问题的同学，说明已经深入思考了标准版雪花算法和新版雪花算法的本质区别，这点值得鼓励！在这里，我们先说结论：新版算法的确不具备全局的单调递增性，但这不影响我们的初衷(减少数据库的页分裂)。这个结论看起来有点违反直觉，但可以被证明。</p>
 </blockquote>
 <p>在证明之前，我们先简单回顾一下数据库关于页分裂的知识。以经典的mysql innodb为例，innodb使用B+树索引，其中，主键索引的叶子节点还保存了数据行的完整记录，叶子节点之间以双向链表的形式串联起来。叶子节点的物理存储形式为数据页，一个数据页内最多可以存储N条行记录(N与行的大小成反比)。如图所示：</p>
-<p><img src="https://seata.apache.org/zh-cn/assets/images/page1-09fa5360a09c5f6ce7e1c5978f370eb1.png" alt="数据页"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page1-09fa5360a09c5f6ce7e1c5978f370eb1.png" alt="数据页"></p>
 <p>B+树的特性要求，左边的节点应小于右边的节点。如果此时要插入一条ID为25的记录，会怎样呢(假设每个数据页只够存放4条记录)？答案是会引起页分裂，如图：</p>
-<p><img src="https://seata.apache.org/zh-cn/assets/images/page2-0ddae897017478780b7f338cca9daa02.png" alt="页分裂"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page2-0ddae897017478780b7f338cca9daa02.png" alt="页分裂"></p>
 <blockquote>
 <p>页分裂是IO不友好的，需要新建数据页，拷贝转移旧数据页的部分记录等，我们应尽量避免。</p>
 </blockquote>
@@ -219,12 +219,12 @@
 <p>最糟糕的情况下，主键ID是随机无序生成的(例如java中一个UUID字符串)，这种情况下，新插入的记录会随机分配到任何一个数据页，如果该页已满，就会触发页分裂。</p>
 <p>如果主键ID由标准版雪花算法生成，最好的情况下，是每个时间戳内只有一个节点在生成ID，这时候算法的效果等同于理想情况的顺序递增，即跟auto_increment无差。最坏的情况下，是每个时间戳内所有节点都在生成ID，这时候算法的效果接近于无序(但仍比UUID的完全无序要好得多，因为workerId只有10位决定了最多只有1024个节点)。实际生产中，算法的效果取决于业务流量，并发度越低，算法越接近理想情况。</p>
 <p>那么，换成新版算法又会如何呢？<br>新版算法从全局角度来看，ID是无序的，但对于每一个workerId，它生成的ID都是严格单调递增的，又因为workerId是有限的，所以最多可划分出1024个子序列，每个子序列都是单调递增的。对于数据库而言，也许它初期接收的ID都是无序的，来自各个子序列的ID都混在一起，就像这样：</p>
-<p><img src="https://seata.apache.org/zh-cn/assets/images/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png" alt="初期"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png" alt="初期"></p>
 <p>如果这时候来了个worker1-seq2，显然会造成页分裂：</p>
-<p><img src="https://seata.apache.org/zh-cn/assets/images/page4-883fee2cd79ec31b7f1d67c9e6362bca.png" alt="首次分裂"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page4-883fee2cd79ec31b7f1d67c9e6362bca.png" alt="首次分裂"></p>
 <p>但分裂之后，有趣的事情发生了，对于worker1而言，后续的seq3，seq4不会再造成页分裂(因为还装得下)，seq5也只需要像顺序增长那样新建页进行链接(区别是这个新页不是在双向链表的尾部)。注意，worker1的后续ID，不会排到worker2及之后的任意节点(因而不会造成后边节点的页分裂)，因为它们总比worker2的ID小；也不会排到worker1当前节点的前边(因而不会造成前边节点的页分裂)，因为worker1的子序列总是单调递增的。在这里，我们称worker1这样的子序列达到了稳态，意为这条子序列已经”稳定”了，它的后续增长只会出现在子序列的尾部，而不会造成其它节点的页分裂。</p>
 <p>同样的事情，可以推广到各个子序列上。无论前期数据库接收到的ID有多乱，经过有限次的页分裂后，双向链表总能达到这样一个稳定的终态：</p>
-<p><img src="https://seata.apache.org/zh-cn/assets/images/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png" alt="终态"></p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png" alt="终态"></p>
 <p>到达终态后，后续的ID只会在该ID所属的子序列上进行顺序增长，而不会造成页分裂。该状态下的顺序增长与auto_increment的顺序增长的区别是，前者有1024个增长位点(各个子序列的尾部)，后者只有尾部一个。</p>
 <p>到这里，我们可以回答开头所提出的问题了：新算法从全局来看的确不是全局递增的，但该算法是<strong>收敛</strong>的，达到稳态后，新算法同样能达成像全局顺序递增一样的效果。</p>
 <hr>
