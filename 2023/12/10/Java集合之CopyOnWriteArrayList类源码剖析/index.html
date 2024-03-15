@@ -17,7 +17,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231210153602951.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Java%E9%9B%86%E5%90%88%E4%B9%8BCopyOnWriteArrayList%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/copyonwritearraylist-class-diagram.png">
 <meta property="article:published_time" content="2023-12-10T07:05:48.738Z">
-<meta property="article:modified_time" content="2024-02-21T10:25:04.491Z">
+<meta property="article:modified_time" content="2024-03-14T09:08:22.886Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="并发编程">
 <meta property="article:tag" content="Java集合">
@@ -185,13 +185,12 @@
 <p>写入时复制（英语：Copy-on-write，简称 COW）是一种计算机程序设计领域的优化策略。其核心思想是，如果有多个调用者（callers）同时请求相同资源（如内存或磁盘上的数据存储），他们会共同获取相同的指针指向相同的资源，直到某个调用者试图修改资源的内容时，系统才会真正复制一份专用副本（private copy）给该调用者，而其他调用者所见到的最初的资源仍然保持不变。这个过程对其他的调用者都是透明的。此作法主要的优点是如果调用者没有修改该资源，就不会有副本（private copy）被创建，因此多个调用者只是读取操作时可以共享同一份资源。</p>
 </blockquote>
 <p>这里再以 <code>CopyOnWriteArrayList</code>为例介绍：当需要修改（ <code>add</code>，<code>set</code>、<code>remove</code> 等操作）<code>CopyOnWriteArrayList</code> 的内容时，不会直接修改原数组，而是会先创建底层数组的副本，对副本数组进行修改，修改完之后再将修改后的数组赋值回去，这样就可以保证写操作不会影响读操作了。</p>
-<p>可以看出，写时复制机制非常适合读多写少的并发场景，能够极大地提高系统的并发性能。</p>
-<p>不过，写时复制机制并不是银弹，其依然存在一些缺点，下面列举几点：</p>
+<p>可以看出，写时复制机制非常适合<code>读多写少</code>的并发场景，能够极大地提高系统的并发性能。</p>
+<p>不过，<strong>写时复制机制并不是银弹</strong>，其依然存在一些缺点，下面列举几点：</p>
 <ol>
-<li>内存占用：每次写操作都需要复制一份原始数据，会占用额外的内存空间，在数据量比较大的情况下，可能会导致内存资源不足。</li>
-<li>写操作开销：每一次写操作都需要复制一份原始数据，然后再进行修改和替换，所以写操作的开销相对较大，在写入比较频繁的场景下，性能可能会受到影响。</li>
-<li>数据一致性问题：修改操作不会立即反映到最终结果中，还需要等待复制完成，这可能会导致一定的数据一致性问题。</li>
-<li>……</li>
+<li><code>内存占用</code>：每次写操作都需要复制一份原始数据，会占用额外的内存空间，在数据量比较大的情况下，可能会导致内存资源不足。</li>
+<li><code>写操作开销</code>：每一次写操作都需要复制一份原始数据，然后再进行修改和替换，所以写操作的开销相对较大，在写入比较频繁的场景下，性能可能会受到影响。</li>
+<li><code>数据一致性问题</code>：修改操作不会立即反映到最终结果中，还需要等待复制完成，这可能会导致一定的数据一致性问题。</li>
 </ol>
 <h2 id="三、ConpyOnWriteArrayList的定义"><a href="#三、ConpyOnWriteArrayList的定义" class="headerlink" title="三、ConpyOnWriteArrayList的定义"></a>三、ConpyOnWriteArrayList的定义</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CopyOnWriteArrayList</span>&lt;E&gt;</span><br><span class="line">    <span class="keyword">implements</span> <span class="title class_">List</span>&lt;E&gt;, RandomAccess, Cloneable, java.io.Serializable &#123;</span><br><span class="line">	<span class="comment">// ReentrantLock和synchronized都可以，只不过作者说比较偏向synchronized</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">transient</span> <span class="type">Object</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line">    <span class="comment">// 底层数组</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Object[] array;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -242,7 +241,7 @@
 </ol>
 <h2 id="七、CopyOnWriteArrayList的size方法"><a href="#七、CopyOnWriteArrayList的size方法" class="headerlink" title="七、CopyOnWriteArrayList的size方法"></a>七、CopyOnWriteArrayList的size方法</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">size</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> getArray().length;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><code>CopyOnWriteArrayList</code>中的<code>array</code>数组每次复制都刚好能够容纳下所有元素，并不像<code>ArrayList</code>那样会预留一定的空间。因此，<code>CopyOnWriteArrayList</code>中并没有<code>size</code>属性，<code>CopyOnWriteArrayList</code>的底层数组的长度就是元素个数，因此<code>size()</code>方法只要返回数组长度就可以了。</p>
+<p><code>CopyOnWriteArrayList</code>中的<code>array</code>数组<strong>每次复制都刚好能够容纳下所有元素</strong>，并不像<code>ArrayList</code>那样会预留一定的空间。因此，<code>CopyOnWriteArrayList</code>中并没有<code>size</code>属性，<code>CopyOnWriteArrayList</code>的底层数组的长度就是元素个数，因此<code>size()</code>方法只要返回数组长度就可以了。</p>
 <h2 id="八、CopyOnWriteArrayList的remove方法"><a href="#八、CopyOnWriteArrayList的remove方法" class="headerlink" title="八、CopyOnWriteArrayList的remove方法"></a>八、CopyOnWriteArrayList的remove方法</h2><p><code>CopyOnWriteArrayList</code>删除元素相关的方法一共有 4 个：</p>
 <ol>
 <li><code>remove(int index)</code>：移除此列表中指定位置上的元素，将任何后续元素向左移动（从它们的索引中减去 1）。</li>
