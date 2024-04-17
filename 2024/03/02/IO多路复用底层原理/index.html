@@ -29,7 +29,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303100952511.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303101002099.png">
 <meta property="article:published_time" content="2024-03-02T07:12:52.203Z">
-<meta property="article:modified_time" content="2024-03-03T03:51:15.921Z">
+<meta property="article:modified_time" content="2024-03-21T16:37:43.356Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Linux内核">
 <meta name="twitter:card" content="summary">
@@ -233,7 +233,7 @@
 <h2 id="4-多进程模型"><a href="#4-多进程模型" class="headerlink" title="4.多进程模型"></a>4.多进程模型</h2><p>基于最原始的阻塞网络 I&#x2F;O， 如果服务器要支持多个客户端，其中比较传统的方式，就是使用<strong>多进程模型</strong>，也就是为每个客户端分配一个进程来处理请求。</p>
 <p>服务器的主进程负责监听客户的连接，一旦与客户端连接完成，accept() 函数就会返回一个「已连接 Socket」，这时就通过 <code>fork()</code> 函数创建一个子进程，实际上就把父进程所有相关的东西都<strong>复制</strong>一份，包括文件描述符、内存地址空间、程序计数器、执行的代码等。</p>
 <p>这两个进程刚复制完的时候，几乎一模一样。不过，会根据<strong>返回值</strong>来区分是父进程还是子进程，如果返回值是 0，则是子进程；如果返回值是其他的整数，就是父进程。</p>
-<p>正因为子进程会<strong>复制父进程的文件描述符</strong>，于是就可以直接使用「已连接 Socket 」和客户端通信了，</p>
+<p>正因为子进程会<strong>复制父进程的文件描述符</strong>，于是就可以直接使用「已连接 Socket」和客户端通信了，</p>
 <p>可以发现，子进程不需要关心「监听 Socket」，只需要关心「已连接 Socket」；父进程则相反，将客户服务交给子进程来处理，因此父进程不需要关心「已连接 Socket」，只需要关心「监听 Socket」。</p>
 <p>下面这张图描述了从连接请求到连接建立，父进程创建生子进程为客户服务。</p>
 <p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/%E5%A4%9A%E8%BF%9B%E7%A8%8B.png" alt="img"></p>

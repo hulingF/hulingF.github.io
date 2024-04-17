@@ -6,12 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="JVM与Java体系结构Java生态体系Java是目前应用最为广泛的软件开发平台之一。随着Java以及Java社区的不断壮大，Java也早已不再是简简单单的一门计算机语言了，它更是一个平台、一种文化、一个社区。  作为一个平台，Java虚拟机扮演着举足轻重的作用 Groovy、Scala、JRuby、Kotlin等都是Java平台的一部分   作为一种文化，Java几乎成为了“开源”的代名词。 第">
+    <meta name="description" content="JVM与Java体系结构Java生态体系Java能获得如此广泛的认可，除了它拥有一门结构严谨、面向对象的编程语言之外，还有许多不可忽视的优点：  它摆脱了硬件平台的束缚，实现了“一次编写，到处运行”的理想; 它提供了一种相对安全的内存管理和访问机制，避免了绝大部分内存泄漏和指针越界问题; 它实现了热点代码检测和运行时编译及优化，这使得Java应用能随着运行时间的增长而获得更高的性能; 它有一套完善">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM与Java体系结构">
 <meta property="og:url" content="https://hulingf.github.io/2024/02/15/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
-<meta property="og:description" content="JVM与Java体系结构Java生态体系Java是目前应用最为广泛的软件开发平台之一。随着Java以及Java社区的不断壮大，Java也早已不再是简简单单的一门计算机语言了，它更是一个平台、一种文化、一个社区。  作为一个平台，Java虚拟机扮演着举足轻重的作用 Groovy、Scala、JRuby、Kotlin等都是Java平台的一部分   作为一种文化，Java几乎成为了“开源”的代名词。 第">
+<meta property="og:description" content="JVM与Java体系结构Java生态体系Java能获得如此广泛的认可，除了它拥有一门结构严谨、面向对象的编程语言之外，还有许多不可忽视的优点：  它摆脱了硬件平台的束缚，实现了“一次编写，到处运行”的理想; 它提供了一种相对安全的内存管理和访问机制，避免了绝大部分内存泄漏和指针越界问题; 它实现了热点代码检测和运行时编译及优化，这使得Java应用能随着运行时间的增长而获得更高的性能; 它有一套完善">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/6e7c0592372b4c28abbb6f8156148514.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/ca8b06db56664543b3905295e884345e.png">
@@ -19,8 +19,11 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/6a8c45cf15694680936358d8b0c439e8.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/b42d3440ece442e8977247c7e22b3685.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240215193343907.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240408172818377.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240408181058283.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240408181222705.png">
 <meta property="article:published_time" content="2024-02-15T08:51:22.047Z">
-<meta property="article:modified_time" content="2024-02-15T11:59:56.323Z">
+<meta property="article:modified_time" content="2024-04-10T01:50:51.247Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="JVM">
 <meta name="twitter:card" content="summary">
@@ -124,7 +127,7 @@
     
     
       <div id="toc">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">JVM与Java体系结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E7%94%9F%E6%80%81%E4%BD%93%E7%B3%BB"><span class="toc-number">1.1.</span> <span class="toc-text">Java生态体系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%AF%AD%E8%A8%80%E6%B7%B7%E5%90%88%E7%BC%96%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">多语言混合编程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%8EJava%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.</span> <span class="toc-text">虚拟机与Java虚拟机</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.1.</span> <span class="toc-text">虚拟机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.2.</span> <span class="toc-text">Java虚拟机</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.4.</span> <span class="toc-text">JVM的位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">1.5.</span> <span class="toc-text">JVM整体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">Java代码执行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.7.</span> <span class="toc-text">JVM的架构模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BE%E4%BE%8B"><span class="toc-number">1.7.1.</span> <span class="toc-text">举例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E5%8F%8D%E7%BC%96%E8%AF%91"><span class="toc-number">1.7.2.</span> <span class="toc-text">字节码反编译</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E5%8F%91%E5%B1%95%E5%8E%86%E7%A8%8B"><span class="toc-number">1.8.</span> <span class="toc-text">JVM发展历程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Sun-Classic-VM"><span class="toc-number">1.8.1.</span> <span class="toc-text">Sun Classic VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Exact-VM"><span class="toc-number">1.8.2.</span> <span class="toc-text">Exact VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#HotSpot-VM"><span class="toc-number">1.8.3.</span> <span class="toc-text">HotSpot VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JRockit"><span class="toc-number">1.8.4.</span> <span class="toc-text">JRockit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IBM%E7%9A%84J9"><span class="toc-number">1.8.5.</span> <span class="toc-text">IBM的J9</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Graal-VM"><span class="toc-number">1.8.6.</span> <span class="toc-text">Graal VM</span></a></li></ol></li></ol></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">JVM与Java体系结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E7%94%9F%E6%80%81%E4%BD%93%E7%B3%BB"><span class="toc-number">1.1.</span> <span class="toc-text">Java生态体系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%AF%AD%E8%A8%80%E6%B7%B7%E5%90%88%E7%BC%96%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">多语言混合编程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%8EJava%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.</span> <span class="toc-text">虚拟机与Java虚拟机</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.1.</span> <span class="toc-text">虚拟机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.2.</span> <span class="toc-text">Java虚拟机</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.4.</span> <span class="toc-text">JVM的位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">1.5.</span> <span class="toc-text">JVM整体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">Java代码执行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.7.</span> <span class="toc-text">JVM的架构模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BE%E4%BE%8B"><span class="toc-number">1.7.1.</span> <span class="toc-text">举例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E5%8F%8D%E7%BC%96%E8%AF%91"><span class="toc-number">1.7.2.</span> <span class="toc-text">字节码反编译</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E5%8F%91%E5%B1%95%E5%8E%86%E7%A8%8B"><span class="toc-number">1.8.</span> <span class="toc-text">JVM发展历程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%A7%8B%E7%A5%96-Classic-x2F-Exact-VM"><span class="toc-number">1.8.1.</span> <span class="toc-text">虚拟机始祖-Classic&#x2F;Exact VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A6%E6%9E%97%E7%9B%9F%E4%B8%BB-HotSpot-VM"><span class="toc-number">1.8.2.</span> <span class="toc-text">武林盟主-HotSpot VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%A9%E4%B8%8B%E7%AC%AC%E4%BA%8C-JRockit-x2F-J9-VM"><span class="toc-number">1.8.3.</span> <span class="toc-text">天下第二-JRockit&#x2F;J9 VM</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B1%95%E6%9C%9BJava%E6%8A%80%E6%9C%AF%E6%9C%AA%E6%9D%A5"><span class="toc-number">1.9.</span> <span class="toc-text">展望Java技术未来</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A0%E8%AF%AD%E8%A8%80%E5%80%BE%E5%90%91"><span class="toc-number">1.9.1.</span> <span class="toc-text">无语言倾向</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B0%E4%B8%80%E4%BB%A3%E5%8D%B3%E6%97%B6%E7%BC%96%E8%AF%91%E5%99%A8"><span class="toc-number">1.9.2.</span> <span class="toc-text">新一代即时编译器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%91Native%E8%BF%88%E8%BF%9B"><span class="toc-number">1.9.3.</span> <span class="toc-text">向Native迈进</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%AD%E8%A8%80%E8%AF%AD%E6%B3%95%E6%8C%81%E7%BB%AD%E5%A2%9E%E5%BC%BA"><span class="toc-number">1.9.4.</span> <span class="toc-text">语言语法持续增强</span></a></li></ol></li></ol></li></ol>
       </div>
     
   </span>
@@ -169,23 +172,26 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <h1 id="JVM与Java体系结构"><a href="#JVM与Java体系结构" class="headerlink" title="JVM与Java体系结构"></a>JVM与Java体系结构</h1><h2 id="Java生态体系"><a href="#Java生态体系" class="headerlink" title="Java生态体系"></a>Java生态体系</h2><p>Java是目前应用最为广泛的软件开发平台之一。随着Java以及Java社区的不断壮大，Java也早已不再是简简单单的一门计算机语言了，它更是一个平台、一种文化、一个社区。</p>
+    <h1 id="JVM与Java体系结构"><a href="#JVM与Java体系结构" class="headerlink" title="JVM与Java体系结构"></a>JVM与Java体系结构</h1><h2 id="Java生态体系"><a href="#Java生态体系" class="headerlink" title="Java生态体系"></a>Java生态体系</h2><p>Java能获得如此广泛的认可，除了它拥有一门结构严谨、面向对象的编程语言之外，还有许多不可忽视的优点：</p>
+<ol>
+<li>它摆脱了硬件平台的束缚，实现了<code>“一次编写，到处运行”</code>的理想;</li>
+<li>它提供了一种相对安全的<code>内存管理和访问机制</code>，避免了绝大部分<strong>内存泄漏和指针越界</strong>问题;</li>
+<li>它实现了<code>热点代码检测</code>和<code>运行时编译及优化</code>，这使得Java应用能随着运行时间的增长而获得更高的性能;</li>
+<li>它有一套完善的应用程序接口，还有无数来自商业机构和开源社区的第三方类库来帮助用户实现各种各样的功能;</li>
+</ol>
+<p>从广义上讲，Kotlin、Clojure、JRuby、Groovy等运行于Java虚拟机上的编程语言及其相关的程序都属于Java技术体系中的一员。如果仅从传统意义上来看，JCP官方所定义的Java技术体系包括了以下几个组成部分：</p>
 <ul>
-<li>作为一个平台，Java虚拟机扮演着举足轻重的作用<ul>
-<li>Groovy、Scala、JRuby、Kotlin等都是Java平台的一部分</li>
+<li>Java程序设计语言</li>
+<li>各种硬件平台上的Java虚拟机实现</li>
+<li>Class文件格式</li>
+<li>Java类库API</li>
+<li>来自商业机构和开源社区的第三方Java类库</li>
 </ul>
-</li>
-<li>作为一种文化，Java几乎成为了“开源”的代名词。<ul>
-<li>第三方开源软件和框架。如Tomcat、Struts，MyBatis，Spring等。</li>
-<li>就连JDK和JVM自身也有不少开源的实现，如OpenJDK、Harmony。</li>
-</ul>
-</li>
-<li>作为一个社区，Java拥有全世界最多的技术拥护者和开源社区支持，有数不清的论坛和资料。从桌面应用软件、嵌入式开发到企业级应用、后台服务器、中间件，都可以看到Java的身影。其应用形式之复杂、参与人数之众多也令人咋舌。</li>
-</ul>
-<p><img src="/../../../../../../imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/6e7c0592372b4c28abbb6f8156148514.png" alt="img"></p>
+<p>我们可以把<code>Java程序设计语言</code>、<code>Java虚拟机</code>、<code>Java类库</code>这三部分统称为<code>JDK</code>（Java Development Kit），JDK是用于支持Java程序开发的最小环境，本书中为行文方便，在不产生歧义的地方常以JDK来代指整个Java技术体系。可以把Java类库API中的<code>Java SE API子集</code>和<code>Java虚拟机</code>这两部分统称为<code>JRE</code>（Java Runtime Environment），JRE是支持Java程序运行的标准环境。</p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/6e7c0592372b4c28abbb6f8156148514.png" alt="img"></p>
 <p>随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现了在Java虚拟机平台上运行非Java语言编写的程序。</p>
 <blockquote>
-<p>Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结果满足并包含Java虚拟机的内部指令集、符号表以及其他的辅助信息，它就是一个有效的字节码文件，就能够被虚拟机所识别并装载运行。</p>
+<p>Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心<code>字节码文件</code>。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结果满足并包含Java虚拟机的内部指令集、符号表以及其他的辅助信息，它就是一个有效的字节码文件，就能够被虚拟机所识别并装载运行。</p>
 </blockquote>
 <h2 id="多语言混合编程"><a href="#多语言混合编程" class="headerlink" title="多语言混合编程"></a>多语言混合编程</h2><p>Java平台上的<code>多语言混合编程</code>正成为主流，通过<code>特定领域的语言去解决特定领域的问题</code>是当前软件开发应对日趋复杂的项目需求的一个方向。</p>
 <p>试想一下，在一个项目之中，并行处理用clojure语言编写，展示层使用JRuby&#x2F;Rails，中间层则是Java，每个应用层都将使用不同的编程语言来完成，而且，接口对每一层的开发者都是透明的，各种语言之间的交互不存在任何困难，就像使用自己语言的原生API一样方便，因为它们最终都运行在一个虚拟机之上。</p>
@@ -207,18 +213,18 @@
 <li><code>自动垃圾回收功能</code></li>
 </ul>
 <h2 id="JVM的位置"><a href="#JVM的位置" class="headerlink" title="JVM的位置"></a>JVM的位置</h2><p>JVM是运行在操作系统之上的，它与硬件没有直接的交互:</p>
-<p><img src="/../../../../../../imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/ca8b06db56664543b3905295e884345e.png" alt="img"> </p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/ca8b06db56664543b3905295e884345e.png" alt="img"> </p>
 <p>Java的体系结构:</p>
-<p><img src="/../../../../../../imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/dd1609513a824607b4703474f00a8df0.png" alt="img"> </p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/dd1609513a824607b4703474f00a8df0.png" alt="img"> </p>
 <h2 id="JVM整体结构"><a href="#JVM整体结构" class="headerlink" title="JVM整体结构"></a>JVM整体结构</h2><ul>
 <li>HotSpot VM是目前市面上高性能虚拟机的代表作之一。</li>
 <li>它采用<code>解释器与即时编译器并存</code>的架构。</li>
 <li>在今天，Java程序的运行性能早已脱胎换骨，已经达到了可以和C&#x2F;C++程序一较高下的地步。</li>
 </ul>
-<p><img src="/../../../../../../imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/6a8c45cf15694680936358d8b0c439e8.png" alt="img"></p>
-<p>执行引擎包含三部分：解释器，及时编译器，垃圾回收器，运行时数据区中的方法区和堆是共享资源，虚拟机栈、本地方法栈和程序计数器是线程私有的。</p>
-<h2 id="Java代码执行流程"><a href="#Java代码执行流程" class="headerlink" title="Java代码执行流程"></a>Java代码执行流程</h2><p><img src="/../../../../../../imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/b42d3440ece442e8977247c7e22b3685.png" alt="img"></p>
-<p>只是能生成被Java虚拟机所能解释的字节码文件，那么理论上就可以自己设计一套代码语言，重点是前端编译器的设计。</p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/6a8c45cf15694680936358d8b0c439e8.png" alt="img"></p>
+<p>执行引擎包含三部分：解释器，即时编译器，垃圾回收器，运行时数据区中的方法区和堆是共享资源，Java虚拟机栈、本地方法栈和程序计数器是线程私有的。</p>
+<h2 id="Java代码执行流程"><a href="#Java代码执行流程" class="headerlink" title="Java代码执行流程"></a>Java代码执行流程</h2><p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/b42d3440ece442e8977247c7e22b3685.png" alt="img"></p>
+<p>只要能生成被Java虚拟机所能解释的字节码文件，那么理论上就可以自己设计一套代码语言，重点是前端编译器的设计。</p>
 <h2 id="JVM的架构模型"><a href="#JVM的架构模型" class="headerlink" title="JVM的架构模型"></a>JVM的架构模型</h2><p>Java编译器输入的指令流基本上是一种<code>基于栈的指令集架构</code>，另外一种指令集架构则是基于寄存器的指令集架构。具体来说：这两种架构之间的区别：</p>
 <p>基于栈式架构的特点</p>
 <ul>
@@ -249,65 +255,67 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">javap -v .\StackStructureTest.class</span><br></pre></td></tr></table></figure>
 
 <p>得到的文件为:</p>
-<p><img src="/../../../../../../imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240215193343907.png" alt="image-20240215193343907"></p>
-<p>由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。</p>
-<h2 id="JVM发展历程"><a href="#JVM发展历程" class="headerlink" title="JVM发展历程"></a>JVM发展历程</h2><h3 id="Sun-Classic-VM"><a href="#Sun-Classic-VM" class="headerlink" title="Sun Classic VM"></a>Sun Classic VM</h3><ul>
-<li>早在1996年Java1.0版本的时候，Sun公司发布了一款名为Sun Classic VM的Java虚拟机，它同时也是世界上第一款商用Java虚拟机，JDK1.4时完全被淘汰</li>
-<li>这款虚拟机内部<code>只提供解释器</code>。现在还没有即时编译器，因此效率比较低，而即时编译器会把热点代码缓存起来，那么以后使用热点代码的时候，效率就比较高</li>
-<li>如果使用JIT编译器，就需要进行外挂。但是一旦使用了JIT编译器，JIT就会接管虚拟机的执行系统。解释器就不再工作。<code>解释器和编译器不能配合工作</code></li>
-</ul>
-<h3 id="Exact-VM"><a href="#Exact-VM" class="headerlink" title="Exact VM"></a>Exact VM</h3><p>为了解决上一个虚拟机问题，JDK1.2时，Sun提供了此虚拟机。Exact Memory Management：准确式内存管理</p>
-<ul>
-<li>也可以叫Non-Conservative&#x2F;Accurate Memory Management</li>
-<li>虚拟机可以知道内存中某个位置的数据具体是什么类型</li>
-</ul>
-<p>具备现代高性能虚拟机的维形</p>
-<ul>
-<li><code>热点探测（寻找出热点代码进行缓存）</code></li>
-<li><code>译器与解释器混合工作模式</code></li>
-</ul>
-<p>只在Solaris平台短暂使用，其他平台上还是Classic VM，英雄气短，终被Hotspot虚拟机替换</p>
-<h3 id="HotSpot-VM"><a href="#HotSpot-VM" class="headerlink" title="HotSpot VM"></a>HotSpot VM</h3><p>HotSpot历史:</p>
-<ul>
-<li>最初由一家名为“Longview Technologies”的小公司设计</li>
-<li>1997年，此公司被Sun收购；2009年，Sun公司被甲骨文收购</li>
-<li>JDK1.3时，HotSpot VM成为默认虚拟机</li>
-</ul>
-<p>目前Hotspot占有绝对的市场地位，称霸武林。</p>
-<ul>
-<li>不管是现在仍在广泛使用的JDK6，还是使用比例较多的JDK8中，默认的虚拟机都是HotSpot</li>
-<li>Oracle JDK和OpenJDK的默认虚拟机</li>
-<li>因此本课程中默认介绍的虚拟机都是HotSpot，相关机制也主要是指HotSpot的GC机制（比如其他两个商用虚机都没有方法区的概念）</li>
-</ul>
-<p>名称中的HotSpot指的就是它的热点代码探测技术。</p>
-<ul>
-<li>通过<code>计数</code>找到最具编译价值代码，触发<code>即时编译</code>或<code>栈上替换</code></li>
-<li>通过<code>编译器与解释器协同工作</code>，在<code>最优程序响应时间</code>与<code>最佳执行性能</code>中取得平衡</li>
-</ul>
-<h3 id="JRockit"><a href="#JRockit" class="headerlink" title="JRockit"></a>JRockit</h3><p>专注于服务器端应用:</p>
-<ul>
-<li>它可以不太关注程序启动速度，因此JRockit内部不包含解析器实现，<code>全部代码都靠即时编译器编译后执行</code>。</li>
-</ul>
-<p>大量的行业基准测试显示，JRockit JVM是世界上最快的JVM</p>
-<ul>
-<li>使用JRockit产品，客户已经体验到了显著的性能提高（一些超过了70%）和硬件成本的减少（达50%）</li>
-</ul>
-<p>优势：全面的Java运行时解决方案组合</p>
-<ul>
-<li>JRockit面向延迟敏感型应用的解决方案JRockit Real Time提供以毫秒或微秒级的JVM响应时间</li>
-<li><code>MissionControl</code>服务套件，它是一组以极低的开销来监控、管理和分析生产环境中的应用程序的工具</li>
-</ul>
-<p>2008年，JRockit被Oracle收购。Oracle表达了整合两大优秀虚拟机的工作，大致在JDK8中完成。整合的方式是在HotSpot的基础上，移植JRockit的优秀特性。</p>
-<h3 id="IBM的J9"><a href="#IBM的J9" class="headerlink" title="IBM的J9"></a>IBM的J9</h3><p>全称：IBM Technology for Java Virtual Machine，简称IT4J，内部代号：J9</p>
-<p>市场定位与HotSpot接近，服务器端、桌面应用、嵌入式等多用途VM广泛用于IBM的各种Java产品。</p>
-<p>目前，有影响力的三大商用虚拟机之一，也号称是世界上最快的Java虚拟机。</p>
-<p>2017年左右，IBM发布了开源J9VM，命名为OpenJ9，交给Eclipse基金会管理，也称为Eclipse OpenJ9</p>
-<h3 id="Graal-VM"><a href="#Graal-VM" class="headerlink" title="Graal VM"></a>Graal VM</h3><p>2018年4月，Oracle Labs公开了GraalvM，号称 “Run Programs Faster Anywhere”，勃勃野心。与1995年Java的”write once，run anywhere”遥相呼应。</p>
-<p><code>GraalVM</code>在HotSpot VM基础上增强而成的<code>跨语言全栈虚拟机</code>，可以作为“任何语言”的运行平台使用。语言包括：Java、Scala、Groovy、Kotlin、C、C++、Javascript、Ruby、Python、R等。支持不同语言中混用对方的接口和对象，支持这些语言使用已经编写好的本地库文件。</p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240215193343907.png" alt="image-20240215193343907"></p>
+<p>由于<code>跨平台性</code>的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。</p>
+<h2 id="JVM发展历程"><a href="#JVM发展历程" class="headerlink" title="JVM发展历程"></a>JVM发展历程</h2><h3 id="虚拟机始祖-Classic-x2F-Exact-VM"><a href="#虚拟机始祖-Classic-x2F-Exact-VM" class="headerlink" title="虚拟机始祖-Classic&#x2F;Exact VM"></a>虚拟机始祖-Classic&#x2F;Exact VM</h3><p>1996年1月23日，Sun发布JDK 1.0，Java语言首次拥有了商用的正式运行环境，这个JDK中所带的虚拟机就是<code>Classic VM</code>。这款虚拟机只能使用<code>纯解释器方式</code>来执行Java代码，如果要使用即时编译器那就必须进行外挂，但是假如外挂了即时编译器的话，即时编译器就会完全接管虚拟机的执行系统，解释器便不能再工作了。在JDK 1.2及之前，用户用Classic虚拟机执行<code>java-version</code>命令，将会看到类似下面这行的输出：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">java version &quot;1.2.2&quot;</span><br><span class="line">Classic VM (build JDK-1.2.2-001, green threads, sunwjit)</span><br></pre></td></tr></table></figure>
+
+<p>其中的“sunwjit”（Sun Workshop JIT）就是Sun提供的外挂编译器。由于解释器和编译器不能配合工作，这就意味着如果要使用编译执行，编译器就不得不对每一个方法、每一行代码都进行编译，而无论它们执行的频率是否具有编译的价值。<code>基于程序响应时间的压力，这些编译器根本不敢应用编译耗时稍高的优化技术</code>，因此这个阶段的虚拟机虽然用了即时编译器输出本地代码，其执行效率也和传统的C&#x2F;C++程序有很大差距，“Java语言很慢”的印象就是在这阶段开始在用户心中树立起来的。</p>
+<p>Sun的虚拟机团队努力去解决Classic虚拟机所面临的各种问题，提升运行效率，在JDK 1.2时，曾在Solaris平台上发布过一款名为<code>Exact VM</code>的虚拟机，<strong>它的编译执行系统已经具备现代高性能虚拟机雏形，如热点探测、两级即时编译器、编译器与解释器混合工作模式等</strong>。</p>
+<p>Exact VM因它使用<code>准确式内存管理</code>（Exact Memory Management）而得名。准确式内存管理是指<code>虚拟机可以知道内存中某个位置的数据具体是什么类型</code>。譬如内存中有一个32bit的整数123456，虚拟机将有能力分辨出它到底是一个指向了123456的内存地址的引用类型还是一个数值为123456的整数，<strong>准确分辨出哪些内存是引用类型，这也是在垃圾收集时准确判断堆上的数据是否还可能被使用的前提</strong>。由于使用了准确式内存管理，Exact VM可以抛弃掉以前Classic VM<code>基于句柄（Handle）的对象查找方式</code>（原因是垃圾收集后对象将可能会被移动位置，如果地址为123456的对象移动到654321，在没有明确信息表明内存中哪些数据是引用类型的前提下，那虚拟机肯定是不敢把内存中所有为123456的值改成654321的，所以要使用句柄来保持引用值的稳定），这样<code>每次定位对象都少了一次间接查找的开销</code>，显著提升执行性能。</p>
+<h3 id="武林盟主-HotSpot-VM"><a href="#武林盟主-HotSpot-VM" class="headerlink" title="武林盟主-HotSpot VM"></a>武林盟主-HotSpot VM</h3><p>HotSpot既继承了Sun之前两款商用虚拟机的优点（如前面提到的准确式内存管理），也有许多自己新的技术优势，如它名称中的HotSpot指的就是它的<code>热点代码探测技术</code>（这里的描写带有“历史由胜利者书写”的味道，其实HotSpot与Exact虚拟机基本上是同时期的独立产品，HotSpot出现得还稍早一些，一开始HotSpot就是基于准确式内存管理的，而Exact VM之中也有与HotSpot几乎一样的热点探测技术，为了Exact VM和HotSpot VM哪个该成为Sun主要支持的虚拟机，在Sun公司内部还争吵过一场，HotSpot击败Exact并不能算技术上的胜利），HotSpot虚拟机的热点代码探测能力可以通过<code>执行计数器找出最具有编译价值的代码</code>，然后<code>通知即时编译器以方法为单位进行编译</code>。如果一个方法被频繁调用，或方法中有效循环次数很多，将会分别触发标准即时编译和栈上替换编译（On-Stack Replacement，OSR）行为。</p>
 <blockquote>
-<p>工作原理是将这些语言的源代码或源代码编译后的中间格式，通过解释器转换为能被Graal VM接受的中间表示。Graal VM提供Truffle工具集快速构建面向一种新语言的解释器。在运行时还能进行即时编译优化，获得比原生编译器更优秀的执行效率。</p>
+<p>[!NOTE]</p>
+<p>通过编译器与解释器恰当地协同工作，可以在<code>最优化的程序响应时间</code>与<code>最佳执行性能</code>中取得平衡，而且无须等待本地代码输出才能执行程序，即时编译的时间压力也相对减小，这样有助于引入更复杂的代码优化技术，输出质量更高的本地代码。</p>
 </blockquote>
-<p><strong>如果说HotSpot有一天真的被取代，Graal VM希望最大。但是Java的软件生态没有丝毫变化。</strong></p>
+<p>得益于Sun&#x2F;OracleJDK在Java应用中的统治地位，HotSpot理所当然地成为全世界使用最广泛的Java虚拟机，是虚拟机家族中毫无争议的“武林盟主”。</p>
+<h3 id="天下第二-JRockit-x2F-J9-VM"><a href="#天下第二-JRockit-x2F-J9-VM" class="headerlink" title="天下第二-JRockit&#x2F;J9 VM"></a>天下第二-JRockit&#x2F;J9 VM</h3><p>JRockit虚拟机曾经号称是<code>“世界上速度最快的Java虚拟机”</code>（广告词，IBM J9虚拟机也这样宣传过，总体上三大虚拟机的性能是交替上升的），它是BEA在2002年从Appeal Virtual Machines公司收购获得的Java虚拟机。BEA将其发展为<code>一款专门为服务器硬件和服务端应用场景高度优化的虚拟机</code>，由于专注于服务端应用，它可以<strong>不太关注于程序启动速度</strong>，因此JRockit内部<code>不包含解释器实现</code>，<code>全部代码都靠即时编译器编译后执行</code>。除此之外，<strong>JRockit的垃圾收集器和Java Mission Control故障处理套件等部分的实现</strong>，在当时众多的Java虚拟机中也处于领先水平。</p>
+<p>J9虚拟机最初是由IBM Ottawa实验室的一个SmallTalk虚拟机项目扩展而来，当时这个虚拟机有一个Bug是因为8KB常量值定义错误引起，工程师们花了很长时间终于发现并解决了这个错误，此后这个版本的虚拟机就被称为K8，后来由其扩展而来、支持Java语言的虚拟机就被命名为J9。与BEA JRockit只专注于服务端应用不同，IBM J9虚拟机的市场定位与HotSpot比较接近，它是<code>一款在设计上全面考虑服务端、桌面应用，再到嵌入式的多用途虚拟机</code>，开发J9的目的是作为IBM公司各种Java产品的执行平台，在和IBM产品（如IBM WebSphere等）搭配以及在IBM AIX和z&#x2F;OS这些平台上部署Java应用。</p>
+<p>IBM J9直至今天仍旧非常活跃，IBM J9虚拟机的<code>职责分离与模块化</code>做得比HotSpot更优秀，由J9虚拟机中抽象封装出来的核心组件库（包括垃圾收集器、即时编译器、诊断监控子系统等）就单独构成了IBM OMR项目，可以在其他语言平台如Ruby、Python中快速组装成相应的功能。从2016年起，IBM逐步将OMR项目和J9虚拟机进行开源，完全开源后便将它们捐献给了Eclipse基金会管理，并重新命名为Eclipse OMR和OpenJ9。<strong>如果为了学习虚拟机技术而去阅读源码，更加模块化的OpenJ9代码其实是比HotSpot更好的选择。</strong>如果为了使用Java虚拟机时多一种选择，那可以通过AdoptOpenJDK来获得采用OpenJ9搭配上OpenJDK其他类库组成的完整JDK。</p>
+<h2 id="展望Java技术未来"><a href="#展望Java技术未来" class="headerlink" title="展望Java技术未来"></a>展望Java技术未来</h2><h3 id="无语言倾向"><a href="#无语言倾向" class="headerlink" title="无语言倾向"></a>无语言倾向</h3><p>2018年4月，Oracle Labs新公开了一项黑科技：<code>Graal VM</code>，从它的口号<code>“Run Programs Faster Anywhere”</code>就能感觉到一颗蓬勃的野心，这句话显然是与1995年Java刚诞生时的“WriteOnce，Run Anywhere”在遥相呼应。</p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240408172818377.png" alt="image-20240408172818377"></p>
+<p>Graal VM被官方称为“Universal VM”和“Polyglot VM”，这是一个在HotSpot虚拟机基础上增强而成的<code>跨语言全栈虚拟机</code>，可以作为“任何语言”的运行平台使用，这里“任何语言”包括了Java、Scala、Groovy、Kotlin等基于Java虚拟机之上的语言，还包括了C、C++、Rust等基于LLVM的语言，同时支持其他像JavaScript、Ruby、Python和R语言等。<code>Graal VM可以无额外开销地混合使用这些编程语言，支持不同语言中混用对方的接口和对象，也能够支持这些语言使用已经编写好的本地库文件</code>。</p>
+<p>Graal VM的基本工作原理是<strong>将这些语言的源代码（例如JavaScript）或源代码编译后的中间格式（例如LLVM字节码）通过解释器转换为能被Graal VM接受的中间表示（Intermediate Representation，IR）</strong>，譬如设计一个解释器专门对LLVM输出的字节码进行转换来支持C和C++语言，这个过程称为程序特化（Specialized，也常被称为Partial Evaluation）。Graal VM提供了<code>Truffle工具集</code>来快速构建面向一种新语言的解释器，并用它构建了一个称为Sulong的高性能LLVM字节码解释器。</p>
+<h3 id="新一代即时编译器"><a href="#新一代即时编译器" class="headerlink" title="新一代即时编译器"></a>新一代即时编译器</h3><p>对需要长时间运行的应用来说，由于经过充分预热，热点代码会被HotSpot的探测机制准确定位捕获，并将其编译为物理硬件可直接执行的机器码，在这类应用中Java的运行效率很大程度上取决于即时编译器所输出的代码质量。</p>
+<p>HotSpot虚拟机中含有两个即时编译器，分别是<code>编译耗时短但输出代码优化程度较低的客户端编译器</code>（简称为<code>C1</code>）以及<code>编译耗时长但输出代码优化质量也更高的服务端编译器</code>（简称为<code>C2</code>），通常它们会在分层编译机制下与解释器互相配合来共同构成HotSpot虚拟机的执行子系统。</p>
+<p>自JDK 10起，HotSpot中又加入了一个全新的即时编译器：<code>Graal编译器</code>，看名字就可以联想到它是来自于前一节提到的Graal VM。Graal编译器是以<code>C2编译器替代者</code>的身份登场的。C2的历史已经非常长了，可以追溯到Cliff Click大神读博士期间的作品，这个由C++写成的编译器尽管目前依然效果拔群，但已经复杂到连Cliff Click本人都不愿意继续维护的程度。而Graal编译器本身就是由Java语言写成，实现时又刻意与C2采用了同一种名为“Sea-of-Nodes”的高级中间表示（High IR）形式，使其能够更容易借鉴C2的优点。</p>
+<blockquote>
+<p>Graal编译器比C2编译器晚了足足二十年面世，有着极其充沛的后发优势，在保持输出相近质量的编译代码的同时，开发效率和扩展性上都要显著优于C2编译器，这决定了C2编译器中优秀的代码优化技术可以轻易地移植到Graal编译器上，但是反过来Graal编译器中行之有效的优化在C2编译器里实现起来则异常艰难。这种情况下，Graal的编译效果短短几年间迅速追平了C2，甚至某些测试项中开始逐渐反超C2编译器。Graal能够做比C2更加复杂的优化，如“部分逃逸分析”（PartialEscape Analysis），也拥有比C2更容易使用激进预测性优化（Aggressive Speculative Optimization）的策略，支持自定义的预测性假设等。</p>
+</blockquote>
+<h3 id="向Native迈进"><a href="#向Native迈进" class="headerlink" title="向Native迈进"></a>向Native迈进</h3><p>对不需要长时间运行的，或者小型化的应用而言，Java（而不是指Java ME）天生就带有一些劣势，这里并不只是指跑个HelloWorld也需要百多兆的JRE之类的问题，更重要的是指近几年在从大型单体应用架构向小型微服务应用架构发展的技术潮流下，Java表现出来的不适应。</p>
+<p>在微服务架构的视角下，应用拆分后，单个微服务很可能就不再需要面对数十、数百GB乃至TB的内存，有了高可用的服务集群，也无须追求单个服务要7×24小时不间断地运行，它们随时可以中断和更新；<code>但相应地，Java的启动时间相对较长，需要预热才能达到最高性能等特点就显得相悖于这样的应用场景</code>。在无服务架构中，矛盾则可能会更加突出，比起服务，一个函数的规模通常会更小，执行时间会更短，当前最热门的无服务运行环境AWS Lambda所允许的最长运行时间仅有15分钟。</p>
+<p>一直把软件服务作为重点领域的Java自然不可能对此视而不见，在最新的几个JDK版本的功能清单中，已经陆续推出了跨进程的、可以面向用户程序的<code>类型信息共享</code>（Application Class Data Sharing，AppCDS，<code>允许把加载解析后的类型信息缓存起来，从而提升下次启动速度</code>，原本CDS只支持Java标准库，在JDK 10时的AppCDS开始支持用户的程序代码）、<code>无操作的垃圾收集器</code>（Epsilon，只做内存分配而不做回收的收集器，对于运行完就退出的应用十分合适）等改善措施。而酝酿中的一个更彻底的解决方案，是逐步开始对<strong>提前编译</strong>（Ahead of Time Compilation，AOT）提供支持。</p>
+<p>提前编译是相对于即时编译的概念，提前编译能带来的最大好处是Java虚拟机加载这些已经预编译成二进制库之后就能够<code>直接调用</code>，而无须再等待即时编译器在运行时将其编译成二进制机器码。<strong>理论上，提前编译可以减少即时编译带来的预热时间，减少Java应用长期给人带来的“第一次运行慢”的不良体验，可以放心地进行很多全程序的分析行为，可以使用时间压力更大的优化措施。</strong></p>
+<p>但是提前编译的坏处也很明显，<code>它破坏了Java“一次编写，到处运行”的承诺</code>，必须为每个不同的硬件、操作系统去编译对应的发行包；也<code>显著降低了Java链接过程的动态性</code>，必须要求加载的代码在编译期就是全部已知的，而不能在运行期才确定，否则就只能舍弃掉已经提前编译好的版本，退回到原来的即时编译执行状态。</p>
+<p>早在JDK 9时期，Java就提供了实验性的Jaotc命令来进行提前编译，不过多数人试用过后都颇感失望，大家原本期望的是类似于Excelsior JET那样的编译过后能生成本地代码完全脱离Java虚拟机运行的解决方案，但Jaotc其实仅仅是代替即时编译的一部分作用而已，仍需要运行于HotSpot之上。</p>
+<blockquote>
+<p>[!NOTE]</p>
+<p>补充内容:</p>
+<p>直到Substrate VM出现，才算是满足了人们心中对Java提前编译的全部期待。Substrate VM是在Graal VM 0.20版本里新出现的一个极小型的运行时环境，包括了独立的异常处理、同步调度、线程管理、内存管理（垃圾收集）和JNI访问等组件，<code>目标是代替HotSpot用来支持提前编译后的程序执行</code>。它还包含了一个本地镜像的构造器（Native Image Generator），用于为用户程序建立基于Substrate VM的本地运行时镜像。这个构造器采用指针分析（Points-To Analysis）技术，从用户提供的程序入口出发，搜索所有可达的代码。在搜索的同时，它还将执行初始化代码，并在最终生成可执行文件时，将已初始化的堆保存至一个堆快照之中。这样一来，Substrate VM就可以直接从目标程序开始运行，而无须重复进行Java虚拟机的初始化过程。但相应地，原理上也决定了Substrate VM必须要求目标程序是完全封闭的，即不能动态加载其他编译器不可知的代码和类库。基于这个假设，Substrate VM才能探索整个编译空间，并通过静态分析推算出所有虚方法调用的目标方法。</p>
+</blockquote>
+<p>Substrate VM带来的好处是能显著<code>降低内存占用及启动时间</code>，由于HotSpot本身就会有一定的内存消耗（通常约几十MB），这对最低也从几GB内存起步的大型单体应用来说并不算什么，但在微服务下就是一笔不可忽视的成本。根据Oracle官方给出的测试数据，运行在Substrate VM上的小规模应用，其内存占用和启动时间与运行在HotSpot上相比有5倍到50倍的下降。</p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240408181058283.png" alt="image-20240408181058283"></p>
+<p>Substrate VM补全了Graal VM“Run Programs Faster Anywhere”愿景蓝图里的最后一块拼图，让Graal VM支持其他语言时<code>不会有重量级的运行负担</code>。譬如运行JavaScript代码，Node.js的V8引擎执行效率非常高，但即使是最简单的HelloWorld，它也要使用约20MB的内存，而运行在Substrate VM上的Graal.js，跑一个HelloWorld则只需要4.2MB内存，且运行速度与V8持平。Substrate VM的轻量特性，使得它十分适合嵌入其他系统，譬如Oracle自家的数据库就已经开始使用这种方式支持用不同的语言代替PL&#x2F;SQL来编写存储过程。</p>
+<p><img src="/imgs/JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/image-20240408181222705.png" alt="image-20240408181222705"></p>
+<blockquote>
+<p>由于AOT编译没有运行时的监控信息，很多由运行信息统计进行向导的优化措施不能使用，所以尽管没有编译时间的压力，效果也不一定就比JIT更好。</p>
+</blockquote>
+<h3 id="语言语法持续增强"><a href="#语言语法持续增强" class="headerlink" title="语言语法持续增强"></a>语言语法持续增强</h3><p>笔者将语言的功能特性和语法放到最后来讲，因为它是相对最不重要的改进点，毕竟连JavaScript这种“反人类”的语法都能获得如此巨大的成功，而比Java语法先进优雅得多的挑战者C#现在已经“江湖日下”，成了末路英雄。</p>
+<p>但一门语言的功能、语法又是影响语言生产力和效率的重要因素，很多语言特性和语法糖不论有没有，程序也照样能写，但即使只是可有可无的语法糖，也是<code>直接影响语言使用者的幸福感程度的关键指标</code>。JDK 7的Coins项目结束以后，Java社区又创建了另外一个新的语言特性改进项目Amber，JDK10至13里面提供的新语法改进基本都来自于这个项目，譬如：</p>
+<ul>
+<li>JEP 286：Local-Variable Type Inference，在JDK 10中提供，本地类型变量推断。</li>
+<li>JEP 323：Local-Variable Syntax for Lambda Parameters，在JDK 11中提供，JEP 286的加强，使它可以用在Lambda中。</li>
+<li>JEP 325：Switch Expressions，在JDK 13中提供，实现switch语句的表达式支持。</li>
+<li>JEP 335：Text Blocks，在JDK 13中提供，支持文本块功能，可以节省拼接HTML、SQL等场景里大量的“+”操作。</li>
+<li>JEP 305：Pattern Matching for instanceof，用instanceof判断过的类型，在条件分支里面可以不需要做强类型转换就能直接使用。</li>
+</ul>
+<p>除语法糖以外，语言的功能也在持续改进之中，以下几个项目是目前比较明确的，也是受到较多关注的功能改进计划：</p>
+<ul>
+<li>Project Loom：现在的Java做并发处理的最小调度单位是线程，Java线程的调度是直接由操作系统内核提供的，会有核心态、用户态的切换开销。而很多其他语言都提供了<code>更加轻量级的、由软件自身进行调度的用户线程</code>（曾经非常早期的Java也有绿色线程），譬如Golang的Groutine、D语言的Fiber等。Loom项目就准备提供一套与目前Thread类API非常接近的Fiber实现。</li>
+<li>Project Valhalla：提供值类型和基本类型的泛型支持，并提供明确的不可变类型和非引用类型的声明。不可变类型在并发编程中能带来很多好处，没有数据竞争风险带来了更好的性能。一些语言（如Scala）就有明确的不可变类型声明，而Java中只能<code>在定义类时将全部字段声明为final来间接实现</code>。基本类型的泛型支持是指在泛型中引用基本数据类型不需要自动装箱和拆箱，避免性能损耗。</li>
+<li>Project Panama：目的是<code>消弭Java虚拟机与本地代码之间的界线</code>。现在Java代码可以通过JNI来调用本地代码，这点在与硬件交互频繁的场合尤其常用（譬如Android）。但是JNI的调用方式充其量只能说是达到能用的标准而已，使用起来仍相当烦琐，频繁执行的性能开销也非常高昂，Panama项目的目标就是提供更好的方式让Java代码与本地代码进行调用和传输数据。</li>
+</ul>
+<p>随着Java每半年更新一次的节奏，新版本的Java中会出现越来越多其他语言里已有的优秀特性，相信博采众长的Java，还能继续保持现在的勃勃生机相当长时间。</p>
 
   </div>
 </article>
@@ -343,7 +351,7 @@
     
     
       <div id="toc-footer" style="display: none">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">JVM与Java体系结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E7%94%9F%E6%80%81%E4%BD%93%E7%B3%BB"><span class="toc-number">1.1.</span> <span class="toc-text">Java生态体系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%AF%AD%E8%A8%80%E6%B7%B7%E5%90%88%E7%BC%96%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">多语言混合编程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%8EJava%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.</span> <span class="toc-text">虚拟机与Java虚拟机</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.1.</span> <span class="toc-text">虚拟机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.2.</span> <span class="toc-text">Java虚拟机</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.4.</span> <span class="toc-text">JVM的位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">1.5.</span> <span class="toc-text">JVM整体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">Java代码执行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.7.</span> <span class="toc-text">JVM的架构模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BE%E4%BE%8B"><span class="toc-number">1.7.1.</span> <span class="toc-text">举例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E5%8F%8D%E7%BC%96%E8%AF%91"><span class="toc-number">1.7.2.</span> <span class="toc-text">字节码反编译</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E5%8F%91%E5%B1%95%E5%8E%86%E7%A8%8B"><span class="toc-number">1.8.</span> <span class="toc-text">JVM发展历程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Sun-Classic-VM"><span class="toc-number">1.8.1.</span> <span class="toc-text">Sun Classic VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Exact-VM"><span class="toc-number">1.8.2.</span> <span class="toc-text">Exact VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#HotSpot-VM"><span class="toc-number">1.8.3.</span> <span class="toc-text">HotSpot VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JRockit"><span class="toc-number">1.8.4.</span> <span class="toc-text">JRockit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IBM%E7%9A%84J9"><span class="toc-number">1.8.5.</span> <span class="toc-text">IBM的J9</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Graal-VM"><span class="toc-number">1.8.6.</span> <span class="toc-text">Graal VM</span></a></li></ol></li></ol></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">JVM与Java体系结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E7%94%9F%E6%80%81%E4%BD%93%E7%B3%BB"><span class="toc-number">1.1.</span> <span class="toc-text">Java生态体系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%AF%AD%E8%A8%80%E6%B7%B7%E5%90%88%E7%BC%96%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">多语言混合编程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%8EJava%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.</span> <span class="toc-text">虚拟机与Java虚拟机</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.1.</span> <span class="toc-text">虚拟机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.3.2.</span> <span class="toc-text">Java虚拟机</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.4.</span> <span class="toc-text">JVM的位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">1.5.</span> <span class="toc-text">JVM整体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">Java代码执行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E7%9A%84%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.7.</span> <span class="toc-text">JVM的架构模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BE%E4%BE%8B"><span class="toc-number">1.7.1.</span> <span class="toc-text">举例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E5%8F%8D%E7%BC%96%E8%AF%91"><span class="toc-number">1.7.2.</span> <span class="toc-text">字节码反编译</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM%E5%8F%91%E5%B1%95%E5%8E%86%E7%A8%8B"><span class="toc-number">1.8.</span> <span class="toc-text">JVM发展历程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%A7%8B%E7%A5%96-Classic-x2F-Exact-VM"><span class="toc-number">1.8.1.</span> <span class="toc-text">虚拟机始祖-Classic&#x2F;Exact VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A6%E6%9E%97%E7%9B%9F%E4%B8%BB-HotSpot-VM"><span class="toc-number">1.8.2.</span> <span class="toc-text">武林盟主-HotSpot VM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%A9%E4%B8%8B%E7%AC%AC%E4%BA%8C-JRockit-x2F-J9-VM"><span class="toc-number">1.8.3.</span> <span class="toc-text">天下第二-JRockit&#x2F;J9 VM</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B1%95%E6%9C%9BJava%E6%8A%80%E6%9C%AF%E6%9C%AA%E6%9D%A5"><span class="toc-number">1.9.</span> <span class="toc-text">展望Java技术未来</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A0%E8%AF%AD%E8%A8%80%E5%80%BE%E5%90%91"><span class="toc-number">1.9.1.</span> <span class="toc-text">无语言倾向</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B0%E4%B8%80%E4%BB%A3%E5%8D%B3%E6%97%B6%E7%BC%96%E8%AF%91%E5%99%A8"><span class="toc-number">1.9.2.</span> <span class="toc-text">新一代即时编译器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%91Native%E8%BF%88%E8%BF%9B"><span class="toc-number">1.9.3.</span> <span class="toc-text">向Native迈进</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%AD%E8%A8%80%E8%AF%AD%E6%B3%95%E6%8C%81%E7%BB%AD%E5%A2%9E%E5%BC%BA"><span class="toc-number">1.9.4.</span> <span class="toc-text">语言语法持续增强</span></a></li></ol></li></ol></li></ol>
       </div>
     
 

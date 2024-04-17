@@ -27,7 +27,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190407870.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190511875.png">
 <meta property="article:published_time" content="2024-01-10T09:40:03.375Z">
-<meta property="article:modified_time" content="2024-02-07T04:49:04.549Z">
+<meta property="article:modified_time" content="2024-03-21T13:37:18.125Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
@@ -188,25 +188,25 @@
 <li>PubSub：基本的点对点消息模型</li>
 <li>Stream：比较完善的消息队列模型</li>
 </ul>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185004014.png" alt="image-20240110185004014"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185004014.png" alt="image-20240110185004014"> </p>
 <h2 id="2-基于List结构模拟消息队列"><a href="#2-基于List结构模拟消息队列" class="headerlink" title="2.基于List结构模拟消息队列"></a>2.基于List结构模拟消息队列</h2><p>消息队列（Message Queue），字面意思就是存放消息的队列。而Redis的list数据结构是一个双向链表，很容易模拟出队列效果。</p>
 <p>队列是入口和出口不在一边，因此我们可以利用：LPUSH结合RPOP、或者RPUSH结合LPOP来实现。不过要注意的是，当队列中没有消息时RPOP或LPOP操作会返回null，并不像JVM的阻塞队列那样会阻塞并等待消息。因此这里应该使用BRPOP或者BLPOP来实现阻塞效果。</p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185143572.png" alt="image-20240110185143572"> </p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185234614.png" alt="image-20240110185234614"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185143572.png" alt="image-20240110185143572"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185234614.png" alt="image-20240110185234614"> </p>
 <h2 id="3-基于PubSub的消息队列"><a href="#3-基于PubSub的消息队列" class="headerlink" title="3.基于PubSub的消息队列"></a>3.基于PubSub的消息队列</h2><p>PubSub（发布订阅）是Redis2.0版本引入的消息传递模型。顾名思义，消费者可以订阅一个或多个channel，生产者向对应channel发送消息后，所有订阅者都能收到相关消息。</p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185409393.png" alt="image-20240110185409393"> </p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185438326.png" alt="image-20240110185438326"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185409393.png" alt="image-20240110185409393"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185438326.png" alt="image-20240110185438326"> </p>
 <h2 id="4-基于Stream的消息队列"><a href="#4-基于Stream的消息队列" class="headerlink" title="4.基于Stream的消息队列"></a>4.基于Stream的消息队列</h2><p>Stream是Redis 5.0引入的一种新数据类型，可以实现一个功能非常完善的消息队列。</p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185542277.png" alt="image-20240110185542277"> </p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185627737.png" alt="image-20240110185627737"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185542277.png" alt="image-20240110185542277"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185627737.png" alt="image-20240110185627737"> </p>
 <p>在业务开发中，我们可以循环的调用XREAD阻塞方式来查询最新消息，从而实现持续监听队列的效果，伪代码如下：</p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185732901.png" alt="image-20240110185732901"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185732901.png" alt="image-20240110185732901"> </p>
 <blockquote>
 <p>当我们指定起始ID为$时，代表读取最新的消息，如果我们处理一条消息的过程中，又有超过1条以上的消息到达队列，则下次获取时也只能获取到最新的一条，会出现漏读消息的问题。</p>
 </blockquote>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185821020.png" alt="image-20240110185821020"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185821020.png" alt="image-20240110185821020"> </p>
 <h2 id="5-基于Stream的消息队列-消费者组"><a href="#5-基于Stream的消息队列-消费者组" class="headerlink" title="5.基于Stream的消息队列-消费者组"></a>5.基于Stream的消息队列-消费者组</h2><p>消费者组（Consumer Group）：将多个消费者划分到一个组中，监听同一个队列。具备下列特点：</p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185853834.png" alt="image-20240110185853834"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110185853834.png" alt="image-20240110185853834"> </p>
 <p>创建消费者组：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">XGROUP CREATE  key groupName ID [MKSTREAM]</span><br></pre></td></tr></table></figure>
 
@@ -235,9 +235,9 @@
 </ul>
 </li>
 </ul>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190354602.png" alt="image-20240110190354602"> </p>
-<p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190407870.png" alt="image-20240110190407870"></p>
-<h2 id="6-消息队列实现异步秒杀下单"><a href="#6-消息队列实现异步秒杀下单" class="headerlink" title="6.消息队列实现异步秒杀下单"></a>6.消息队列实现异步秒杀下单</h2><p><img src="/../../../../../../imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190511875.png" alt="image-20240110190511875"></p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190354602.png" alt="image-20240110190354602"> </p>
+<p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190407870.png" alt="image-20240110190407870"></p>
+<h2 id="6-消息队列实现异步秒杀下单"><a href="#6-消息队列实现异步秒杀下单" class="headerlink" title="6.消息队列实现异步秒杀下单"></a>6.消息队列实现异步秒杀下单</h2><p><img src="/imgs/Redis%E5%AE%9E%E8%B7%B5%E4%B9%8B%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/image-20240110190511875.png" alt="image-20240110190511875"></p>
 <p>Lua脚本的改写:</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 秒杀优惠劵ID</span></span><br><span class="line"><span class="keyword">local</span> voucherId = ARGV[<span class="number">1</span>]</span><br><span class="line"><span class="comment">-- 用户ID</span></span><br><span class="line"><span class="keyword">local</span> userId = ARGV[<span class="number">2</span>]</span><br><span class="line"><span class="comment">-- 订单ID</span></span><br><span class="line"><span class="keyword">local</span> orderId = RGV[<span class="number">3</span>]</span><br><span class="line"><span class="comment">-- 秒杀券库存Key</span></span><br><span class="line"><span class="keyword">local</span> stockKey = <span class="string">&#x27;seckill:stock:&#x27;</span> .. voucherId</span><br><span class="line"><span class="comment">-- 秒杀券订单Key</span></span><br><span class="line"><span class="keyword">local</span> orderKey = <span class="string">&#x27;seckill:order:&#x27;</span> .. voucherId</span><br><span class="line"><span class="comment">-- 判断库存是否充足</span></span><br><span class="line"><span class="keyword">if</span>(<span class="built_in">tonumber</span>(redis.call(<span class="string">&#x27;get&#x27;</span>, stockKey)) &lt;= <span class="number">0</span>) <span class="keyword">then</span></span><br><span class="line">    <span class="comment">-- 库存不足，返回1</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"><span class="comment">-- 判断一人一单</span></span><br><span class="line"><span class="keyword">if</span>(redis.call(<span class="string">&#x27;sismember&#x27;</span>, orderKey, userId) == <span class="number">1</span>) <span class="keyword">then</span></span><br><span class="line">    <span class="comment">-- 用户已下单，返回2</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">2</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"><span class="comment">-- 扣减库存</span></span><br><span class="line">redis.call(<span class="string">&#x27;incrby&#x27;</span>, stockKey, <span class="number">-1</span>)</span><br><span class="line"><span class="comment">-- 保存用户</span></span><br><span class="line">redis.call(<span class="string">&#x27;sadd&#x27;</span>, orderKey, userId)</span><br><span class="line"><span class="comment">-- 下单信息保存到消息队列</span></span><br><span class="line">redis.call(<span class="string">&#x27;xadd&#x27;</span>, <span class="string">&#x27;stream.orders&#x27;</span>, <span class="string">&#x27;*&#x27;</span>, <span class="string">&#x27;userId&#x27;</span>, userId, <span class="string">&#x27;voucherId&#x27;</span>, voucherId, <span class="string">&#x27;id&#x27;</span>, orderId);</span><br><span class="line"><span class="comment">-- 秒杀成功，返回0</span></span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
 

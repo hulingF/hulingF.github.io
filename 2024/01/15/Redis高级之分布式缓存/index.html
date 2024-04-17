@@ -52,7 +52,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171456648.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171542874.png">
 <meta property="article:published_time" content="2024-01-15T04:07:08.073Z">
-<meta property="article:modified_time" content="2024-02-23T10:54:15.517Z">
+<meta property="article:modified_time" content="2024-03-21T14:49:24.108Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
@@ -471,7 +471,7 @@
 <p>(6)如果要关闭所有进程，可以执行命令：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">printf &#x27;%s\n&#x27; 7001 7002 7003 8001 8002 8003 | xargs -I&#123;&#125; -t redis-cli -p &#123;&#125; shutdown</span><br></pre></td></tr></table></figure>
 
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117153900797.png" alt="image-20240117153900797"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117153900797.png" alt="image-20240117153900797"> </p>
 <p>(7)虽然服务启动了，但是目前每个服务之间都是独立的，没有任何关联。我们需要执行命令来创建集群，在Redis5.0之前创建集群比较麻烦，5.0之后集群管理命令都集成到了redis-cli中。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster create --cluster-replicas 1 192.168.139.166:7001 192.168.139.166:7002 192.168.139.166:7003 192.168.139.166:8001 192.168.139.166:8002 192.168.139.166:8003</span><br></pre></td></tr></table></figure>
 
@@ -480,52 +480,52 @@
 <li><code>create</code>：代表是创建集群</li>
 <li><code>--replicas 1</code>或者<code>--cluster-replicas 1</code> ：指定集群中每个master的副本个数为1，此时<code>节点总数 ÷ (replicas + 1)</code> 得到的就是master的数量。因此节点列表中的前n个就是master，其它节点都是slave节点，随机分配到不同master</li>
 </ul>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117154326044.png" alt="image-20240117154326044"></p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117154346178.png" alt="image-20240117154346178"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117154326044.png" alt="image-20240117154326044"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117154346178.png" alt="image-20240117154346178"></p>
 <p>(8)通过命令可以查看集群状态：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli -p 7001 cluster nodes</span><br></pre></td></tr></table></figure>
 
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117154513022.png" alt="image-20240117154513022"></p>
-<h3 id="5-2散列插槽"><a href="#5-2散列插槽" class="headerlink" title="5.2散列插槽"></a>5.2散列插槽</h3><p>Redis会把每一个master节点映射到0~16383共16384个插槽（hash slot）上，查看集群信息时就能看到：</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117163539205.png" alt="image-20240117163539205"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117154513022.png" alt="image-20240117154513022"></p>
+<h3 id="5-2散列插槽"><a href="#5-2散列插槽" class="headerlink" title="5.2散列插槽"></a>5.2散列插槽</h3><p>Redis会把每一个master节点映射到0~16383共<code>16384</code>个插槽（hash slot）上，查看集群信息时就能看到：</p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117163539205.png" alt="image-20240117163539205"> </p>
 <p>数据key不是与节点绑定，而是与插槽绑定。redis会根据key的有效部分计算插槽值，分两种情况：</p>
 <ul>
 <li>key中包含”{}”，且“{}”中至少包含1个字符，“{}”中的部分是有效部分</li>
 <li>key中不包含“{}”，整个key都是有效部分</li>
 </ul>
 <p>例如：key是num，那么就根据num计算，如果是{itcast}num，则根据itcast计算。计算方式是利用<code>CRC16</code>算法得到一个hash值，然后对16384<code>取余</code>，得到的结果就是slot值。</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117163804969.png" alt="image-20240117163804969"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117163804969.png" alt="image-20240117163804969"> </p>
 <blockquote>
 <p>如何将同一类数据固定的保存在同一个Redis实例？</p>
 <p>这一类数据使用相同的有效部分，例如key都以{type}为前缀。</p>
 </blockquote>
 <h3 id="5-3集群伸缩"><a href="#5-3集群伸缩" class="headerlink" title="5.3集群伸缩"></a>5.3集群伸缩</h3><p>redis-cli –cluster提供了很多操作集群的命令，可以通过下面方式查看：</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117164053072.png" alt="image-20240117164053072"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117164053072.png" alt="image-20240117164053072"> </p>
 <hr>
 <p><strong>需求：向集群中添加一个新的master节点，并向其中存储key1&#x3D;value1</strong></p>
 <hr>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117164745470.png" alt="image-20240117164745470"></p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117165009327.png" alt="image-20240117165009327"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117164745470.png" alt="image-20240117164745470"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117165009327.png" alt="image-20240117165009327"></p>
 <blockquote>
 <p>可以看到，此时加入集群的7004主节点还没有任何插槽的分配，我们需要把key1所对应的插槽(9189,在7002主节点上)迁移到7004主节点上。</p>
 </blockquote>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170145340.png" alt="image-20240117170145340"> </p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170339113.png" alt="image-20240117170339113"> 此时key1所在的插槽已经转移到7004主节点上了。</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170530321.png" alt="image-20240117170530321"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170145340.png" alt="image-20240117170145340"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170339113.png" alt="image-20240117170339113"> 此时key1所在的插槽已经转移到7004主节点上了。</p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170530321.png" alt="image-20240117170530321"></p>
 <h3 id="5-4故障转移"><a href="#5-4故障转移" class="headerlink" title="5.4故障转移"></a>5.4故障转移</h3><p>当集群中有一个master宕机会发生什么呢？(自动故障转移)</p>
 <ol>
 <li>首先是该实例与其它实例失去连接</li>
 <li>然后是疑似宕机</li>
 <li>最后是确定下线，自动提升一个slave为新的master</li>
 </ol>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170935700.png" alt="image-20240117170935700"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117170935700.png" alt="image-20240117170935700"></p>
 <p>利用<code>cluster failover</code>命令可以手动让集群中的某个master宕机，切换到执行cluster failover命令的这个slave节点，实现无感知的数据迁移。其流程如下：</p>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171116293.png" alt="image-20240117171116293"> </p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171116293.png" alt="image-20240117171116293"> </p>
 <hr>
 <p><strong>需求：在7001这个slave节点执行手动故障转移，重新夺回master地位</strong></p>
 <hr>
-<p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171456648.png" alt="image-20240117171456648"></p>
-<h3 id="5-5RedisTemplate访问分片集群"><a href="#5-5RedisTemplate访问分片集群" class="headerlink" title="5.5RedisTemplate访问分片集群"></a>5.5RedisTemplate访问分片集群</h3><p><img src="/../../../../../../imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171542874.png" alt="image-20240117171542874"></p>
+<p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171456648.png" alt="image-20240117171456648"></p>
+<h3 id="5-5RedisTemplate访问分片集群"><a href="#5-5RedisTemplate访问分片集群" class="headerlink" title="5.5RedisTemplate访问分片集群"></a>5.5RedisTemplate访问分片集群</h3><p><img src="/imgs/Redis%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98/image-20240117171542874.png" alt="image-20240117171542874"></p>
 
   </div>
 </article>

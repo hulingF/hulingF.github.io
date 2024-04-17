@@ -49,7 +49,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/image-20231222162509841.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B3%BB%E7%BB%9F%E7%AF%87/16a739f4a99c9a08tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="article:published_time" content="2023-12-16T16:00:00.000Z">
-<meta property="article:modified_time" content="2024-02-20T01:59:34.666Z">
+<meta property="article:modified_time" content="2024-03-20T14:15:24.724Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="MySQL原理">
 <meta name="twitter:card" content="summary">
@@ -393,7 +393,7 @@
 <p>这个部分共占用16个字节，也就是128个比特位。我们说一个区默认有64个页，这128个比特位被划分为64个部分，每个部分2个比特位，对应区中的一个页。比如<code>Page State Bitmap</code>部分的第1和第2个比特位对应着区中的第1个页面，第3和第4个比特位对应着区中的第2个页面，依此类推，<code>Page State Bitmap</code>部分的第127和128个比特位对应着区中的第64个页面。这两个比特位的第一个位表示对应的页是否是空闲的，第二个比特位还没有用。</p>
 </li>
 </ul>
-<p>到现在为止，我们已经提出了五花八门的概念，什么区、段、碎片区、附属于段的区、<code>XDES Entry</code>结构吧啦吧啦的概念，走远了千万别忘了自己为什么出发，我们把事情搞这么麻烦的初心仅仅是想提高向表插入数据的效率又不至于数据量少的表浪费空间。现在我们知道向表中插入数据本质上就是向表中各个索引的叶子节点段、非叶子节点段插入数据，也知道了不同的区有不同的状态，再回到最初的起点，捋一捋向某个段中插入数据的过程：</p>
+<p>到现在为止，我们已经提出了五花八门的概念，什么区、段、碎片区、附属于段的区、<code>XDES Entry</code>结构吧啦吧啦的概念，走远了千万别忘了自己为什么出发，我们把事情搞这么麻烦的初心仅仅是想<strong>提高向表插入数据的效率又不至于数据量少的表浪费空间</strong>。现在我们知道向表中插入数据本质上就是向表中各个索引的叶子节点段、非叶子节点段插入数据，也知道了不同的区有不同的状态，再回到最初的起点，捋一捋向某个段中插入数据的过程：</p>
 <ul>
 <li><p>当段中数据较少的时候，首先会查看表空间中是否有状态为<code>FREE_FRAG</code>的区，也就是找还有空闲空间的碎片区，如果找到了，那么从该区中取一些零散的页把数据插进去；否则到表空间下申请一个状态为<code>FREE</code>的区，也就是空闲的区，把该区的状态变为<code>FREE_FRAG</code>，然后从该新申请的区中取一些零散的页把数据插进去。之后不同的段使用零散页的时候都会从该区中取，直到该区中没有空闲空间，然后该区的状态就变成了<code>FULL_FRAG</code>。</p>
 <p>现在的问题是你怎么知道表空间里的哪些区是<code>FREE</code>的，哪些区的状态是<code>FREE_FRAG</code>的，哪些区是<code>FULL_FRAG</code>的？要知道表空间的大小是可以不断增大的，当增长到GB级别的时候，区的数量也就上千了，我们总不能每次都遍历这些区对应的<code>XDES Entry</code>结构吧？这时候就是<code>XDES Entry</code>中的<code>List Node</code>部分发挥奇效的时候了，我们可以通过<code>List Node</code>中的指针，做这么三件事：</p>

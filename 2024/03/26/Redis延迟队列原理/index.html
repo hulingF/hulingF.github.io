@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Redis延迟队列原理 转载文章：用Redis实现延迟队列，我研究了两种方案，发现并不简单 - 三友的java日记 - 博客园 (cnblogs.com)  背景前段时间有个小项目需要使用延迟任务，谈到延迟任务，我脑子第一时间一闪而过的就是使用消息队列来做，比如RabbitMQ的死信队列又或者RocketMQ的延迟队列，但是奈何这是一个小项目，并没有引入MQ，我也不太想因为一个延迟任务就引入MQ，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis延迟队列原理">
+<meta property="og:url" content="https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Redis延迟队列原理 转载文章：用Redis实现延迟队列，我研究了两种方案，发现并不简单 - 三友的java日记 - 博客园 (cnblogs.com)  背景前段时间有个小项目需要使用延迟任务，谈到延迟任务，我脑子第一时间一闪而过的就是使用消息队列来做，比如RabbitMQ的死信队列又或者RocketMQ的延迟队列，但是奈何这是一个小项目，并没有引入MQ，我也不太想因为一个延迟任务就引入MQ，">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/bad1bc88-a6ce-4e07-b5b1-a659cc7d640a.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/eb4d7974-e9a8-4e67-a265-94e143439058.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/5ca8350c-1c65-4a40-a23b-db7f08fb478c.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/a464d8a9-5a98-439c-99df-79409e42dd01.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/3e876d5b-8084-4e4d-863f-e4c059747e8b.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/465e587b-6a51-47a7-86e8-ae85f1cd148c.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/95bab4a6-1c19-4eb2-870f-f5a413815751.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/279a5e4e-a138-4890-a8dc-dd3e942edfb9.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/17074050-5795-459d-8781-2b8878154492.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/a9c2a2d6-dbc7-4ae4-9fb3-f5763982cb7b.png">
+<meta property="article:published_time" content="2024-03-26T06:24:54.019Z">
+<meta property="article:modified_time" content="2024-03-26T07:12:33.471Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/bad1bc88-a6ce-4e07-b5b1-a659cc7d640a.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Redis延迟队列原理</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/04/08/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-JVM%E9%AB%98%E7%BA%A7%E7%89%B9%E6%80%A7%E4%B8%8E%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/03/25/WXG%E4%B8%80%E9%9D%A2%E6%80%BB%E7%BB%93/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&text=Redis延迟队列原理"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&is_video=false&description=Redis延迟队列原理"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis延迟队列原理&body=Check out this article: https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&name=Redis延迟队列原理&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&t=Redis延迟队列原理"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86"><span class="toc-number">1.</span> <span class="toc-text">Redis延迟队列原理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%91%E5%90%AC%E8%BF%87%E6%9C%9Fkey"><span class="toc-number">1.2.</span> <span class="toc-text">监听过期key</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81Redis%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.0.1.</span> <span class="toc-text">1、Redis发布订阅模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81keyspace-notifications"><span class="toc-number">1.2.0.2.</span> <span class="toc-text">2、keyspace notifications</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3%E3%80%81%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.0.3.</span> <span class="toc-text">3、延迟队列实现原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4%E3%80%81demo"><span class="toc-number">1.2.0.4.</span> <span class="toc-text">4、demo</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5%E3%80%81%E5%9D%91"><span class="toc-number">1.2.0.5.</span> <span class="toc-text">5、坑</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Redisson%E5%AE%9E%E7%8E%B0%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97"><span class="toc-number">1.3.</span> <span class="toc-text">Redisson实现延迟队列</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81demo"><span class="toc-number">1.3.0.1.</span> <span class="toc-text">1、demo</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.3.0.2.</span> <span class="toc-text">2、实现原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3%E3%80%81%E4%B8%8E%E7%AC%AC%E4%B8%80%E7%A7%8D%E6%96%B9%E6%A1%88%E6%AF%94%E8%BE%83"><span class="toc-number">1.3.0.3.</span> <span class="toc-text">3、与第一种方案比较</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Redis延迟队列原理
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-03-26T06:24:54.019Z" class="dt-published" itemprop="datePublished">2024-03-26</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Redis/" rel="tag">Redis</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Redis延迟队列原理"><a href="#Redis延迟队列原理" class="headerlink" title="Redis延迟队列原理"></a>Redis延迟队列原理</h1><blockquote>
+<p>转载文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/zzyang/p/17119268.html">用Redis实现延迟队列，我研究了两种方案，发现并不简单 - 三友的java日记 - 博客园 (cnblogs.com)</a></p>
+</blockquote>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前段时间有个小项目需要使用延迟任务，谈到延迟任务，我脑子第一时间一闪而过的就是使用消息队列来做，比如RabbitMQ的死信队列又或者RocketMQ的延迟队列，但是奈何这是一个小项目，并没有引入MQ，我也不太想因为一个延迟任务就引入MQ，增加系统复杂度，所以这个方案直接就被pass了。</p>
+<p>虽然基于MQ这个方式走不通了，但是这个项目中使用到Redis，所以我就想是否能够使用Redis来代替MQ实现延迟队列的功能，于是我就查了一下有没有现成可用的方案，别说，还真给我查到了两种方案，并且我还仔细研究对比了这两个方案，发现要想很好的实现延迟队列，并不简单。</p>
+<h2 id="监听过期key"><a href="#监听过期key" class="headerlink" title="监听过期key"></a>监听过期key</h2><p>基于监听过期key的方式来实现延迟队列是我查到的第一个方案，为了弄懂这个方案实现的细节，我还特地去扒了扒官网，还真有所收获</p>
+<h4 id="1、Redis发布订阅模式"><a href="#1、Redis发布订阅模式" class="headerlink" title="1、Redis发布订阅模式"></a>1、Redis发布订阅模式</h4><p>一谈到发布订阅模式，其实一想到的就是MQ，只不过Redis也实现了一套，并且跟MQ贼像，如图：</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/bad1bc88-a6ce-4e07-b5b1-a659cc7d640a.png" alt="img"></p>
+<p>图中的channel的概念跟MQ中的topic的概念差不多，你可以把channel理解成MQ中的topic。</p>
+<p>生产者在消息发送时需要到指定发送到哪个channel上，消费者订阅这个channel就能获取到消息。</p>
+<h4 id="2、keyspace-notifications"><a href="#2、keyspace-notifications" class="headerlink" title="2、keyspace notifications"></a>2、keyspace notifications</h4><p>在Redis中，有很多默认的channel，只不过向这些channel发送消息的生产者不是我们写的代码，而是Redis本身。当消费者监听这些channel时，就可以感知到Redis中数据的变化。</p>
+<p>这个功能Redis官方称为keyspace notifications，字面意思就是键空间通知。</p>
+<p>这些默认的channel被分为两类：</p>
+<ul>
+<li><p>以<code>__keyspace@&lt;db&gt;__:</code>为前缀，后面跟的是key的名称，表示监听跟这个key有关的事件。</p>
+<p>举个例子，现在有个消费者监听了<code>__keyspace@0__:sanyou</code>这个channel，sanyou就是Redis中的一个普通key，那么当sanyou这个key被删除或者发生了其它事件，那么消费者就会收到sanyou这个key删除或者其它事件的消息</p>
+</li>
+<li><p>以<code>__keyevent@&lt;db&gt;__:</code>为前缀，后面跟的是消息事件类型，表示监听某个事件</p>
+<p>同样举个例子，现在有个消费者监听了<code>__keyevent@0__:expired</code>这个channel，代表了监听key的过期事件。那么当某个Redis的key过期了（expired），那么消费者就能收到这个key过期的消息。如果把expired换成del，那么监听的就是删除事件。具体支持哪些事件，可从官网查。</p>
+</li>
+</ul>
+<p>上述db是指具体的数据库，Redis不是默认分为16个库么，序号从0-15，所以db就是0到15的数字，示例中的0就是指0对应的数据库。</p>
+<h4 id="3、延迟队列实现原理"><a href="#3、延迟队列实现原理" class="headerlink" title="3、延迟队列实现原理"></a>3、延迟队列实现原理</h4><p>通过对上面的两个概念了解之后，应该就对监听过期key的实现原理一目了然了，其实就是当这个key过期之后，Redis会发布一个key过期的事件到<code>__keyevent@&lt;db&gt;__:expired</code>这个channel，只要我们的服务监听这个channel，那么就能知道过期的Key，从而就算实现了延迟队列功能。</p>
+<p>所以这种方式实现延迟队列就只需要两步：</p>
+<ul>
+<li>发送延迟任务，key是延迟消息本身，过期时间就是延迟时间</li>
+<li>监听<code>__keyevent@&lt;db&gt;__:expired</code>这个channel，处理延迟任务</li>
+</ul>
+<h4 id="4、demo"><a href="#4、demo" class="headerlink" title="4、demo"></a>4、demo</h4><p>好了，基本概念和核心原理都说完了之后，又到了show me the code环节。</p>
+<p>好巧不巧，Spring已经实现了监听<code>__keyevent@*__:expired</code>这个channel这个功能，<code>__keyevent@*__:expired</code>中的<code>*</code>代表通配符的意思，监听所有的数据库。所以demo写起来就很简单了，只需3步即可</p>
+<p>引入pom:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.2.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.2.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>配置类:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedisConfiguration</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> RedisMessageListenerContainer <span class="title function_">redisMessageListenerContainer</span><span class="params">(RedisConnectionFactory connectionFactory)</span> &#123;</span><br><span class="line">        <span class="type">RedisMessageListenerContainer</span> <span class="variable">redisMessageListenerContainer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RedisMessageListenerContainer</span>();</span><br><span class="line">        redisMessageListenerContainer.setConnectionFactory(connectionFactory);</span><br><span class="line">        <span class="keyword">return</span> redisMessageListenerContainer;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> KeyExpirationEventMessageListener <span class="title function_">redisKeyExpirationListener</span><span class="params">(RedisMessageListenerContainer redisMessageListenerContainer)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KeyExpirationEventMessageListener</span>(redisMessageListenerContainer);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>KeyExpirationEventMessageListener实现了对<code>__keyevent@*__:expired</code>channel的监听:</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/eb4d7974-e9a8-4e67-a265-94e143439058.png" alt="img"></p>
+<p>当KeyExpirationEventMessageListener收到Redis发布的过期Key的消息的时候，会发布RedisKeyExpiredEvent事件:</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/5ca8350c-1c65-4a40-a23b-db7f08fb478c.png" alt="img"></p>
+<p>所以我们只需要监听RedisKeyExpiredEvent事件就可以拿到过期消息的Key，也就是延迟消息。</p>
+<p>对RedisKeyExpiredEvent事件的监听实现MyRedisKeyExpiredEventListener:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyRedisKeyExpiredEventListener</span> <span class="keyword">implements</span> <span class="title class_">ApplicationListener</span>&lt;RedisKeyExpiredEvent&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onApplicationEvent</span><span class="params">(RedisKeyExpiredEvent event)</span> &#123;</span><br><span class="line">        <span class="type">byte</span>[] body = event.getSource();</span><br><span class="line">        System.out.println(<span class="string">&quot;获取到延迟消息：&quot;</span> + <span class="keyword">new</span> <span class="title class_">String</span>(body));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整个工程目录也简单</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/a464d8a9-5a98-439c-99df-79409e42dd01.png" alt="img"></p>
+<p>代码写好，启动应用</p>
+<p>之后我直接通过Redis命令设置消息，就没通过代码发送消息了，消息的key为sanyou，值为task，值不重要，过期时间为5s</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set sanyou task </span><br><span class="line">expire sanyou 5</span><br></pre></td></tr></table></figure>
+
+<p>如果上面都理论都正确，不出意外的话，5s后MyRedisKeyExpiredEventListener应该可以监听到sanyou这个key过期的消息，也就相当于拿到了延迟任务，控制台会打印出<code>获取到延迟消息：sanyou</code>。</p>
+<p>于是我满怀希望，静静地等待了5s。。</p>
+<p>5、4、3、2、1，时间一到，我查看控制台，但是控制台并没有按照预期打印出上面那句话。</p>
+<p>为什么会没打印出？难道是代码写错了？正当我准备检查代码的时候，官网的一段话道出了真实原因。</p>
+<p>这段话主要讨论的是key过期事件的时效性问题，首先提到了Redis过期key的两种清除策略，就是面试八股文常背的两种：</p>
+<ul>
+<li><code>惰性清除</code>。当这个key过期之后，访问时，这个Key才会被清除</li>
+<li><code>定时清除</code>。后台会定期检查一部分key，如果有key过期了，就会被清除</li>
+</ul>
+<p>再后面那段话是核心，意思是说，key的过期事件发布时机并不是当这个key的过期时间到了之后就发布，而是这个key在Redis中被清理之后，也就是真正被删除之后才会发布。</p>
+<p>到这我终于明白了，上面的例子中即使我设置了5s的过期时间，但是当5s过去之后，只要两种清除策略都不满足，没人访问sanyou这个key，后台的定时清理的任务也没扫描到sanyou这个key，那么就不会发布key过期的事件，自然而然也就监听不到了。</p>
+<p>至于后台的定时清理的任务什么时候能扫到，这个没有固定时间，可能一到过期时间就被扫到，也可能等一定时间才会被扫到，这就可能会造成了客户端从发布到监听到的消息时间差会大于等于过期时间，从而造成一定时间消息的延迟，这就着实有点坑了。。</p>
+<h4 id="5、坑"><a href="#5、坑" class="headerlink" title="5、坑"></a>5、坑</h4><p>除了上面测试demo的时候遇到的坑之外，在我深入研究之后，还发现了一些更离谱的坑。</p>
+<p><strong>丢消息太频繁</strong></p>
+<p>Redis的丢消息跟MQ不一样，因为MQ都会有消息的持久化机制，可能只有当机器宕机了，才会丢点消息，但是Redis丢消息就很离谱，比如说你的服务在重启的时候就会丢消息。</p>
+<p>Redis实现的发布订阅模式，消息是没有持久化机制，当消息发布到某个channel之后，如果没有客户端订阅这个channel，那么这个消息就丢了，并不会像MQ一样进行持久化，等有消费者订阅的时候再给消费者消费。</p>
+<p>所以说，假设服务重启期间，某个生产者或者是Redis本身发布了一条消息到某个channel，由于服务重启，没有监听这个channel，那么这个消息自然就丢了。</p>
+<p><strong>消息消费只有广播模式</strong></p>
+<p>Redis的发布订阅模式消息消费只有广播模式一种。</p>
+<p>所谓的广播模式就是多个消费者订阅同一个channel，那么每个消费者都能消费到发布到这个channel的所有消息。</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/3e876d5b-8084-4e4d-863f-e4c059747e8b.png" alt="img"></p>
+<p>如图，生产者发布了一条消息，内容为sanyou，那么两个消费者都可以同时收到sanyou这条消息。</p>
+<p>所以，如果通过监听channel来获取延迟任务，那么一旦服务实例有多个的话，还得保证消息不能重复处理，额外地增加了代码开发量。</p>
+<p><strong>接收到所有key的某个事件</strong></p>
+<p>这个不属于Redis发布订阅模式的问题，而是Redis本身事件通知的问题。</p>
+<p>当消费者监听了以<code>__keyevent@&lt;db&gt;__:</code>开头的消息，那么会导致所有的key发生了事件都会被通知给消费者。</p>
+<p>举个例子，某个消费者监听了<code>__keyevent@*__:expired</code>这个channel，那么只要key过期了，不管这个key是张三还会李四，消费者都能收到。</p>
+<p>所以如果你只想消费某一类消息的key，那么还得自行加一些标记，比如消息的key加个前缀，消费的时候判断一下带前缀的key就是需要消费的任务。</p>
+<p>所以，综上能够得出一个非常重要的结论，那就是监听Redis过期Key这种方式实现延迟队列，<strong>不稳定，坑贼多！</strong></p>
+<p>那有没有比较靠谱的延迟队列的实现方案呢？这就不得不提到我研究的第二种方案了。</p>
+<h2 id="Redisson实现延迟队列"><a href="#Redisson实现延迟队列" class="headerlink" title="Redisson实现延迟队列"></a>Redisson实现延迟队列</h2><p>Redisson他是Redis的儿子（Redis son），基于Redis实现了非常多的功能，其中最常使用的就是Redis分布式锁的实现，但是除了实现Redis分布式锁之外，它还实现了延迟队列的功能。</p>
+<p>先来个demo，后面再来说说这种实现的原理。</p>
+<h4 id="1、demo"><a href="#1、demo" class="headerlink" title="1、demo"></a>1、demo</h4><p>引入pom:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.redisson<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>redisson<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.13.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>封装了一个RedissonDelayQueue类:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedissonDelayQueue</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> RedissonClient redissonClient;</span><br><span class="line">    <span class="keyword">private</span> RDelayedQueue&lt;String&gt; delayQueue;</span><br><span class="line">    <span class="keyword">private</span> RBlockingQueue&lt;String&gt; blockingQueue;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostConstruct</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span> &#123;</span><br><span class="line">        initDelayQueue();</span><br><span class="line">        startDelayQueueConsumer();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">initDelayQueue</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Config</span> <span class="variable">config</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Config</span>();</span><br><span class="line">        <span class="type">SingleServerConfig</span> <span class="variable">serverConfig</span> <span class="operator">=</span> config.useSingleServer();</span><br><span class="line">        serverConfig.setAddress(<span class="string">&quot;redis://localhost:6379&quot;</span>);</span><br><span class="line">        redissonClient = Redisson.create(config);</span><br><span class="line"></span><br><span class="line">        blockingQueue = redissonClient.getBlockingQueue(<span class="string">&quot;SANYOU&quot;</span>);</span><br><span class="line">        delayQueue = redissonClient.getDelayedQueue(blockingQueue);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">startDelayQueueConsumer</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">            <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="type">String</span> <span class="variable">task</span> <span class="operator">=</span> blockingQueue.take();</span><br><span class="line">                    log.info(<span class="string">&quot;接收到延迟任务:&#123;&#125;&quot;</span>, task);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="string">&quot;SANYOU-Consumer&quot;</span>).start();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">offerTask</span><span class="params">(String task, <span class="type">long</span> seconds)</span> &#123;</span><br><span class="line">        log.info(<span class="string">&quot;添加延迟任务:&#123;&#125; 延迟时间:&#123;&#125;s&quot;</span>, task, seconds);</span><br><span class="line">        delayQueue.offer(task, seconds, TimeUnit.SECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个类在创建的时候会去初始化延迟队列，创建一个RedissonClient对象，之后通过RedissonClient对象获取到RDelayedQueue和RBlockingQueue对象，传入的队列名字叫SANYOU，这个名字无所谓。</p>
+<p>当延迟队列创建之后，会开启一个延迟任务的消费线程，这个线程会一直从RBlockingQueue中通过take方法阻塞获取延迟任务。</p>
+<p>添加任务的时候是通过RDelayedQueue的offer方法添加的。</p>
+<p>controller类，通过接口添加任务，延迟时间为5s</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedissonDelayQueueController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Resource</span></span><br><span class="line">    <span class="keyword">private</span> RedissonDelayQueue redissonDelayQueue;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/add&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addTask</span><span class="params">(<span class="meta">@RequestParam(&quot;task&quot;)</span> String task)</span> &#123;</span><br><span class="line">        redissonDelayQueue.offerTask(task, <span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>启动项目，在浏览器输入如下连接，添加任务</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://localhost:8080/add?task=sanyou">http://localhost:8080/add?task=sanyou</a></p>
+</blockquote>
+<p>静静等待5s，成功获取到任务。</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/465e587b-6a51-47a7-86e8-ae85f1cd148c.png" alt="img"></p>
+<h4 id="2、实现原理"><a href="#2、实现原理" class="headerlink" title="2、实现原理"></a>2、实现原理</h4><p>如下图就是上面demo中，一个延迟队列会在Redis内部使用到的channel和数据类型</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/95bab4a6-1c19-4eb2-870f-f5a413815751.png" alt="img"></p>
+<p>SANYOU前面的前缀都是固定的，Redisson创建的时候会拼上前缀。</p>
+<ul>
+<li><code>redisson_delay_queue_timeout:SANYOU</code>，sorted set数据类型，存放所有延迟任务，按照延迟任务的到期时间戳（提交任务时的时间戳 + 延迟时间）来排序的，所以列表的最前面的第一个元素就是整个延迟队列中最早要被执行的任务，这个概念很重要</li>
+<li><code>redisson_delay_queue:SANYOU</code>，list数据类型，也是存放所有的任务，但是研究下来发现好像没什么用。。</li>
+<li><code>SANYOU</code>，list数据类型，被称为目标队列，这个里面存放的任务都是已经到了延迟时间的，可以被消费者获取的任务，所以上面demo中的RBlockingQueue的take方法是从这个目标队列中获取到任务的</li>
+<li><code>redisson_delay_queue_channel:SANYOU</code>，是一个channel，用来通知客户端开启一个延迟任务</li>
+</ul>
+<p>有了这些概念之后，再来看看整体的运行原理图</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/279a5e4e-a138-4890-a8dc-dd3e942edfb9.png" alt="img"></p>
+<ul>
+<li>生产者在提交任务的时候将任务放到<code>redisson_delay_queue_timeout:SANYOU</code>中，分数就是提交任务的时间戳+延迟时间，就是延迟任务的到期时间戳</li>
+<li>客户端会有一个延迟任务，为了区分，后面我都说是客户端延迟任务。这个延迟任务会向Redis Server发送一段lua脚本，Redis执行lua脚本中的命令，并且是原子性的</li>
+</ul>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/17074050-5795-459d-8781-2b8878154492.png" alt="img"></p>
+<p>这段lua脚本主要干了两件事：</p>
+<ul>
+<li>将到了延迟时间的任务从<code>redisson_delay_queue_timeout:SANYOU</code>中移除，存到<code>SANYOU</code>这个目标队列</li>
+<li>获取到<code>redisson_delay_queue_timeout:SANYOU</code>中目前最早到过期时间的延迟任务的到期时间戳，然后发布到<code>redisson_delay_queue_channel:SANYOU</code>这个channel中</li>
+</ul>
+<p>当客户端监听到<code>redisson_delay_queue_channel:SANYOU</code>这个channel的消息时，会再次提交一个客户端延迟任务，延迟时间就是消息（最早到过期时间的延迟任务的到期时间戳）- 当前时间戳，这个时间其实也就是<code>redisson_delay_queue_channel:SANYOU</code>中最早到过期时间的任务还剩余的延迟时间。</p>
+<p>此处可以等待10s，好好想想。。</p>
+<p>这样，一旦时间来到了上面说的最早到过期时间任务的到期时间戳，<code>redisson_delay_queue_timeout:SANYOU</code>中上面说的最早到过期时间的任务已经到期了，客户端的延迟任务也同时到期，于是开始执行lua脚本操作，及时将到了延迟时间的任务放到目标队列中。然后再次发布剩余的延迟任务中最早到期的任务到期时间戳到channe中，如此循环往复，一直运行下去，保证<code>redisson_delay_queue_timeout:SANYOU</code>中到期的数据能及时放到目标队列中。</p>
+<p>所以，上述说了一大堆的主要的作用就是保证到了延迟时间的任务能够及时被放到目标队列。</p>
+<p>这里再补充两个特殊情况，图中没有画出：</p>
+<p>第一个就是如果<code>redisson_delay_queue_timeout:SANYOU</code>是新添加的任务（队列之前有或者没有任务）是队列中最早需要被执行的，也会发布消息到channel，之后就按时上面说的流程走了。</p>
+<p>添加任务代码如下，也是通过lua脚本来的</p>
+<p><img src="/imgs/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/a9c2a2d6-dbc7-4ae4-9fb3-f5763982cb7b.png" alt="img"></p>
+<p>第二种特殊情况就是项目启动的时候会执行一次客户端延迟任务。项目在重启时，由于没有客户端延迟任务的执行，可能会出现<code>redisson_delay_queue_timeout:SANYOU</code>队列中有到期但是没有被放到目标队列的可能，重启就执行一次就是为了保证到期的数据能被及时放到目标队列中。</p>
+<h4 id="3、与第一种方案比较"><a href="#3、与第一种方案比较" class="headerlink" title="3、与第一种方案比较"></a>3、与第一种方案比较</h4><p>现在来比较一下第一种方案和Redisson的这种方案，看看有没有第一种方案的那些坑。</p>
+<p>第一个任务延迟的问题，Redisson方案理论上是没有延迟的，但是当消息数量增加，消费者消费缓慢这个情况下可能会导致延迟任务消费的延迟。</p>
+<p>第二个丢消息的问题，Redisson方案很大程度上减轻了丢消息的可能性，因为所有的任务都是存在list和sorted set两种数据类型中，Redis有持久化机制，就算Redis宕机了，也就可能会丢一点点数据。</p>
+<p>第三个广播消费任务的问题，这个是不会出现的，因为每个客户端都是从同一个目标队列中获取任务的。</p>
+<p>第四个问题是Redis内部channel发布事件的问题，跟这种方案不沾边，就更不可能存在了。</p>
+<p>所以，通过上面的对比可以看出，Redisson这种实现方案就显得更加的靠谱了。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86"><span class="toc-number">1.</span> <span class="toc-text">Redis延迟队列原理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%91%E5%90%AC%E8%BF%87%E6%9C%9Fkey"><span class="toc-number">1.2.</span> <span class="toc-text">监听过期key</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81Redis%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.0.1.</span> <span class="toc-text">1、Redis发布订阅模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81keyspace-notifications"><span class="toc-number">1.2.0.2.</span> <span class="toc-text">2、keyspace notifications</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3%E3%80%81%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.0.3.</span> <span class="toc-text">3、延迟队列实现原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4%E3%80%81demo"><span class="toc-number">1.2.0.4.</span> <span class="toc-text">4、demo</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5%E3%80%81%E5%9D%91"><span class="toc-number">1.2.0.5.</span> <span class="toc-text">5、坑</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Redisson%E5%AE%9E%E7%8E%B0%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97"><span class="toc-number">1.3.</span> <span class="toc-text">Redisson实现延迟队列</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81demo"><span class="toc-number">1.3.0.1.</span> <span class="toc-text">1、demo</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.3.0.2.</span> <span class="toc-text">2、实现原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3%E3%80%81%E4%B8%8E%E7%AC%AC%E4%B8%80%E7%A7%8D%E6%96%B9%E6%A1%88%E6%AF%94%E8%BE%83"><span class="toc-number">1.3.0.3.</span> <span class="toc-text">3、与第一种方案比较</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&text=Redis延迟队列原理"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&is_video=false&description=Redis延迟队列原理"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Redis延迟队列原理&body=Check out this article: https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&title=Redis延迟队列原理"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&name=Redis延迟队列原理&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/26/Redis%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%8E%9F%E7%90%86/&t=Redis延迟队列原理"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

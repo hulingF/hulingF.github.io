@@ -36,7 +36,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/16db02bc7153fee5tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/16db02bc77059366tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="article:published_time" content="2023-12-15T16:00:00.000Z">
-<meta property="article:modified_time" content="2024-02-19T08:47:52.961Z">
+<meta property="article:modified_time" content="2024-03-20T13:48:23.832Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="MySQL原理">
 <meta name="twitter:card" content="summary">
@@ -336,7 +336,7 @@
 <p>所谓完整的用户记录，就是指这个记录中存储了所有列的值（包括隐藏列）。</p>
 </li>
 </ol>
-<p>我们把具有这两种特性的<code>B+</code>树称为<code>聚簇索引</code>，所有完整的用户记录都存放在这个<code>聚簇索引</code>的叶子节点处。这种<code>聚簇索引</code>并不需要我们在<code>MySQL</code>语句中显式的使用<code>INDEX</code>语句去创建（后边会介绍索引相关的语句），<code>InnoDB</code>存储引擎会自动的为我们创建聚簇索引。另外有趣的一点是，在<code>InnoDB</code>存储引擎中，<code>聚簇索引</code>就是数据的存储方式（所有的用户记录都存储在了<code>叶子节点</code>），也就是所谓的索引即数据，数据即索引。</p>
+<p>我们把具有这两种特性的<code>B+</code>树称为<code>聚簇索引</code>，所有完整的用户记录都存放在这个<code>聚簇索引</code>的叶子节点处。这种<code>聚簇索引</code>并不需要我们在<code>MySQL</code>语句中显式的使用<code>INDEX</code>语句去创建（后边会介绍索引相关的语句），<code>InnoDB</code>存储引擎会自动的为我们创建聚簇索引。另外有趣的一点是，在<code>InnoDB</code>存储引擎中，<code>聚簇索引</code>就是数据的存储方式（所有的用户记录都存储在了<code>叶子节点</code>），也就是所谓的<strong>索引即数据，数据即索引</strong>。</p>
 <h4 id="1-3-2二级索引"><a href="#1-3-2二级索引" class="headerlink" title="1.3.2二级索引"></a>1.3.2二级索引</h4><p>大家有木有发现，上边介绍的<code>聚簇索引</code>只能在搜索条件是主键值时才能发挥作用，因为<code>B+</code>树中的数据都是按照主键进行排序的。那如果我们想以别的列作为搜索条件该咋办呢？难道只能从头到尾沿着链表依次遍历记录么？</p>
 <p>不，我们可以多建几棵<code>B+</code>树，不同的<code>B+</code>树中的数据采用不同的排序规则。比方说我们用<code>c2</code>列的大小作为数据页、页中记录的排序规则，再建一棵<code>B+</code>树，效果如下图所示：</p>
 <p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/16a01bd2a89adfa5tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1cactc8jg14j91likvmd1h8cn3o4h.png-161.6kB"> </p>
@@ -401,9 +401,9 @@
 <p>如果我们想新插入一行记录，其中<code>c1</code>、<code>c2</code>、<code>c3</code>的值分别是：<code>9</code>、<code>1</code>、<code>&#39;c&#39;</code>，那么在修改这个为<code>c2</code>列建立的二级索引对应的<code>B+</code>树时便碰到了个大问题：由于<code>页3</code>中存储的目录项记录是由<code>c2列 + 页号</code>的值构成的，<code>页3</code>中的两条目录项记录对应的<code>c2</code>列的值都是<code>1</code>，而我们新插入的这条记录的<code>c2</code>列的值也是<code>1</code>，那我们这条新插入的记录到底应该放到<code>页4</code>中，还是应该放到<code>页5</code>中啊？答案是：对不起，懵逼了。</p>
 <p>为了让新插入记录能找到自己在那个页里，我们需要保证在B+树的同一层内节点的目录项记录除<code>页号</code>这个字段以外是唯一的。所以对于二级索引的内节点的目录项记录的内容实际上是由三个部分构成的：</p>
 <ul>
-<li>索引列的值</li>
-<li>主键值</li>
-<li>页号</li>
+<li><strong>索引列的值</strong></li>
+<li><strong>主键值</strong></li>
+<li><strong>页号</strong></li>
 </ul>
 <p>也就是我们把<code>主键值</code>也添加到二级索引内节点中的目录项记录了，这样就能保证<code>B+</code>树每一层节点中各条目录项记录除<code>页号</code>这个字段外是唯一的，所以我们为<code>c2</code>列建立二级索引后的示意图实际上应该是这样子的：</p>
 <p><img src="https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2019/4/9/16a01bd2c92fbca0~tplv-t2oaga2asx-jj-mark:1890:0:0:0:q75.awebp" alt="image_1cpb919suginpp7lbgsk0147f20.png-58.6kB"></p>
@@ -561,7 +561,7 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> person_info <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;A&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> birthday, phone_number LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
 
 <p>这个查询能使用联合索引进行排序是因为<code>name</code>列的值相同的记录是按照<code>birthday</code>, <code>phone_number</code>排序的，说了好多遍了都。</p>
-<h5 id="不可以使用索引进行排序的几种情况"><a href="#不可以使用索引进行排序的几种情况" class="headerlink" title="不可以使用索引进行排序的几种情况"></a><strong>不可以使用索引进行排序的几种情况</strong></h5><p>1.ASC、DESC混用</p>
+<h5 id="不可以使用索引进行排序的几种情况"><a href="#不可以使用索引进行排序的几种情况" class="headerlink" title="不可以使用索引进行排序的几种情况"></a><strong>不可以使用索引进行排序的几种情况</strong></h5><p>1.<strong>ASC、DESC混用</strong></p>
 <p>对于使用联合索引进行排序的场景，我们要求各个排序列的排序顺序是一致的，也就是要么各个列都是<code>ASC</code>规则排序，要么都是<code>DESC</code>规则排序。</p>
 <blockquote>
 <p>ORDER BY子句后的列如果不加ASC或者DESC默认是按照ASC排序规则排序的，也就是升序排序的。</p>
@@ -589,11 +589,11 @@
 <li>如果<code>name</code>列等于最小的值的记录不足10条，再继续往右找<code>name</code>值第二小的记录，重复上边那个过程，直到找到10条记录为止。</li>
 </ul>
 <p>累不累？累！重点是这样不能高效使用索引，而要采取更复杂的算法去从索引中取数据，设计<code>MySQL</code>的大叔觉得这样还不如直接文件排序来的快，所以就规定使用联合索引的各个排序列的排序顺序必须是一致的。</p>
-<p>2.排序列包含非同一个索引的列</p>
+<p>2.<strong>排序列包含非同一个索引的列</strong></p>
 <p>有时候用来排序的多个列不是一个索引里的，这种情况也不能使用索引进行排序，比方说：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> person_info <span class="keyword">ORDER</span> <span class="keyword">BY</span> name, country LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
 
-<p>3.排序列使用了复杂的表达式</p>
+<p>3.<strong>排序列使用了复杂的表达式</strong></p>
 <p>要想使用索引进行排序操作，必须保证索引列是以单独列的形式出现，而不是修饰过的形式，比方说这样：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> person_info <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="built_in">UPPER</span>(name) LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
 
@@ -608,7 +608,7 @@
 </ol>
 <p>然后针对那些<code>小小分组</code>进行统计，比如在我们这个查询语句中就是统计每个<code>小小分组</code>包含的记录条数。如果没有索引的话，这个分组过程全部需要在内存里实现，而如果有了索引的话，恰巧这个分组顺序又和我们的<code>B+</code>树中的索引列的顺序是一致的，而我们的<code>B+</code>树索引又是按照索引列排好序的，这不正好么，所以可以直接使用<code>B+</code>树索引进行分组。</p>
 <p>和使用<code>B+</code>树索引进行排序是一个道理，分组列的顺序也需要和索引列的顺序一致，也可以只使用索引列中左边的列进行分组，吧啦吧啦的～</p>
-<h3 id="2-3回表的代价"><a href="#2-3回表的代价" class="headerlink" title="2.3回表的代价"></a>2.3回表的代价</h3><p>上边的讨论对<code>回表</code>这个词儿多是一带而过，可能大家没啥深刻的体会，下边我们详细唠叨下。还是用<code>idx_name_birthday_phone_number</code>索引为例，看下边这个查询：</p>
+<h3 id="2-3回表的代价"><a href="#2-3回表的代价" class="headerlink" title="2.3回表的代价"></a>2.3回表的代价</h3><p>上边的讨论对<code>回表</code>这个词儿多是一带而过，可能大家没啥深刻的体会，下边我们详细唠叨下。<code>idx_name_birthday_phone_number</code>索引为例，看下边这个查询：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> person_info <span class="keyword">WHERE</span> name <span class="operator">&gt;</span> <span class="string">&#x27;Asa&#x27;</span> <span class="keyword">AND</span> name <span class="operator">&lt;</span> <span class="string">&#x27;Barlow&#x27;</span>;</span><br></pre></td></tr></table></figure>
 
 <p>在使用<code>idx_name_birthday_phone_number</code>索引进行查询时大致可以分为这两个步骤：</p>
@@ -642,12 +642,12 @@
 <p>虽然这个查询中没有<code>LIMIT</code>子句，但是采用了<code>覆盖索引</code>，所以查询优化器就会直接使用<code>idx_name_birthday_phone_number</code>索引进行排序而不需要回表操作了。</p>
 <p>当然，如果业务需要查询出索引以外的列，那还是以保证业务需求为重。但是我们很不鼓励用<code>*</code>号作为查询列表，最好把我们需要查询的列依次标明。</p>
 <h3 id="2-4索引最佳实践"><a href="#2-4索引最佳实践" class="headerlink" title="2.4索引最佳实践"></a>2.4索引最佳实践</h3><p>上边我们以<code>idx_name_birthday_phone_number</code>索引为例对索引的适用条件进行了详细的唠叨，下边看一下我们在建立索引时或者编写查询语句时就应该注意的一些事项。</p>
-<h4 id="2-4-1只为用于搜索、排序或分组的列创建索引"><a href="#2-4-1只为用于搜索、排序或分组的列创建索引" class="headerlink" title="2.4.1只为用于搜索、排序或分组的列创建索引"></a>2.4.1只为用于搜索、排序或分组的列创建索引</h4><p>也就是说，只为出现在<code>WHERE</code>子句中的列、连接子句中的连接列，或者出现在<code>ORDER BY</code>或<code>GROUP BY</code>子句中的列创建索引。而出现在查询列表中的列就没必要建立索引了：</p>
+<h4 id="2-4-1只为用于搜索、排序或分组的列创建索引"><a href="#2-4-1只为用于搜索、排序或分组的列创建索引" class="headerlink" title="2.4.1只为用于搜索、排序或分组的列创建索引"></a>2.4.1只为用于搜索、排序或分组的列创建索引</h4><p>也就是说，只为出现在<code>WHERE</code>子句中的列、连接子句中的<code>连接列</code>，或者出现在<code>ORDER BY</code>或<code>GROUP BY</code>子句中的列创建索引。而出现在查询列表中的列就没必要建立索引了：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> birthday, country <span class="keyword">FROM</span> person_name <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Ashburn&#x27;</span>;</span><br></pre></td></tr></table></figure>
 
 <p>像查询列表中的<code>birthday</code>、<code>country</code>这两个列就不需要建立索引，我们只需要为出现在<code>WHERE</code>子句中的<code>name</code>列创建索引就可以了。</p>
-<h4 id="2-4-2考虑列的基数"><a href="#2-4-2考虑列的基数" class="headerlink" title="2.4.2考虑列的基数"></a>2.4.2考虑列的基数</h4><p><code>列的基数</code>指的是某一列中不重复数据的个数，比方说某个列包含值<code>2, 5, 8, 2, 5, 8, 2, 5, 8</code>，虽然有<code>9</code>条记录，但该列的基数却是<code>3</code>。也就是说，在记录行数一定的情况下，列的基数越大，该列中的值越分散，列的基数越小，该列中的值越集中。这个<code>列的基数</code>指标非常重要，直接影响我们是否能有效的利用索引。假设某个列的基数为<code>1</code>，也就是所有记录在该列中的值都一样，那为该列建立索引是没有用的，因为所有值都一样就无法排序，无法进行快速查找了～ 而且如果某个建立了二级索引的列的重复值特别多，那么使用这个二级索引查出的记录还可能要做回表操作，这样性能损耗就更大了。所以结论就是：最好为那些列的基数大的列建立索引，为基数太小列的建立索引效果可能不好。</p>
-<h4 id="2-4-3索引列的类型尽量小"><a href="#2-4-3索引列的类型尽量小" class="headerlink" title="2.4.3索引列的类型尽量小"></a>2.4.3索引列的类型尽量小</h4><p>我们在定义表结构的时候要显式的指定列的类型，以整数类型为例，有<code>TINYINT</code>、<code>MEDIUMINT</code>、<code>INT</code>、<code>BIGINT</code>这么几种，它们占用的存储空间依次递增，我们这里所说的<code>类型大小</code>指的就是该类型表示的数据范围的大小。能表示的整数范围当然也是依次递增，如果我们想要对某个整数列建立索引的话，在表示的整数范围允许的情况下，尽量让索引列使用较小的类型，比如我们能使用<code>INT</code>就不要使用<code>BIGINT</code>，能使用<code>MEDIUMINT</code>就不要使用<code>INT</code>～ 这是因为：</p>
+<h4 id="2-4-2考虑列的基数"><a href="#2-4-2考虑列的基数" class="headerlink" title="2.4.2考虑列的基数"></a>2.4.2考虑列的基数</h4><p><code>列的基数</code>指的是某一列中不重复数据的个数，比方说某个列包含值<code>2, 5, 8, 2, 5, 8, 2, 5, 8</code>，虽然有<code>9</code>条记录，但该列的基数却是<code>3</code>。也就是说，在记录行数一定的情况下，列的基数越大，该列中的值越分散，列的基数越小，该列中的值越集中。这个<code>列的基数</code>指标非常重要，<strong>直接影响我们是否能有效的利用索引</strong>。假设某个列的基数为<code>1</code>，也就是所有记录在该列中的值都一样，那为该列建立索引是没有用的，因为所有值都一样就无法排序，无法进行快速查找了～ 而且如果某个建立了二级索引的列的重复值特别多，那么使用这个二级索引查出的记录还可能要做回表操作，这样性能损耗就更大了。所以结论就是：<strong>最好为那些列的基数大的列建立索引，为基数太小列的建立索引效果可能不好。</strong></p>
+<h4 id="2-4-3索引列的类型尽量小"><a href="#2-4-3索引列的类型尽量小" class="headerlink" title="2.4.3索引列的类型尽量小"></a>2.4.3索引列的类型尽量小</h4><p>我们在定义表结构的时候要显式的指定列的类型，以整数类型为例，有<code>TINYINT</code>、<code>MEDIUMINT</code>、<code>INT</code>、<code>BIGINT</code>这么几种，它们占用的存储空间依次递增，我们这里所说的<code>类型大小</code>指的就是该类型表示的数据范围的大小。能表示的整数范围当然也是依次递增，如果我们想要对某个整数列建立索引的话，在表示的整数范围允许的情况下，<strong>尽量让索引列使用较小的类型</strong>，比如我们能使用<code>INT</code>就不要使用<code>BIGINT</code>，能使用<code>MEDIUMINT</code>就不要使用<code>INT</code>～ 这是因为：</p>
 <ul>
 <li>数据类型越小，在查询时进行的比较操作越快（这是CPU层次的东东）</li>
 <li>数据类型越小，索引占用的存储空间就越少，在一个数据页内就可以放下更多的记录，从而减少磁盘<code>I/O</code>带来的性能损耗，也就意味着可以把更多的数据页缓存在内存中，从而加快读写效率。</li>
@@ -658,7 +658,7 @@
 <li><code>B+</code>树索引中的记录需要把该列的完整字符串存储起来，而且字符串越长，在索引中占用的存储空间越大。</li>
 <li>如果<code>B+</code>树索引中索引列存储的字符串很长，那在做字符串比较时会占用更多的时间。</li>
 </ul>
-<p>我们前边儿说过索引列的字符串前缀其实也是排好序的，所以索引的设计者提出了个方案 — 只对字符串的前几个字符进行索引也就是说在二级索引的记录中只保留字符串前几个字符。这样在查找记录时虽然不能精确的定位到记录的位置，但是能定位到相应前缀所在的位置，然后根据前缀相同的记录的主键值回表查询完整的字符串值，再对比就好了。这样只在<code>B+</code>树中存储字符串的前几个字符的编码，<code>既节约空间，又减少了字符串的比较时间，还大概能解决排序的问题</code>，何乐而不为，比方说我们在建表语句中只对<code>name</code>列的前10个字符进行索引可以这么写：</p>
+<p>我们前边儿说过索引列的字符串前缀其实也是排好序的，所以索引的设计者提出了个方案 — <strong>只对字符串的前几个字符进行索引</strong>也就是说在二级索引的记录中只保留字符串前几个字符。这样在查找记录时虽然不能精确的定位到记录的位置，但是能定位到相应前缀所在的位置，然后根据前缀相同的记录的主键值回表查询完整的字符串值，再对比就好了。这样只在<code>B+</code>树中存储字符串的前几个字符的编码，<code>既节约空间，又减少了字符串的比较时间，还大概能解决排序的问题</code>，何乐而不为，比方说我们在建表语句中只对<code>name</code>列的前10个字符进行索引可以这么写：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person_info(</span><br><span class="line">    name <span class="type">VARCHAR</span>(<span class="number">100</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    birthday <span class="type">DATE</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    phone_number <span class="type">CHAR</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    country <span class="type">varchar</span>(<span class="number">100</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    KEY idx_name_birthday_phone_number (name(<span class="number">10</span>), birthday, phone_number)</span><br><span class="line">);    </span><br></pre></td></tr></table></figure>
 
 <p><code>name(10)</code>就表示在建立的<code>B+</code>树索引中只保留记录的前<code>10</code>个字符的编码，这种只索引字符串值的前缀的策略是我们非常鼓励的，尤其是在字符串类型能存储的字符比较多的时候。</p>
@@ -672,7 +672,7 @@
 <li><code>WHERE my_col &lt; 4/2</code></li>
 </ol>
 <p>第1个<code>WHERE</code>子句中<code>my_col</code>列并不是以单独列的形式出现的，而是以<code>my_col * 2</code>这样的表达式的形式出现的，存储引擎会依次遍历所有的记录，计算这个表达式的值是不是小于<code>4</code>，所以这种情况下是使用不到为<code>my_col</code>列建立的<code>B+</code>树索引的。而第2个<code>WHERE</code>子句中<code>my_col</code>列并是以单独列的形式出现的，这样的情况可以直接使用<code>B+</code>树索引。</p>
-<p>所以结论就是：如果索引列在比较表达式中不是以单独列的形式出现，而是以某个表达式，或者函数调用形式出现的话，是用不到索引的。</p>
+<p>所以结论就是：<strong>如果索引列在比较表达式中不是以单独列的形式出现，而是以某个表达式，或者函数调用形式出现的话，是用不到索引的</strong>。</p>
 <h4 id="2-4-7主键插入顺序"><a href="#2-4-7主键插入顺序" class="headerlink" title="2.4.7主键插入顺序"></a>2.4.7主键插入顺序</h4><p>我们知道，对于一个使用<code>InnoDB</code>存储引擎的表来说，在我们没有显式的创建索引时，表中的数据实际上都是存储在<code>聚簇索引</code>的叶子节点的。而记录又是存储在数据页中的，数据页和记录又是按照记录主键值从小到大的顺序进行排序，所以如果我们插入的记录的主键值是依次增大的话，那我们每插满一个数据页就换到下一个数据页继续插，而如果我们插入的主键值忽大忽小的话，这就比较麻烦了，假设某个数据页存储的记录已经满了，它存储的主键值在<code>1~100</code>之间：</p>
 <p><img src="/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/16db02bc7153fee5tplv-t2oaga2asx-jj-mark1890000q75.webp" alt="image_1capq3r1o1geqdck1cnc1fkihj39.png-28.1kB"> </p>
 <p>如果此时再插入一条主键值为<code>9</code>的记录，那它插入的位置就如下图：</p>
