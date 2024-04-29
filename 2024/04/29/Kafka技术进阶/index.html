@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Kafka技术进阶1.Controller选举Controller，是Apache Kafka的核心组件。它的主要作用是在Apache ZooKeeper的帮助下管理和协调控制整个Kafka集群。 集群中的任意一台Broker都能充当Controller的角色，但是，在整个集群运行过程中，只能有一个Broker成为Controller。也就是说，每个正常运行的Kafka集群，在任何时刻都有且只有一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka技术进阶">
+<meta property="og:url" content="https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Kafka技术进阶1.Controller选举Controller，是Apache Kafka的核心组件。它的主要作用是在Apache ZooKeeper的帮助下管理和协调控制整个Kafka集群。 集群中的任意一台Broker都能充当Controller的角色，但是，在整个集群运行过程中，只能有一个Broker成为Controller。也就是说，每个正常运行的Kafka集群，在任何时刻都有且只有一">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429205054630.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429205453716.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429210902760.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429212000889.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429212529784.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429212653126.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429212824334.png">
+<meta property="article:published_time" content="2024-04-29T12:42:34.939Z">
+<meta property="article:modified_time" content="2024-04-29T14:20:28.873Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Kafka">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429205054630.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Kafka技术进阶</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/04/27/Kafka%E6%8A%80%E6%9C%AF%E6%8E%A2%E7%B4%A2/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&text=Kafka技术进阶"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&is_video=false&description=Kafka技术进阶"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Kafka技术进阶&body=Check out this article: https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&name=Kafka技术进阶&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&t=Kafka技术进阶"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6"><span class="toc-number">1.</span> <span class="toc-text">Kafka技术进阶</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Controller%E9%80%89%E4%B8%BE"><span class="toc-number">1.1.</span> <span class="toc-text">1.Controller选举</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Broker%E4%B8%8A%E4%B8%8B%E7%BA%BF"><span class="toc-number">1.2.</span> <span class="toc-text">2.Broker上下线</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%95%B0%E6%8D%AE%E5%81%8F%E7%A7%BB%E9%87%8F%E5%AE%9A%E4%BD%8D"><span class="toc-number">1.3.</span> <span class="toc-text">3.数据偏移量定位</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%97%A5%E5%BF%97%E6%B8%85%E7%90%86%E5%92%8C%E5%8E%8B%E7%BC%A9"><span class="toc-number">1.4.</span> <span class="toc-text">4.日志清理和压缩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%A1%B5%E7%BC%93%E5%AD%98"><span class="toc-number">1.5.</span> <span class="toc-text">5.页缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%A1%BA%E5%86%99%E6%97%A5%E5%BF%97"><span class="toc-number">1.6.</span> <span class="toc-text">6.顺写日志</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Linux%E9%9B%86%E7%BE%A4%E9%83%A8%E7%BD%B2"><span class="toc-number">1.7.</span> <span class="toc-text">7.Linux集群部署</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1%E9%9B%86%E7%BE%A4%E8%A7%84%E5%88%92"><span class="toc-number">1.7.1.</span> <span class="toc-text">7.1集群规划</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2%E5%AE%89%E8%A3%85%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.7.2.</span> <span class="toc-text">7.2安装虚拟机</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-1%E6%A8%A1%E6%9D%BF%E6%9C%BA%E5%AE%89%E8%A3%85"><span class="toc-number">1.7.2.1.</span> <span class="toc-text">7.2.1模板机安装</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-2%E5%85%8B%E9%9A%86%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.7.2.2.</span> <span class="toc-text">7.2.2克隆虚拟机</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-3%E5%88%86%E5%8F%91%E8%84%9A%E6%9C%AC%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.7.2.3.</span> <span class="toc-text">7.2.3分发脚本设计</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-4%E9%85%8D%E7%BD%AESSH%E6%97%A0%E5%AF%86%E7%99%BB%E5%BD%95"><span class="toc-number">1.7.2.4.</span> <span class="toc-text">7.2.4配置SSH无密登录</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-3%E5%AE%89%E8%A3%85JDK1-8"><span class="toc-number">1.7.3.</span> <span class="toc-text">7.3安装JDK1.8</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-1%E5%8D%B8%E8%BD%BD%E7%8E%B0%E6%9C%89JDK"><span class="toc-number">1.7.3.1.</span> <span class="toc-text">7.3.1卸载现有JDK</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-2%E4%B8%8A%E4%BC%A0JDK%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.3.2.</span> <span class="toc-text">7.3.2上传JDK压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-3%E8%A7%A3%E5%8E%8BJDK%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.3.3.</span> <span class="toc-text">7.3.3解压JDK压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-4%E9%85%8D%E7%BD%AEJava%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">1.7.3.4.</span> <span class="toc-text">7.3.4配置Java环境变量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-5%E5%AE%89%E8%A3%85%E6%B5%8B%E8%AF%95"><span class="toc-number">1.7.3.5.</span> <span class="toc-text">7.3.5安装测试</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-6%E5%88%86%E5%8F%91%E8%BD%AF%E4%BB%B6"><span class="toc-number">1.7.3.6.</span> <span class="toc-text">7.3.6分发软件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-4%E5%AE%89%E8%A3%85ZooKeeper"><span class="toc-number">1.7.4.</span> <span class="toc-text">7.4安装ZooKeeper</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-1%E4%B8%8A%E4%BC%A0ZooKeeper%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.4.1.</span> <span class="toc-text">7.4.1上传ZooKeeper压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-2%E8%A7%A3%E5%8E%8BZooKeeper%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.4.2.</span> <span class="toc-text">7.4.2解压ZooKeeper压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-3%E9%85%8D%E7%BD%AE%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%BC%96%E5%8F%B7"><span class="toc-number">1.7.4.3.</span> <span class="toc-text">7.4.3配置服务器编号</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-4%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.4.4.</span> <span class="toc-text">7.4.4修改配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-5%E5%90%AF%E5%8A%A8ZooKeeper"><span class="toc-number">1.7.4.5.</span> <span class="toc-text">7.4.5启动ZooKeeper</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-6%E5%85%B3%E9%97%ADZooKeeper"><span class="toc-number">1.7.4.6.</span> <span class="toc-text">7.4.6关闭ZooKeeper</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-7%E6%9F%A5%E7%9C%8BZooKeeper%E7%8A%B6%E6%80%81"><span class="toc-number">1.7.4.7.</span> <span class="toc-text">7.4.7查看ZooKeeper状态</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-8%E5%88%86%E5%8F%91%E8%BD%AF%E4%BB%B6"><span class="toc-number">1.7.4.8.</span> <span class="toc-text">7.4.8分发软件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-9%E5%90%AF%E5%81%9C%E8%84%9A%E6%9C%AC"><span class="toc-number">1.7.4.9.</span> <span class="toc-text">7.4.9启停脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-10%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%B7%A5%E5%85%B7%E5%AE%89%E8%A3%85"><span class="toc-number">1.7.4.10.</span> <span class="toc-text">7.4.10客户端工具安装</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-5%E5%AE%89%E8%A3%85Kafka"><span class="toc-number">1.7.5.</span> <span class="toc-text">7.5安装Kafka</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-1%E4%B8%8A%E4%BC%A0Kafka%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.5.1.</span> <span class="toc-text">7.5.1上传Kafka压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-2%E8%A7%A3%E5%8E%8BKafka%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.5.2.</span> <span class="toc-text">7.5.2解压Kafka压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-3%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.5.3.</span> <span class="toc-text">7.5.3修改配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-4%E5%88%86%E5%8F%91Kafka%E8%BD%AF%E4%BB%B6"><span class="toc-number">1.7.5.4.</span> <span class="toc-text">7.5.4分发Kafka软件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-5%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">1.7.5.5.</span> <span class="toc-text">7.5.5配置环境变量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-6%E5%90%AF%E5%8A%A8Kafka"><span class="toc-number">1.7.5.6.</span> <span class="toc-text">7.5.6启动Kafka</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-7%E5%85%B3%E9%97%ADKafka"><span class="toc-number">1.7.5.7.</span> <span class="toc-text">7.5.7关闭Kafka</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-8%E5%90%AF%E5%81%9C%E8%84%9A%E6%9C%AC"><span class="toc-number">1.7.5.8.</span> <span class="toc-text">7.5.8启停脚本</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-6%E6%B5%8B%E8%AF%95%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.</span> <span class="toc-text">7.6测试集群</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-1%E5%90%AF%E5%8A%A8Kafka%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.1.</span> <span class="toc-text">7.6.1启动Kafka集群</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-2%E6%9F%A5%E7%9C%8BKafka%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.2.</span> <span class="toc-text">7.6.2查看Kafka集群</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-3%E5%85%B3%E9%97%ADKafka%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.3.</span> <span class="toc-text">7.6.3关闭Kafka集群</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Kafka技术进阶
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-04-29T12:42:34.939Z" class="dt-published" itemprop="datePublished">2024-04-29</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Kafka/" rel="tag">Kafka</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Kafka技术进阶"><a href="#Kafka技术进阶" class="headerlink" title="Kafka技术进阶"></a>Kafka技术进阶</h1><h2 id="1-Controller选举"><a href="#1-Controller选举" class="headerlink" title="1.Controller选举"></a>1.Controller选举</h2><p>Controller，是Apache Kafka的核心组件。它的主要作用是在Apache ZooKeeper的帮助下管理和协调控制整个Kafka集群。</p>
+<p>集群中的任意一台Broker都能充当Controller的角色，但是，在整个集群运行过程中，只能有一个Broker成为Controller。也就是说，每个正常运行的Kafka集群，在任何时刻都有且只有一个Controller。</p>
+<p><img src="/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429205054630.png" alt="image-20240429205054630"></p>
+<p>最先在ZooKeeper上创建<code>临时节点/controller</code>成功的Broker就是Controller。Controller重度依赖Zookeeper，依赖ZooKeeper保存元数据，依赖Zookeeper进行服务发现。Controller大量使用<code>Watcher功能</code>实现对集群的协调管理。如果此时，作为Controller的Broker节点宕掉了。那么ZooKeeper的临时节点&#x2F;controller就会因为会话超时而自动删除。而监控这个节点的Broker就会收到通知而向ZooKeeper发出创建&#x2F;controller节点的申请，一旦创建成功，那么创建成功的Broker节点就成为了新的Controller。</p>
+<p><img src="/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429205453716.png" alt="image-20240429205453716"></p>
+<p>有一种特殊的情况，就是Controller节点并没有宕掉，而是因为<code>网络抖动不稳定</code>，导致和ZooKeeper之间的会话超时，那么此时，整个Kafka集群就会认为之前的Controller已经下线从而选举出新的Controller，而之前的Controller的网络又恢复了，以为自己还是Controller了，继续管理整个集群，那么此时，整个Kafka集群就有两个Controller进行管理，那么其他的Broker就懵了，不知道听谁的了，这种情况，我们称之为<code>脑裂现象</code>，为了解决这个问题，Kafka通过一个<code>任期（epoch:纪元）</code>的概念来解决，也就是说，每一个Broker当选Controller时，会告诉当前Broker是第几任Controller，一旦重新选举时，这个任期会自动增1，那么不同任期的Controller的epoch值是不同的，那么旧的Controller一旦发现集群中有新任Controller的时候，那么它就会完成退出操作（清空缓存，中断和Broker的连接，并重新加载最新的缓存），让自己重新变成一个普通的Broker。</p>
+<h2 id="2-Broker上下线"><a href="#2-Broker上下线" class="headerlink" title="2.Broker上下线"></a>2.Broker上下线</h2><p>Controller在初始化时，会利用ZooKeeper的Watcher机制注册很多不同类型的<code>监听器</code>，当监听的事件被触发时，Controller就会触发相应的操作。Controller在初始化时，会注册多种类型的监听器，主要有以下几种：</p>
+<ul>
+<li>监听<code>/admin/reassign_partitions</code>节点，用于分区副本迁移的监听</li>
+<li>监听<code>/isr_change_notification</code>节点，用于Partition ISR变动的监听</li>
+<li>监听<code>/admin/preferred_replica_election</code>节点，用于需要进行Partition最优Leader选举的监听</li>
+<li>监听<code>/brokers/topics</code>节点，用于Topic新建的监听</li>
+<li>监听<code>/brokers/topics/TOPIC_NAME</code>节点，用于Topic Partition扩容的监听</li>
+<li>监听<code>/admin/delete_topics</code>节点，用于Topic删除的监听</li>
+<li>监听<code>/brokers/ids</code>节点，用于Broker上下线的监听</li>
+</ul>
+<p>每台Broker在上线时，都会与ZooKeeper建立一个建立一个session，并在<code>/brokers/ids</code>下注册一个节点，节点名字就是<code>brokerid</code>，这个节点是<code>临时节点</code>，该节点内部会有这个Broker的详细节点信息。Controller会监听&#x2F;brokers&#x2F;ids这个路径下的所有子节点，如果有新的节点出现，那么就代表有新的Broker上线，如果有节点消失，就代表有旧的Broker下线，Controller会进行相应的处理，Kafka就是利用ZooKeeper的这种<code>Watcher机制及临时节点的特性</code>来完成集群Broker的上下线。无论Controller监听到的哪一种节点的变化，都会进行相应的处理，同步整个集群元数据。</p>
+<h2 id="3-数据偏移量定位"><a href="#3-数据偏移量定位" class="headerlink" title="3.数据偏移量定位"></a>3.数据偏移量定位</h2><p>分区是一个逻辑工作单元，其中记录被<code>顺序附加</code>分区上（<strong>Kafka只能保证分区消息的有序性，而不能保证消息的全局有序性</strong>）。但是分区不是存储单元，<code>分区进一步划分为Segment</code>（段），这些段是文件系统上的<code>实际文件</code>。为了获得更好的性能和可维护性，可以创建多个段，而不是从一个巨大的分区中读取，消费者现在可以更快地从较小的段文件中读取。创建具有分区名称的目录，并将该分区的所有段作为各种文件进行维护。在理想情况下，数据流量分摊到各个Parition中，实现了负载均衡的效果。</p>
+<p>每个数据日志文件会对应一个LogSegment对象，并且都有一个基准偏移量，表示当前LogSegment中第一条消息的偏移量offset。</p>
+<p><img src="/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429210902760.png" alt="image-20240429210902760"></p>
+<p>偏移量是一个64位的长整形数，固定是20位数字，长度未达到用0进行填补，索引文件和日志文件都由该作为文件名命名规则：</p>
+<p>00000000000000000000.index：索引文件，记录偏移量映射到.log文件位置，此映射用于从任何特定偏移量读取记录</p>
+<p>0000000000000000000.timeindex：时间戳索引文件，此文件包含时间戳到记录偏移量的映射</p>
+<p>00000000000000000000.log：此文件包含实际记录，并将记录保持到特定偏移量，文件名描述了添加到此文件的起始偏移量，如果日志文件名为 00000000000000000004.log，则当前日志文件的第一条数据偏移量就是4（偏移量从0开始）</p>
+<p>多个数据日志文件在操作时，<code>只有最新的日志文件处于活动状态，拥有文件写入和读取权限</code>，其他的日志文件只有只读的权限。</p>
+<p>偏移量索引文件用于记录消息偏移量与物理地址之间的映射关系。时间戳索引文件则根据时间戳查找对应的偏移量。Kafka中的索引文件是以<code>稀疏索引</code>的方式构造消息的索引，<code>并不保证每一个消息在索引文件中都有对应的索引项</code>。每当写入一定量的消息时，偏移量索引文件和时间戳索引文件分别增加一个偏移量索引项和时间戳索引项。通过修改<code>log.index.interval.bytes</code>的值，改变索引项的密度。</p>
+<p>数据位置索引保存在index文件中，log日志默认每写入4K（log.index.interval.bytes设定的），会写入一条索引信息到index文件中，因此索引文件是稀疏索引，它不会为每条日志都建立索引信息，索引文件的数据结构则是由相对offset（4byte）+position（4byte）组成，由于保存的是相对第一个消息的相对offset，只需要4byte就可以，节省空间，实际查找后还需要计算回实际的offset，这对用户是不可见的。</p>
+<p>如果消费者想要消费某一个偏移量的数据，那么Kafka会通过Kafka中存在一个<code>ConcurrentSkipListMap（跳跃表）</code>定位到00000000000000000000.index索引文件，通过<code>二分法</code>在偏移量索引文件中找到不大于指定偏移量的最大索引项，然后从日志分段文件中的物理位置开始顺序查找偏移量为指定值的消息。</p>
+<h2 id="4-日志清理和压缩"><a href="#4-日志清理和压缩" class="headerlink" title="4.日志清理和压缩"></a>4.日志清理和压缩</h2><p>Kafka软件的目的本质是用于传输数据，而不是存储数据，但是为了均衡生产数据速率和消费者的消费速率，所以可以将数据保存到日志文件中进行存储。默认的数据日志保存时间为7天，可以通过调整如下参数修改保存时间：</p>
+<ul>
+<li><code>log.retention.hours</code>：小时（默认：7天，最低优先级）</li>
+<li><code>log.retention.minutes</code>：分钟</li>
+<li><code>log.retention.ms</code>：毫秒（最高优先级）</li>
+<li><code>log.retention.check.interval.ms</code>：负责设置检查周期，默认5分钟</li>
+</ul>
+<p>日志一旦超过了设置的时间，Kafka中提供了两种日志清理策略：delete和compact。</p>
+<ul>
+<li><p>delete：将过期数据删除</p>
+<ul>
+<li><code>log.cleanup.policy = delete</code>（所有数据启用删除策略）</li>
+<li>基于时间：默认打开。以Segment中所有记录中的最大时间戳作为该文件时间戳。</li>
+<li>基于大小：默认关闭。超过设置的所有日志总大小，删除最早的Segment。<code>log.retention.bytes</code>，默认等于-1，表示无穷大。</li>
+</ul>
+</li>
+<li><p>compact：日志压缩</p>
+<ul>
+<li><p>基本思路就是将相同key的数据，只保留最后一个</p>
+</li>
+<li><p><code>log.cleanup.policy = compact</code>（所有数据启用压缩策略）</p>
+<p><img src="/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429212000889.png" alt="image-20240429212000889"></p>
+</li>
+<li><p><strong>注意：因为数据会丢失，所以这种策略只适用保存数据最新状态的特殊场景。</strong></p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="5-页缓存"><a href="#5-页缓存" class="headerlink" title="5.页缓存"></a>5.页缓存</h2><p>页缓存是操作系统实现的一种主要的磁盘缓存，以此用来减少对磁盘I&#x2F;O的操作。具体来说，就是把磁盘中的数据缓存到内存中，把对磁盘的访问变为对内存的访问。为了弥补性能上的差异，现代操作系统越来越多地将内存作为磁盘缓存，甚至会将所有可用的内存用于磁盘缓存，这样当内存回收时也几乎没有性能损失，所有对于磁盘的读写也将经由统一的缓存。</p>
+<p>当一个进程准备读取磁盘上的文件内容时，操作系统会先查看待读取的数据所在的页是否在页缓存（page cache）中，如果存在（命中）则直接返回数据，从而避免了对物理磁盘的I&#x2F;O操作；如果没有命中，则操作系统会向磁盘发起读取请示并将读取的数据页写入页缓存，之后再将数据返回进程。同样，如果一个进程需要将数据写入磁盘，那么操作系统也会检测数据对应的页是否在页缓存中，如果不存在，则会先在页缓存中添加相应的页，最后将数据写入对应的页。<strong>被修改过后的页也就变成了脏页，操作系统会在合适的时间把脏页中的数据写入磁盘，以操作数据的一致性。</strong></p>
+<p>Kafka中大量使用了页缓存，这是Kafka实现高吞吐的重要因此之一。虽然消息都是先被写入页缓存，然后由操作系统负责具体的刷盘任务，但在Kafka中同样提供了<code>同步刷盘及间断性强制刷盘（fsync）</code>的功能，这些功能可以通过<code>log.flush.interval.message</code>、<code>log.flush.interval.ms</code>等参数来控制。同步刷盘可以提高消息的可靠性，防止由于机器掉电等异常造成处于页缓存而没有及时写入磁盘的消息丢失。不过一般不建议这么做，刷盘任务就应交由操作系统去调配，消息的可靠性应该由多副本机制来保障，而不是由同步刷盘这种严重影响性能的行为来保障。</p>
+<h2 id="6-顺写日志"><a href="#6-顺写日志" class="headerlink" title="6.顺写日志"></a>6.顺写日志</h2><p>Kafka中消息是以Topic进行分类的，生产者生产消息，消费者消费消息，都是面向Topic的。在Kafka中，一个Topic可以分为多个Partition，一个Partition分为多个Segment，每个Segment对应三个文件：<code>.index</code>文件、<code>.log</code>文件、<code>.timeindex</code>文件。</p>
+<img src="/imgs/Kafka技术进阶/image-20240429212529784.png" alt="image-20240429212529784" style="zoom:150%;" />
+
+<p>Kafka底层采用的是<code>FileChannel.wrtieTo</code>进行数据的写入，写的时候并不是直接写入文件，而是<code>写入ByteBuffer</code>，然后当缓冲区满了，再将数据顺序写入文件，无需定位文件中的某一个位置进行写入，那么就减少了磁盘查询，数据定位的过程。所以性能要比随机写入效率高得多。</p>
+<p>官网有数据表明，同样的磁盘，顺序写能到600M&#x2F;s，而随机写只有100K&#x2F;s。这与磁盘的机械结构有关，顺序写之所以快，是因为其<code>省去了大量磁头寻址的时间</code>。</p>
+<p><img src="/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429212653126.png" alt="image-20240429212653126"></p>
+<h2 id="7-Linux集群部署"><a href="#7-Linux集群部署" class="headerlink" title="7.Linux集群部署"></a>7.Linux集群部署</h2><p>Kafka从早期的消息传输系统转型为开源分布式事件流处理平台系统，所以很多核心组件，核心操作都是基于分布式多节点的，所以我们这里把分布式软件环境安装一下。</p>
+<h3 id="7-1集群规划"><a href="#7-1集群规划" class="headerlink" title="7.1集群规划"></a>7.1集群规划</h3><p><img src="/imgs/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/image-20240429212824334.png" alt="image-20240429212824334"></p>
+<h3 id="7-2安装虚拟机"><a href="#7-2安装虚拟机" class="headerlink" title="7.2安装虚拟机"></a>7.2安装虚拟机</h3><p>生产环境中，我们会使用多台服务器搭建Kafka集群系统，但是对于学习来讲，准备多台独立的服务器还是比较困难的，所以我们这里采用虚拟机的方式进行学习。</p>
+<h4 id="7-2-1模板机安装"><a href="#7-2-1模板机安装" class="headerlink" title="7.2.1模板机安装"></a>7.2.1模板机安装</h4><p>为了让大家学习的重心放在技术本身，而不是环境上，我们将基础的虚拟机环境进行了封装，形成了模板机，这样大家直接下载使用即可。</p>
+<table>
+<thead>
+<tr>
+<th>模板机属性</th>
+<th>模板机属性值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IP地址</td>
+<td>192.168.10.100</td>
+</tr>
+<tr>
+<td>主机名称</td>
+<td>hadoop100</td>
+</tr>
+<tr>
+<td>内存（虚拟）</td>
+<td>4G</td>
+</tr>
+<tr>
+<td>硬盘（虚拟）</td>
+<td>50G</td>
+</tr>
+<tr>
+<td>登录账号(全小写)</td>
+<td>root</td>
+</tr>
+<tr>
+<td>密码</td>
+<td>000000</td>
+</tr>
+</tbody></table>
+<h4 id="7-2-2克隆虚拟机"><a href="#7-2-2克隆虚拟机" class="headerlink" title="7.2.2克隆虚拟机"></a>7.2.2克隆虚拟机</h4><h4 id="7-2-3分发脚本设计"><a href="#7-2-3分发脚本设计" class="headerlink" title="7.2.3分发脚本设计"></a>7.2.3分发脚本设计</h4><h4 id="7-2-4配置SSH无密登录"><a href="#7-2-4配置SSH无密登录" class="headerlink" title="7.2.4配置SSH无密登录"></a>7.2.4配置SSH无密登录</h4><h3 id="7-3安装JDK1-8"><a href="#7-3安装JDK1-8" class="headerlink" title="7.3安装JDK1.8"></a>7.3安装JDK1.8</h3><h4 id="7-3-1卸载现有JDK"><a href="#7-3-1卸载现有JDK" class="headerlink" title="7.3.1卸载现有JDK"></a>7.3.1卸载现有JDK</h4><h4 id="7-3-2上传JDK压缩包"><a href="#7-3-2上传JDK压缩包" class="headerlink" title="7.3.2上传JDK压缩包"></a>7.3.2上传JDK压缩包</h4><h4 id="7-3-3解压JDK压缩包"><a href="#7-3-3解压JDK压缩包" class="headerlink" title="7.3.3解压JDK压缩包"></a>7.3.3解压JDK压缩包</h4><h4 id="7-3-4配置Java环境变量"><a href="#7-3-4配置Java环境变量" class="headerlink" title="7.3.4配置Java环境变量"></a>7.3.4配置Java环境变量</h4><h4 id="7-3-5安装测试"><a href="#7-3-5安装测试" class="headerlink" title="7.3.5安装测试"></a>7.3.5安装测试</h4><h4 id="7-3-6分发软件"><a href="#7-3-6分发软件" class="headerlink" title="7.3.6分发软件"></a>7.3.6分发软件</h4><h3 id="7-4安装ZooKeeper"><a href="#7-4安装ZooKeeper" class="headerlink" title="7.4安装ZooKeeper"></a>7.4安装ZooKeeper</h3><h4 id="7-4-1上传ZooKeeper压缩包"><a href="#7-4-1上传ZooKeeper压缩包" class="headerlink" title="7.4.1上传ZooKeeper压缩包"></a>7.4.1上传ZooKeeper压缩包</h4><h4 id="7-4-2解压ZooKeeper压缩包"><a href="#7-4-2解压ZooKeeper压缩包" class="headerlink" title="7.4.2解压ZooKeeper压缩包"></a>7.4.2解压ZooKeeper压缩包</h4><h4 id="7-4-3配置服务器编号"><a href="#7-4-3配置服务器编号" class="headerlink" title="7.4.3配置服务器编号"></a>7.4.3配置服务器编号</h4><h4 id="7-4-4修改配置文件"><a href="#7-4-4修改配置文件" class="headerlink" title="7.4.4修改配置文件"></a>7.4.4修改配置文件</h4><h4 id="7-4-5启动ZooKeeper"><a href="#7-4-5启动ZooKeeper" class="headerlink" title="7.4.5启动ZooKeeper"></a>7.4.5启动ZooKeeper</h4><h4 id="7-4-6关闭ZooKeeper"><a href="#7-4-6关闭ZooKeeper" class="headerlink" title="7.4.6关闭ZooKeeper"></a>7.4.6关闭ZooKeeper</h4><h4 id="7-4-7查看ZooKeeper状态"><a href="#7-4-7查看ZooKeeper状态" class="headerlink" title="7.4.7查看ZooKeeper状态"></a>7.4.7查看ZooKeeper状态</h4><h4 id="7-4-8分发软件"><a href="#7-4-8分发软件" class="headerlink" title="7.4.8分发软件"></a>7.4.8分发软件</h4><h4 id="7-4-9启停脚本"><a href="#7-4-9启停脚本" class="headerlink" title="7.4.9启停脚本"></a>7.4.9启停脚本</h4><h4 id="7-4-10客户端工具安装"><a href="#7-4-10客户端工具安装" class="headerlink" title="7.4.10客户端工具安装"></a>7.4.10客户端工具安装</h4><h3 id="7-5安装Kafka"><a href="#7-5安装Kafka" class="headerlink" title="7.5安装Kafka"></a>7.5安装Kafka</h3><h4 id="7-5-1上传Kafka压缩包"><a href="#7-5-1上传Kafka压缩包" class="headerlink" title="7.5.1上传Kafka压缩包"></a>7.5.1上传Kafka压缩包</h4><h4 id="7-5-2解压Kafka压缩包"><a href="#7-5-2解压Kafka压缩包" class="headerlink" title="7.5.2解压Kafka压缩包"></a>7.5.2解压Kafka压缩包</h4><h4 id="7-5-3修改配置文件"><a href="#7-5-3修改配置文件" class="headerlink" title="7.5.3修改配置文件"></a>7.5.3修改配置文件</h4><h4 id="7-5-4分发Kafka软件"><a href="#7-5-4分发Kafka软件" class="headerlink" title="7.5.4分发Kafka软件"></a>7.5.4分发Kafka软件</h4><h4 id="7-5-5配置环境变量"><a href="#7-5-5配置环境变量" class="headerlink" title="7.5.5配置环境变量"></a>7.5.5配置环境变量</h4><h4 id="7-5-6启动Kafka"><a href="#7-5-6启动Kafka" class="headerlink" title="7.5.6启动Kafka"></a>7.5.6启动Kafka</h4><h4 id="7-5-7关闭Kafka"><a href="#7-5-7关闭Kafka" class="headerlink" title="7.5.7关闭Kafka"></a>7.5.7关闭Kafka</h4><h4 id="7-5-8启停脚本"><a href="#7-5-8启停脚本" class="headerlink" title="7.5.8启停脚本"></a>7.5.8启停脚本</h4><h3 id="7-6测试集群"><a href="#7-6测试集群" class="headerlink" title="7.6测试集群"></a>7.6测试集群</h3><h4 id="7-6-1启动Kafka集群"><a href="#7-6-1启动Kafka集群" class="headerlink" title="7.6.1启动Kafka集群"></a>7.6.1启动Kafka集群</h4><h4 id="7-6-2查看Kafka集群"><a href="#7-6-2查看Kafka集群" class="headerlink" title="7.6.2查看Kafka集群"></a>7.6.2查看Kafka集群</h4><h4 id="7-6-3关闭Kafka集群"><a href="#7-6-3关闭Kafka集群" class="headerlink" title="7.6.3关闭Kafka集群"></a>7.6.3关闭Kafka集群</h4>
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6"><span class="toc-number">1.</span> <span class="toc-text">Kafka技术进阶</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Controller%E9%80%89%E4%B8%BE"><span class="toc-number">1.1.</span> <span class="toc-text">1.Controller选举</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Broker%E4%B8%8A%E4%B8%8B%E7%BA%BF"><span class="toc-number">1.2.</span> <span class="toc-text">2.Broker上下线</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%95%B0%E6%8D%AE%E5%81%8F%E7%A7%BB%E9%87%8F%E5%AE%9A%E4%BD%8D"><span class="toc-number">1.3.</span> <span class="toc-text">3.数据偏移量定位</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%97%A5%E5%BF%97%E6%B8%85%E7%90%86%E5%92%8C%E5%8E%8B%E7%BC%A9"><span class="toc-number">1.4.</span> <span class="toc-text">4.日志清理和压缩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%A1%B5%E7%BC%93%E5%AD%98"><span class="toc-number">1.5.</span> <span class="toc-text">5.页缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%A1%BA%E5%86%99%E6%97%A5%E5%BF%97"><span class="toc-number">1.6.</span> <span class="toc-text">6.顺写日志</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Linux%E9%9B%86%E7%BE%A4%E9%83%A8%E7%BD%B2"><span class="toc-number">1.7.</span> <span class="toc-text">7.Linux集群部署</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1%E9%9B%86%E7%BE%A4%E8%A7%84%E5%88%92"><span class="toc-number">1.7.1.</span> <span class="toc-text">7.1集群规划</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2%E5%AE%89%E8%A3%85%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.7.2.</span> <span class="toc-text">7.2安装虚拟机</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-1%E6%A8%A1%E6%9D%BF%E6%9C%BA%E5%AE%89%E8%A3%85"><span class="toc-number">1.7.2.1.</span> <span class="toc-text">7.2.1模板机安装</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-2%E5%85%8B%E9%9A%86%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.7.2.2.</span> <span class="toc-text">7.2.2克隆虚拟机</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-3%E5%88%86%E5%8F%91%E8%84%9A%E6%9C%AC%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.7.2.3.</span> <span class="toc-text">7.2.3分发脚本设计</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2-4%E9%85%8D%E7%BD%AESSH%E6%97%A0%E5%AF%86%E7%99%BB%E5%BD%95"><span class="toc-number">1.7.2.4.</span> <span class="toc-text">7.2.4配置SSH无密登录</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-3%E5%AE%89%E8%A3%85JDK1-8"><span class="toc-number">1.7.3.</span> <span class="toc-text">7.3安装JDK1.8</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-1%E5%8D%B8%E8%BD%BD%E7%8E%B0%E6%9C%89JDK"><span class="toc-number">1.7.3.1.</span> <span class="toc-text">7.3.1卸载现有JDK</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-2%E4%B8%8A%E4%BC%A0JDK%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.3.2.</span> <span class="toc-text">7.3.2上传JDK压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-3%E8%A7%A3%E5%8E%8BJDK%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.3.3.</span> <span class="toc-text">7.3.3解压JDK压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-4%E9%85%8D%E7%BD%AEJava%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">1.7.3.4.</span> <span class="toc-text">7.3.4配置Java环境变量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-5%E5%AE%89%E8%A3%85%E6%B5%8B%E8%AF%95"><span class="toc-number">1.7.3.5.</span> <span class="toc-text">7.3.5安装测试</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-3-6%E5%88%86%E5%8F%91%E8%BD%AF%E4%BB%B6"><span class="toc-number">1.7.3.6.</span> <span class="toc-text">7.3.6分发软件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-4%E5%AE%89%E8%A3%85ZooKeeper"><span class="toc-number">1.7.4.</span> <span class="toc-text">7.4安装ZooKeeper</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-1%E4%B8%8A%E4%BC%A0ZooKeeper%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.4.1.</span> <span class="toc-text">7.4.1上传ZooKeeper压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-2%E8%A7%A3%E5%8E%8BZooKeeper%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.4.2.</span> <span class="toc-text">7.4.2解压ZooKeeper压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-3%E9%85%8D%E7%BD%AE%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%BC%96%E5%8F%B7"><span class="toc-number">1.7.4.3.</span> <span class="toc-text">7.4.3配置服务器编号</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-4%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.4.4.</span> <span class="toc-text">7.4.4修改配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-5%E5%90%AF%E5%8A%A8ZooKeeper"><span class="toc-number">1.7.4.5.</span> <span class="toc-text">7.4.5启动ZooKeeper</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-6%E5%85%B3%E9%97%ADZooKeeper"><span class="toc-number">1.7.4.6.</span> <span class="toc-text">7.4.6关闭ZooKeeper</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-7%E6%9F%A5%E7%9C%8BZooKeeper%E7%8A%B6%E6%80%81"><span class="toc-number">1.7.4.7.</span> <span class="toc-text">7.4.7查看ZooKeeper状态</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-8%E5%88%86%E5%8F%91%E8%BD%AF%E4%BB%B6"><span class="toc-number">1.7.4.8.</span> <span class="toc-text">7.4.8分发软件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-9%E5%90%AF%E5%81%9C%E8%84%9A%E6%9C%AC"><span class="toc-number">1.7.4.9.</span> <span class="toc-text">7.4.9启停脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-4-10%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%B7%A5%E5%85%B7%E5%AE%89%E8%A3%85"><span class="toc-number">1.7.4.10.</span> <span class="toc-text">7.4.10客户端工具安装</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-5%E5%AE%89%E8%A3%85Kafka"><span class="toc-number">1.7.5.</span> <span class="toc-text">7.5安装Kafka</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-1%E4%B8%8A%E4%BC%A0Kafka%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.5.1.</span> <span class="toc-text">7.5.1上传Kafka压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-2%E8%A7%A3%E5%8E%8BKafka%E5%8E%8B%E7%BC%A9%E5%8C%85"><span class="toc-number">1.7.5.2.</span> <span class="toc-text">7.5.2解压Kafka压缩包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-3%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.5.3.</span> <span class="toc-text">7.5.3修改配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-4%E5%88%86%E5%8F%91Kafka%E8%BD%AF%E4%BB%B6"><span class="toc-number">1.7.5.4.</span> <span class="toc-text">7.5.4分发Kafka软件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-5%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">1.7.5.5.</span> <span class="toc-text">7.5.5配置环境变量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-6%E5%90%AF%E5%8A%A8Kafka"><span class="toc-number">1.7.5.6.</span> <span class="toc-text">7.5.6启动Kafka</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-7%E5%85%B3%E9%97%ADKafka"><span class="toc-number">1.7.5.7.</span> <span class="toc-text">7.5.7关闭Kafka</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-8%E5%90%AF%E5%81%9C%E8%84%9A%E6%9C%AC"><span class="toc-number">1.7.5.8.</span> <span class="toc-text">7.5.8启停脚本</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-6%E6%B5%8B%E8%AF%95%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.</span> <span class="toc-text">7.6测试集群</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-1%E5%90%AF%E5%8A%A8Kafka%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.1.</span> <span class="toc-text">7.6.1启动Kafka集群</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-2%E6%9F%A5%E7%9C%8BKafka%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.2.</span> <span class="toc-text">7.6.2查看Kafka集群</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-3%E5%85%B3%E9%97%ADKafka%E9%9B%86%E7%BE%A4"><span class="toc-number">1.7.6.3.</span> <span class="toc-text">7.6.3关闭Kafka集群</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&text=Kafka技术进阶"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&is_video=false&description=Kafka技术进阶"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Kafka技术进阶&body=Check out this article: https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&title=Kafka技术进阶"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&name=Kafka技术进阶&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/04/29/Kafka%E6%8A%80%E6%9C%AF%E8%BF%9B%E9%98%B6/&t=Kafka技术进阶"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
