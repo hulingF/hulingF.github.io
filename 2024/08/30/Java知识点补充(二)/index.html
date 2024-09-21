@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Java知识点补充(一)1.操作系统1.1用户态和内核态是如何切换的？ 用户态切换到内核态的 3 种方式：  系统调用（Trap）：用户态进程 主动 要求切换到内核态的一种方式，主要是为了使用内核态才能做的事情比如读取磁盘资源。系统调用的机制其核心还是使用了操作系统为用户特别开放的一个中断来实现。 中断（Interrupt）：当外围设备完成用户请求的操作后，会向 CPU 发出相应的中断信号，这时">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java知识点补充(二)">
+<meta property="og:url" content="https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Java知识点补充(一)1.操作系统1.1用户态和内核态是如何切换的？ 用户态切换到内核态的 3 种方式：  系统调用（Trap）：用户态进程 主动 要求切换到内核态的一种方式，主要是为了使用内核态才能做的事情比如读取磁盘资源。系统调用的机制其核心还是使用了操作系统为用户特别开放的一个中断来实现。 中断（Interrupt）：当外围设备完成用户请求的操作后，会向 CPU 发出相应的中断信号，这时">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240830142040379.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240831102027785.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240831102155258.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240831102250814.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/5a7ed46c5c06abb45b5b25eee704d47c.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/413513530cfb07c08853b6d82d995481.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/831f727e736b4bfb38db18c1439811b5.jpg">
+<meta property="article:published_time" content="2024-08-30T05:26:07.355Z">
+<meta property="article:modified_time" content="2024-09-04T14:34:46.060Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240830142040379.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Java知识点补充(二)</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/09/05/Java%E4%B8%AD%E7%9A%84%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/08/26/%E6%8A%BD%E5%A5%96%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&text=Java知识点补充(二)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&is_video=false&description=Java知识点补充(二)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java知识点补充(二)&body=Check out this article: https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&name=Java知识点补充(二)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&t=Java知识点补充(二)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85-%E4%B8%80"><span class="toc-number">1.</span> <span class="toc-text">Java知识点补充(一)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.1.</span> <span class="toc-text">1.操作系统</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E7%94%A8%E6%88%B7%E6%80%81%E5%92%8C%E5%86%85%E6%A0%B8%E6%80%81%E6%98%AF%E5%A6%82%E4%BD%95%E5%88%87%E6%8D%A2%E7%9A%84%EF%BC%9F"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1用户态和内核态是如何切换的？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%88%86%E5%B8%83%E5%BC%8F%E9%99%90%E6%B5%81"><span class="toc-number">1.2.</span> <span class="toc-text">2.分布式限流</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E5%9F%BA%E4%BA%8E%E4%B8%AD%E5%BF%83%E5%8C%96%E7%9A%84%E9%99%90%E6%B5%81%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1基于中心化的限流方案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E5%9F%BA%E4%BA%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%99%90%E6%B5%81"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2基于负载均衡的分布式限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E5%9F%BA%E4%BA%8E%E5%88%86%E5%B8%83%E5%BC%8F%E5%8D%8F%E8%B0%83%E6%9C%8D%E5%8A%A1%E7%9A%84%E9%99%90%E6%B5%81"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3基于分布式协调服务的限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E6%96%B9%E6%A1%88%E6%80%BB%E7%BB%93"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4方案总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83"><span class="toc-number">1.3.</span> <span class="toc-text">3.配置中心</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%B6%85%E6%97%B6%E6%B2%BB%E7%90%86"><span class="toc-number">1.4.</span> <span class="toc-text">4.超时治理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1%E8%B5%84%E6%BA%90%E6%B6%88%E8%80%97%E5%88%86%E6%9E%90"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1资源消耗分析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-1%E9%9D%99%E6%80%81%E5%88%86%E6%9E%90"><span class="toc-number">1.4.1.1.</span> <span class="toc-text">4.1.1静态分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-2%E5%8A%A8%E6%80%81%E5%88%86%E6%9E%90"><span class="toc-number">1.4.1.2.</span> <span class="toc-text">4.1.2动态分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-3%E8%AE%BE%E7%BD%AE%E8%B6%85%E6%97%B6"><span class="toc-number">1.4.1.3.</span> <span class="toc-text">4.1.3设置超时</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2%E8%B6%85%E6%97%B6%E6%97%B6%E9%97%B4%E8%AE%BE%E7%BD%AE%E6%B2%BB%E7%90%86"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2超时时间设置治理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-1%E8%AE%BE%E7%BD%AE%E8%BF%87%E9%95%BF"><span class="toc-number">1.4.2.1.</span> <span class="toc-text">4.2.1设置过长</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-2%E8%AE%BE%E7%BD%AE%E8%BF%87%E7%9F%AD"><span class="toc-number">1.4.2.2.</span> <span class="toc-text">4.2.2设置过短</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-3%E5%90%88%E7%90%86%E8%AE%BE%E5%AE%9A"><span class="toc-number">1.4.2.3.</span> <span class="toc-text">4.2.3合理设定</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3%E5%91%8A%E8%AD%A6%E5%92%8C%E4%BC%98%E5%8C%96"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3告警和优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-3-1%E5%91%8A%E8%AD%A6"><span class="toc-number">1.4.3.1.</span> <span class="toc-text">4.3.1告警</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-3-2%E4%BC%98%E5%8C%96"><span class="toc-number">1.4.3.2.</span> <span class="toc-text">4.3.2优化</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Java知识点补充(二)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-08-30T05:26:07.355Z" class="dt-published" itemprop="datePublished">2024-08-30</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Java/" rel="tag">Java</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Java知识点补充-一"><a href="#Java知识点补充-一" class="headerlink" title="Java知识点补充(一)"></a>Java知识点补充(一)</h1><h2 id="1-操作系统"><a href="#1-操作系统" class="headerlink" title="1.操作系统"></a>1.操作系统</h2><h3 id="1-1用户态和内核态是如何切换的？"><a href="#1-1用户态和内核态是如何切换的？" class="headerlink" title="1.1用户态和内核态是如何切换的？"></a>1.1用户态和内核态是如何切换的？</h3><p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240830142040379.png" alt="image-20240830142040379"></p>
+<p>用户态切换到内核态的 3 种方式：</p>
+<ol>
+<li><strong>系统调用（Trap）</strong>：用户态进程 <strong>主动</strong> 要求切换到内核态的一种方式，主要是为了使用内核态才能做的事情比如读取磁盘资源。系统调用的机制其核心还是使用了操作系统为用户特别开放的一个中断来实现。</li>
+<li><strong>中断（Interrupt）</strong>：当外围设备完成用户请求的操作后，会向 CPU 发出相应的<code>中断信号</code>，这时 CPU 会暂停执行下一条即将要执行的指令转而去执行与中断信号对应的处理程序，如果先前执行的指令是用户态下的程序，那么这个转换的过程自然也就发生了由用户态到内核态的切换。比如硬盘读写操作完成，系统会切换到硬盘读写的中断处理程序中执行后续操作等。</li>
+<li><strong>异常（Exception）</strong>：当 CPU 在执行运行在用户态下的程序时，发生了某些事先不可知的异常，这时会触发由当前运行进程切换到处理此异常的内核相关程序中，也就转到了内核态，比如缺页异常。</li>
+</ol>
+<p>在系统的处理上，中断和异常类似，都是通过<code>中断向量表</code>来找到<code>相应的中断处理程序</code>进行处理。区别在于，中断来自处理器外部，不是由任何一条专门的指令造成，而异常是执行当前指令的结果。</p>
+<h2 id="2-分布式限流"><a href="#2-分布式限流" class="headerlink" title="2.分布式限流"></a>2.分布式限流</h2><blockquote>
+<p>详细参见：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/685595220">分布式限流方案的探索与实践 - 知乎 (zhihu.com)</a></p>
+</blockquote>
+<h3 id="2-1基于中心化的限流方案"><a href="#2-1基于中心化的限流方案" class="headerlink" title="2.1基于中心化的限流方案"></a>2.1基于中心化的限流方案</h3><p>通过一个中心化的限流器来控制所有服务器的请求。实现方式：</p>
+<ol>
+<li>选择一个中心化的组件，例如—Redis。</li>
+<li>定义限流规则，例如：可以设置每秒钟允许的最大请求数（QPS），并将这个值存储在Redis中。</li>
+<li>对于每个请求，服务器需要先向Redis请求令牌。</li>
+<li>如果获取到令牌，说明请求可以被处理；如果没有获取到令牌，说明请求被限流，可以返回一个错误信息或者稍后重试。</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">   <span class="string">&quot;context&quot;</span></span><br><span class="line">   <span class="string">&quot;fmt&quot;</span></span><br><span class="line">   <span class="string">&quot;go.uber.org/atomic&quot;</span></span><br><span class="line">   <span class="string">&quot;sync&quot;</span></span><br><span class="line"></span><br><span class="line">   <span class="string">&quot;git.code.oa.com/pcg-csd/trpc-ext/redis&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> RedisClient <span class="keyword">interface</span> &#123;</span><br><span class="line">   Do(ctx context.Context, cmd <span class="type">string</span>, args ...<span class="keyword">interface</span>&#123;&#125;) (<span class="keyword">interface</span>&#123;&#125;, <span class="type">error</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Client 数据库</span></span><br><span class="line"><span class="keyword">type</span> Client <span class="keyword">struct</span> &#123;</span><br><span class="line">   client RedisClient <span class="comment">// redis 操作</span></span><br><span class="line">   script <span class="type">string</span>      <span class="comment">// lua脚本</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// NewBucketClient 创建redis令牌桶</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewBucketClient</span><span class="params">(redis RedisClient)</span></span> *Client &#123;</span><br><span class="line">   helper := redis</span><br><span class="line">   <span class="keyword">return</span> &amp;Client&#123;</span><br><span class="line">      client: helper,</span><br><span class="line">      script: <span class="string">`</span></span><br><span class="line"><span class="string">         -- 令牌桶限流脚本</span></span><br><span class="line"><span class="string">         -- KEYS[1]: 桶的名称</span></span><br><span class="line"><span class="string">         -- ARGV[1]: 桶的容量</span></span><br><span class="line"><span class="string">         -- ARGV[2]: 令牌产生速率</span></span><br><span class="line"><span class="string">         </span></span><br><span class="line"><span class="string">         local bucket = KEYS[1]</span></span><br><span class="line"><span class="string">         local capacity = tonumber(ARGV[1])</span></span><br><span class="line"><span class="string">         local tokenRate = tonumber(ARGV[2])</span></span><br><span class="line"><span class="string">         </span></span><br><span class="line"><span class="string">         local redisTime = redis.call(&#x27;TIME&#x27;)</span></span><br><span class="line"><span class="string">         local now = tonumber(redisTime[1])</span></span><br><span class="line"><span class="string">         </span></span><br><span class="line"><span class="string">         local tokens, lastRefill = unpack(redis.call(&#x27;hmget&#x27;, bucket, &#x27;tokens&#x27;, &#x27;lastRefill&#x27;))</span></span><br><span class="line"><span class="string">         tokens = tonumber(tokens)</span></span><br><span class="line"><span class="string">         lastRefill = tonumber(lastRefill)</span></span><br><span class="line"><span class="string">         </span></span><br><span class="line"><span class="string">         if not tokens or not lastRefill then</span></span><br><span class="line"><span class="string">            tokens = capacity</span></span><br><span class="line"><span class="string">            lastRefill = now</span></span><br><span class="line"><span class="string">         else</span></span><br><span class="line"><span class="string">            local intervalsSinceLast = (now - lastRefill) * tokenRate</span></span><br><span class="line"><span class="string">            tokens = math.min(capacity, tokens + intervalsSinceLast)</span></span><br><span class="line"><span class="string">         end</span></span><br><span class="line"><span class="string">         </span></span><br><span class="line"><span class="string">         if tokens &lt; 1 then</span></span><br><span class="line"><span class="string">            return 0</span></span><br><span class="line"><span class="string">         else</span></span><br><span class="line"><span class="string">            redis.call(&#x27;hmset&#x27;, bucket, &#x27;tokens&#x27;, tokens - 1, &#x27;lastRefill&#x27;, now)</span></span><br><span class="line"><span class="string">            return 1</span></span><br><span class="line"><span class="string">         end</span></span><br><span class="line"><span class="string">      `</span>,</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取令牌，获取成功则立即返回true，否则返回false</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Client)</span></span> isAllowed(ctx context.Context, key <span class="type">string</span>, capacity <span class="type">int64</span>, tokenRate <span class="type">int64</span>) (<span class="type">bool</span>, <span class="type">error</span>) &#123;</span><br><span class="line">   result, err := redis.Int(c.client.Do(ctx, <span class="string">&quot;eval&quot;</span>, c.script, <span class="number">1</span>, key, capacity, tokenRate))</span><br><span class="line">   <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">      fmt.Println(<span class="string">&quot;Redis 执行错误:&quot;</span>, err)</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>, err</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> result == <span class="number">1</span>, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用检测</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">   c := NewBucketClient(redis.GetPoolByName(<span class="string">&quot;redis://127.0.0.1:6379&quot;</span>))</span><br><span class="line">   gw := sync.WaitGroup&#123;&#125;</span><br><span class="line">   gw.Add(<span class="number">120</span>)</span><br><span class="line">   count := atomic.Int64&#123;&#125;</span><br><span class="line">   <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">120</span>; i++ &#123;</span><br><span class="line">      <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(i <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">         <span class="keyword">defer</span> gw.Done()</span><br><span class="line">         status, err := c.isAllowed(context.Background(), <span class="string">&quot;test&quot;</span>, <span class="number">100</span>, <span class="number">10</span>)</span><br><span class="line">         <span class="keyword">if</span> status &#123;</span><br><span class="line">            count.Add(<span class="number">1</span>)</span><br><span class="line">         &#125;</span><br><span class="line">         fmt.Printf(<span class="string">&quot;go %d status:%v error: %v\n&quot;</span>, i, status, err)</span><br><span class="line">      &#125;(i)</span><br><span class="line">   &#125;</span><br><span class="line">   gw.Wait()</span><br><span class="line">   fmt.Printf(<span class="string">&quot;allow %d\n\n&quot;</span>, count.Load())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240831102027785.png" alt="image-20240831102027785"></p>
+<h3 id="2-2基于负载均衡的分布式限流"><a href="#2-2基于负载均衡的分布式限流" class="headerlink" title="2.2基于负载均衡的分布式限流"></a>2.2基于负载均衡的分布式限流</h3><p>可以看到中心化限流方案的存在较高的单点故障风险，且带宽瓶颈比较严重。在这个基础上本文结合本地缓存单机限流和负载均衡设计了一个新的分布式限流方案。具体方案如下：</p>
+<ol>
+<li>使用负载均衡器或分布式服务发现（北极星即可做到），将请求均匀地分发到每个机器上。这确保了每个机器都能处理一部分请求。</li>
+<li>在每个机器上维护本机的限流状态，实现本地缓存单机限流的逻辑。使用令牌桶限流算法，在每个机器上独立地进行限流控制。每秒钟处理的请求数、令牌桶的令牌数量等。根据本地限流状态，对到达的请求进行限流判断。</li>
+<li>准备相应的动态调整方案，可以根据每个机器的实际负载情况，动态地调整限流参数。例如，如果一个机器的CPU或内存使用率过高，你可以降低这个机器的限流阈值，减少这个机器的请求处理量。反之，如果一个机器的资源使用率较低，提高这个机器的限流阈值，增加这个机器的请求处理量。</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240831102155258.png" alt="image-20240831102155258"></p>
+<h3 id="2-3基于分布式协调服务的限流"><a href="#2-3基于分布式协调服务的限流" class="headerlink" title="2.3基于分布式协调服务的限流"></a>2.3基于分布式协调服务的限流</h3><p>使用ZooKeeper或者etcd等分布式协调服务来实现限流。每台服务器都会向分布式协调服务申请令牌，只有获取到令牌的请求才能被处理。基本方案：</p>
+<ol>
+<li>初始化令牌桶：在ZooKeeper中创建一个节点，节点的数据代表令牌的数量。初始时，将数据设置为令牌桶的容量。</li>
+<li>申请令牌：当一个请求到达时，服务器首先向ZooKeeper申请一个令牌。这可以通过获取节点的分布式锁，然后将节点的数据减1实现。如果操作成功，说明申请到了令牌，请求可以被处理；如果操作失败，说明令牌已经用完，请求需要被拒绝或者等待。</li>
+<li>释放令牌：当一个请求处理完毕时，服务器需要向ZooKeeper释放一个令牌。这可以通过获取节点的分布式锁，然后将节点的数据加1实现。</li>
+<li>补充令牌：可以设置一个定时任务，定期向ZooKeeper中的令牌桶补充令牌。补充的频率和数量可以根据系统的负载情况动态调整。</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/image-20240831102250814.png" alt="image-20240831102250814"></p>
+<h3 id="2-4方案总结"><a href="#2-4方案总结" class="headerlink" title="2.4方案总结"></a>2.4方案总结</h3><p>一个好的限流设计必须要考虑到业务的特性和需求，同时具备以下六点：</p>
+<ol>
+<li><strong>多级限流</strong>：除了主备复制的限流服务，可以考虑实现多级限流策略。例如，可以在应用层、服务层和数据层都设置限流，这样可以更好地防止系统过载。</li>
+<li><strong>动态阈值调整</strong>：我们可以根据系统的实时负载情况动态调整限流策略。例如，当系统负载较低时，我们可以放宽限流策略；当系统负载较高时，我们可以收紧限流策略。</li>
+<li><strong>灵活维度</strong>：限流策略应该能够根据不同的业务场景进行调整。除了接口，设备，IP，账户ID等维度外，我们还可以考虑更细粒度的限流。例如，我们可以根据用户的行为模式进行限流，这样可以更好地防止恶意用户的攻击。</li>
+<li><strong>解耦性</strong>：限流应该作为一个基础服务，与具体的业务逻辑分离。这样，当业务逻辑发生变化时，不需要修改限流服务的代码，只需要调整限流策略即可。</li>
+<li><strong>容错性</strong>：限流服务应该具有高可用性，但是如果出现问题，业务应该有备选方案（熔断、降级）。这可能包括使用备用的限流服务，或者根据业务的敏感性决定是否放行请求。</li>
+<li><strong>监控和报警</strong>：对限流策略应进行实时监控，并设置报警机制。当限流策略触发时，可立即收到报警，以便我们可以及时地处理问题。</li>
+</ol>
+<h2 id="3-配置中心"><a href="#3-配置中心" class="headerlink" title="3.配置中心"></a>3.配置中心</h2><blockquote>
+<p>详细参见：<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=Mzg3OTU5NzQ1Mw==&mid=2247486918&idx=1&sn=5651cd0b4b9c8e68bcfa55c00c0950d6&chksm=cf034f24f874c632511684057337a744c54702543ec3690aa06dbf4bbaf980b2828f52276c9b&scene=21#wechat_redirect">注册中心原理和选型：Zookeeper、Eureka、Nacos、Consul和Etcd (qq.com)</a></p>
+</blockquote>
+<h2 id="4-超时治理"><a href="#4-超时治理" class="headerlink" title="4.超时治理"></a>4.超时治理</h2><blockquote>
+<p>详细参见：<a target="_blank" rel="noopener" href="https://www.infoq.cn/article/eyrslar53l6hjm5yjgyx">微服务之间调用超时的设置治理_架构_奇正_InfoQ精选文章</a></p>
+</blockquote>
+<p>分布式应⽤的挑战之⼀就是如何管理远程服务的可用性和它们的响应。本文主要探讨服务的响应时间对系统的影响和应对。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/5a7ed46c5c06abb45b5b25eee704d47c.jpg" alt="img"></p>
+<p>上图是简化的微服务调用链路过程，为清晰阐述三个相关方，图中的客户端被限定为用户端（如移动端应用、浏览器页面等），服务端被区分为服务消费方（网络调用中客户端）和服务提供方（网络调用中服务端）。⼤部分服务既为服务消费方，⼜为服务提供方，如处于调⽤链路中间的业务服务，大概率需要去整合数据，所以通常会同时作为服务消费方和服务提供方，两种资源消耗并存。小部分服务是纯粹的服务提供方，如数据库、缓存、ZooKeeper等。下⽂先来分析服务响应时间过⻓对资源消耗问题。</p>
+<h3 id="4-1资源消耗分析"><a href="#4-1资源消耗分析" class="headerlink" title="4.1资源消耗分析"></a>4.1资源消耗分析</h3><h4 id="4-1-1静态分析"><a href="#4-1-1静态分析" class="headerlink" title="4.1.1静态分析"></a>4.1.1静态分析</h4><p>微服务都有⾃身的硬件资源上限，直观来看，响应时间会对资源消耗产生直接影响。</p>
+<ul>
+<li>服务消费方：<ul>
+<li>协议消耗，每次发起TCP连接请求时，通常会让系统选取⼀个空闲的本地端⼝，该端⼝是独占的，不能和其他TCP连接共享。TCP端⼝的数据类型是unsigned short，因此可⽤端⼝最多只有65535，所以在全部作为client端的情况下，最⼤TCP连接数65535。</li>
+<li>除端口消耗外，发起调⽤的业务进程、线程、协程等待过程中，⽆法释放其所消耗的内存、CPU等，是服务消费方发起调用的主要消耗。</li>
+</ul>
+</li>
+<li>服务提供方：<ul>
+<li>协议消耗，主要是建立连接的消耗，每接收每⼀个TCP连接都要占⼀个文件描述符，理论上是server端单机最大TCP连接数约为2的48次方。</li>
+<li>业务逻辑消耗。在复杂的业务逻辑、机器资源和网络带宽条件下，最大并发TCP连接数远不能达到理论上限，有时候会发现，单机1w并发往往也是比较困难。因此，服务提供方主要是业务逻辑的大量资源消耗，如CPU、网络带宽、磁盘IO等。</li>
+</ul>
+</li>
+</ul>
+<h4 id="4-1-2动态分析"><a href="#4-1-2动态分析" class="headerlink" title="4.1.2动态分析"></a>4.1.2动态分析</h4><p><code>在调用持续发生且服务提供方不及时返回的情况下，未触发性能拐点前，可以简化认为资源的消耗是线性增长。</code>微服务发起⼀个请求，会占⽤⼀个空闲的本地端⼝，当然，每个连接所对应的业务处理过程，也会对应消耗内存、IO、CPU等资源，简化为如下公式：</p>
+<blockquote>
+<p>RR &#x3D; RT - QPS * RCPR * Duration - Release * Tinny_T </p>
+</blockquote>
+<p>其中，资源容量（Resource Total）受单机性能影响，可以简化为固定值；单请求消耗资源数（ResourceCostPerRequest）受业务影响，也可以简化为固定值。那么，资源剩余数（Resource Remaining），将受这三个变量影响：每秒请求数（QPS）、请求持续时间 （Duration）和资源释放的速度（Release * Tinny_T）。在连接不释放的情境下，Release简化为0，则上⾯公式简化为：</p>
+<blockquote>
+<p>RR &#x3D; RT - QPS * RCPR * Duration</p>
+</blockquote>
+<p>可以看到，系统所剩余资源，随Duration线性减少，最终被耗尽。</p>
+<h4 id="4-1-3设置超时"><a href="#4-1-3设置超时" class="headerlink" title="4.1.3设置超时"></a>4.1.3设置超时</h4><p>在设定超时时间后。由于资源释放速度较快，可以假设为⼀旦主动关闭连接，资源立即释放。那么，系统内所保留的资源可以简化为设置超时时间（Timeout Value）时间段内连接所保持的资源：</p>
+<blockquote>
+<p>RR &#x3D; RT - QPS * RCPR * TV</p>
+</blockquote>
+<p><code>在资源总量、QPS固定、且发生超时的情况下，超时时间和资源消耗的速度和成近似线性正比。所以从尽快释放消耗资源的角度来看，超时时间的设置应当和QPS成反比，QPS越⾼，超时时间应当越短。</code></p>
+<h3 id="4-2超时时间设置治理"><a href="#4-2超时时间设置治理" class="headerlink" title="4.2超时时间设置治理"></a>4.2超时时间设置治理</h3><p>从资源静态和动态分析看，我们应当规范设置调⽤超时时间。<code>设置超时时间的意义，是在极端情况下，采用主动的快速失败策略，使得资源消耗与释放资源之间达到平衡，避免调用双方因资源耗尽而宕机</code>。超时时间设置不当，容易引发生产故障，线上已经有诸多血的教训。</p>
+<h4 id="4-2-1设置过长"><a href="#4-2-1设置过长" class="headerlink" title="4.2.1设置过长"></a>4.2.1设置过长</h4><p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/413513530cfb07c08853b6d82d995481.jpg" alt="img"></p>
+<p>超时时间过长容易引起降级失效、系统崩溃、连接池爆满等问题。如下图，内容服务是面向用户直接提供知识内容的核心服务。收藏服务返回用户对内容的是否收藏，属于低优先级服务。如果内容服务请求收藏服务设置超时时间过长，如图中，虽然设置1S超时，但是重试累计3S，则⼀旦收藏服务发生宕机（通常是由于上游QPS异常导致），则内容服务会失效，无法返回给用户数据，甚⾄发生串联雪崩。</p>
+<h4 id="4-2-2设置过短"><a href="#4-2-2设置过短" class="headerlink" title="4.2.2设置过短"></a>4.2.2设置过短</h4><p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/831f727e736b4bfb38db18c1439811b5.jpg" alt="img"></p>
+<p>超时时间设置过短，实际生产中容易因网络抖动而告警频繁，造成服务不稳定等用户体验问题。如内容服务调⽤资源服务超时时间设置200ms，资源服务调用ID发号器服务超时时间设置为300ms，⼀旦网络抖动后，资源服务200ms即超时返回，资源服务对下游的调⽤300ms超时也无实际意义。</p>
+<h4 id="4-2-3合理设定"><a href="#4-2-3合理设定" class="headerlink" title="4.2.3合理设定"></a>4.2.3合理设定</h4><p>合理设置超时时间，对系统的稳定而言，非常重要，我们可以从以下角度来考虑设置值：</p>
+<ul>
+<li><strong>用户角度</strong>。微服务最终为服务对象是用户，<code>从⽤户交互数据来讲，服务响应时间在300ms内最佳</code>，2000ms内仍可接受。通常情况下，建议超时的上限值为2000ms，超过2000ms的非重要请求，则有必要被降级处理。 </li>
+<li><strong>技术角度</strong>。同时考虑到TCP算法中<code>Delayed ACK + Nagle算法开启</code>的场景，<code>最小delay值40ms</code>，建议下限值设定为50ms；在RTT较小的正常网络环境中，TCP数据包丢包，<code>超时重传的最小值200ms</code>，因此我们建议300ms可以视为超时设置的最佳选择，为重传保留⼀定的余量。</li>
+<li><strong>资源消耗角度</strong>。依据资源消耗的分析，<code>超时时间长短应当和QPS成反比例</code>。我们设定基础值超时设定为300ms、100QPS，并根据实际QPS做调整。</li>
+</ul>
+<h3 id="4-3告警和优化"><a href="#4-3告警和优化" class="headerlink" title="4.3告警和优化"></a>4.3告警和优化</h3><p>超时时间设置是系统的第⼀重保护，超时时间设置后，需要配合超时告警和响应时间优化，才能形成构成的完整的系统自我修复的闭环。</p>
+<h4 id="4-3-1告警"><a href="#4-3-1告警" class="headerlink" title="4.3.1告警"></a>4.3.1告警</h4><p>超时告警，会直接反馈超时设置的效果，而且也是长耗时请求被超时设置拦截后，系统自我保护的下⼀个重要环节。系统调用发生超时告警，可以通过运维体系监控告警让人力及时介入排查问题，以避免更大损失。 </p>
+<p>超时告警通常只是告警监控系统⾥⼀个子监控项，从实际生产中来看，超时告警往往也是最频繁发生的告警，超时告警如何在保障灵敏度的同时，避免过度告警，需要专门考虑。对此，我们建议从范围和时间两个维度来区分超时告警：</p>
+<p>从范围来看，可以将<code>局部性超时</code>和<code>大面积超时告警</code>区分对待：</p>
+<ul>
+<li><p>大面积告警，紧急人力介入，通常是运维网络故障等原因，可以结合网络监控来具体定位。 </p>
+</li>
+<li><p>局部小范围告警，作为非紧急重要事情处理。</p>
+</li>
+</ul>
+<p>从时间来看，将<code>波动性</code>和<code>持续性</code>超时告警区分对待：</p>
+<ul>
+<li>持续性问题，大概率是业务问题，紧急人力介入从而避免业务发生重大损失。</li>
+<li>波动性问题，根据出现频率，排查隐藏线上问题并解决，作为非紧急重要事情处理。</li>
+</ul>
+<blockquote>
+<p>对于如何定义短暂性的波动，可以由运维评估出日常<code>网络平均抖动时长</code>，超过网络抖动时长⼀定阈值后，则触发紧急告警。如果运维体系资源充足，建议将超时告警波动性监控细化到具体接口。</p>
+</blockquote>
+<h4 id="4-3-2优化"><a href="#4-3-2优化" class="headerlink" title="4.3.2优化"></a>4.3.2优化</h4><p>响应时间优化是超时治理的治本措施。理想情况下，服务的响应时间当然是越快越好，但也要和当前业务发展相匹配，要保障系统稳定，也要避免为优化响应时间耗费过多成本。</p>
+<p><code>原则上，应当依据超时设置时间来优化响应时间，而非以响应时间来决定超时时间。</code>服务超时，可能是应用层代码错误、网络丢包，服务器自身硬件异常、或大量数据库操作慢查询等问题导致。可以采⽤的措施有：</p>
+<ul>
+<li>排查异常问题，如排查业务超时重试次数、排查错误日志、排查库表操作是否有慢查询等。 </li>
+<li>调整软件设计架构，提高业务响应速度，如使用缓存、拆分调整架构减少调用层级等。</li>
+<li>调整运维方式，如发版引发的告警，则可以从调用框架的重试中进行解决，也可以依赖滚动发布进行解决。</li>
+</ul>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85-%E4%B8%80"><span class="toc-number">1.</span> <span class="toc-text">Java知识点补充(一)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.1.</span> <span class="toc-text">1.操作系统</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E7%94%A8%E6%88%B7%E6%80%81%E5%92%8C%E5%86%85%E6%A0%B8%E6%80%81%E6%98%AF%E5%A6%82%E4%BD%95%E5%88%87%E6%8D%A2%E7%9A%84%EF%BC%9F"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1用户态和内核态是如何切换的？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%88%86%E5%B8%83%E5%BC%8F%E9%99%90%E6%B5%81"><span class="toc-number">1.2.</span> <span class="toc-text">2.分布式限流</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E5%9F%BA%E4%BA%8E%E4%B8%AD%E5%BF%83%E5%8C%96%E7%9A%84%E9%99%90%E6%B5%81%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1基于中心化的限流方案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E5%9F%BA%E4%BA%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%99%90%E6%B5%81"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2基于负载均衡的分布式限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E5%9F%BA%E4%BA%8E%E5%88%86%E5%B8%83%E5%BC%8F%E5%8D%8F%E8%B0%83%E6%9C%8D%E5%8A%A1%E7%9A%84%E9%99%90%E6%B5%81"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3基于分布式协调服务的限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E6%96%B9%E6%A1%88%E6%80%BB%E7%BB%93"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4方案总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83"><span class="toc-number">1.3.</span> <span class="toc-text">3.配置中心</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%B6%85%E6%97%B6%E6%B2%BB%E7%90%86"><span class="toc-number">1.4.</span> <span class="toc-text">4.超时治理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1%E8%B5%84%E6%BA%90%E6%B6%88%E8%80%97%E5%88%86%E6%9E%90"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1资源消耗分析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-1%E9%9D%99%E6%80%81%E5%88%86%E6%9E%90"><span class="toc-number">1.4.1.1.</span> <span class="toc-text">4.1.1静态分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-2%E5%8A%A8%E6%80%81%E5%88%86%E6%9E%90"><span class="toc-number">1.4.1.2.</span> <span class="toc-text">4.1.2动态分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-3%E8%AE%BE%E7%BD%AE%E8%B6%85%E6%97%B6"><span class="toc-number">1.4.1.3.</span> <span class="toc-text">4.1.3设置超时</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2%E8%B6%85%E6%97%B6%E6%97%B6%E9%97%B4%E8%AE%BE%E7%BD%AE%E6%B2%BB%E7%90%86"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2超时时间设置治理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-1%E8%AE%BE%E7%BD%AE%E8%BF%87%E9%95%BF"><span class="toc-number">1.4.2.1.</span> <span class="toc-text">4.2.1设置过长</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-2%E8%AE%BE%E7%BD%AE%E8%BF%87%E7%9F%AD"><span class="toc-number">1.4.2.2.</span> <span class="toc-text">4.2.2设置过短</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-3%E5%90%88%E7%90%86%E8%AE%BE%E5%AE%9A"><span class="toc-number">1.4.2.3.</span> <span class="toc-text">4.2.3合理设定</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3%E5%91%8A%E8%AD%A6%E5%92%8C%E4%BC%98%E5%8C%96"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3告警和优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-3-1%E5%91%8A%E8%AD%A6"><span class="toc-number">1.4.3.1.</span> <span class="toc-text">4.3.1告警</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-3-2%E4%BC%98%E5%8C%96"><span class="toc-number">1.4.3.2.</span> <span class="toc-text">4.3.2优化</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&text=Java知识点补充(二)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&is_video=false&description=Java知识点补充(二)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java知识点补充(二)&body=Check out this article: https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&title=Java知识点补充(二)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&name=Java知识点补充(二)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/08/30/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85(%E4%BA%8C)/&t=Java知识点补充(二)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

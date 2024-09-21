@@ -17,7 +17,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/FutureTask%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231107182256974.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/FutureTask%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/java-thread-x-juc-futuretask-2.png">
 <meta property="article:published_time" content="2023-11-07T08:36:22.663Z">
-<meta property="article:modified_time" content="2024-03-15T02:17:35.089Z">
+<meta property="article:modified_time" content="2024-09-06T02:31:22.993Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="并发编程">
 <meta name="twitter:card" content="summary">
@@ -168,7 +168,7 @@
   <div class="content e-content" itemprop="articleBody">
     <h1 id="FutureTask类源码剖析"><a href="#FutureTask类源码剖析" class="headerlink" title="FutureTask类源码剖析"></a>FutureTask类源码剖析</h1><h2 id="一、FutrueTask类的简介"><a href="#一、FutrueTask类的简介" class="headerlink" title="一、FutrueTask类的简介"></a>一、FutrueTask类的简介</h2><p>FutureTask为<code>Future</code>提供了基础实现，如获取任务执行结果和取消任务等，如果任务尚未完成，获取任务执行结果时将会阻塞。一旦执行结束，任务就不能被重启或取消，除非使用runAndReset执行计算。FutureTask常用来封装Callable和Runnable(本质上其实还是Callable)，也可以作为一个任务提交到线程池中执行。</p>
 <blockquote>
-<p>FutureTask类当前设计中的同步控制依赖于通过CAS更新的“状态”字段来跟踪完成情况，以及一个简单的Treiber堆栈来保存等待线程。</p>
+<p>FutureTask类当前设计中的同步控制依赖于通过CAS更新的状态字段来跟踪完成情况，以及一个简单的Treiber堆栈来保存等待线程。</p>
 </blockquote>
 <p><img src="/imgs/FutureTask%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/image-20231107163623828.png" alt="image-20231107163623828"></p>
 <p>可以看到,FutureTask实现了RunnableFuture接口，而RunnableFuture接口继承了Runnable接口和Future接口，因此FutureTask既能当做一个Runnable对象直接被Thread执行，也能作为Future对象用来异步计算得到Callable的计算结果。</p>
@@ -277,9 +277,9 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">removeWaiter</span><span class="params">(WaitNode node)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (node != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 首先置空线程</span></span><br><span class="line">        node.thread = <span class="literal">null</span>;</span><br><span class="line">        retry:</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;          <span class="comment">// restart on removeWaiter race</span></span><br><span class="line">            <span class="comment">// 依次遍历查找</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="type">WaitNode</span> <span class="variable">pred</span> <span class="operator">=</span> <span class="literal">null</span>, q = waiters, s; q != <span class="literal">null</span>; q = s) &#123;</span><br><span class="line">                <span class="comment">// 后继节点</span></span><br><span class="line">                s = q.next;</span><br><span class="line">                <span class="comment">// 前序节点</span></span><br><span class="line">                <span class="keyword">if</span> (q.thread != <span class="literal">null</span>)</span><br><span class="line">                    pred = q;</span><br><span class="line">                <span class="comment">// 待删除的节点不是头节点，直接删除</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (pred != <span class="literal">null</span>) &#123;</span><br><span class="line">                    pred.next = s;</span><br><span class="line">                    <span class="keyword">if</span> (pred.thread == <span class="literal">null</span>) <span class="comment">// check for race</span></span><br><span class="line">                        <span class="keyword">continue</span> retry;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 待删除的节点是头节点，利用CAS更新头节点</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (!UNSAFE.compareAndSwapObject(<span class="built_in">this</span>, waitersOffset, q, s)) </span><br><span class="line">                    <span class="keyword">continue</span> retry;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <ul>
-<li><p>如果当前状态为结束状态(state&gt;COMPLETING),则根据需要置空等待节点的线程，并返回 FutureTask 状态；</p>
+<li><p>如果当前状态为结束状态(state&gt;COMPLETING),则根据需要置空等待节点的线程，并返回FutureTask状态；</p>
 </li>
-<li><p>如果当前状态为正在完成(COMPLETING)，说明此时 FutureTask 还不能做出超时动作，为任务让出CPU执行时间片；</p>
+<li><p>如果当前状态为正在完成(COMPLETING)，说明此时FutureTask还不能做出超时动作，为任务让出CPU执行时间片；</p>
 </li>
 <li><p>如果state为NEW，先新建一个WaitNode，然后CAS修改当前waiters；</p>
 </li>

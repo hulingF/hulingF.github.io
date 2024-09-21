@@ -6,19 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="Redis原理之数据结构1.动态字符串SDS1.1SDS由来 1.2SDS结构 1.3SDS扩容 2.IntSet2.1IntSet结构 2.2IntSet存储  2.3IntSet升级 2.4IntSet源码   3.Dict3.1Dict的结构   3.2Dict的渐进式扩容     4.ZipList4.1ZipList结构     4.2ZipList的连锁更新  5.QuickList5">
+    <meta name="description" content="Redis原理之数据结构1.动态字符串SDS1.1SDS由来 1.2SDS结构 1.3SDS扩容 2.IntSet2.1IntSet结构 2.2IntSet存储 2.3IntSet升级 IntSet升级过程中需要自动升级编码方式，这是为了保证统一寻址的方便性。    2.4IntSet源码 IntSet是用来保存不重复的整数集合的，底层采用整数数组+编码方式的实现，为了快速查询元素是否已经存在以及">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis原理之数据结构">
 <meta property="og:url" content="https://hulingf.github.io/2024/02/07/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
-<meta property="og:description" content="Redis原理之数据结构1.动态字符串SDS1.1SDS由来 1.2SDS结构 1.3SDS扩容 2.IntSet2.1IntSet结构 2.2IntSet存储  2.3IntSet升级 2.4IntSet源码   3.Dict3.1Dict的结构   3.2Dict的渐进式扩容     4.ZipList4.1ZipList结构     4.2ZipList的连锁更新  5.QuickList5">
+<meta property="og:description" content="Redis原理之数据结构1.动态字符串SDS1.1SDS由来 1.2SDS结构 1.3SDS扩容 2.IntSet2.1IntSet结构 2.2IntSet存储 2.3IntSet升级 IntSet升级过程中需要自动升级编码方式，这是为了保证统一寻址的方便性。    2.4IntSet源码 IntSet是用来保存不重复的整数集合的，底层采用整数数组+编码方式的实现，为了快速查询元素是否已经存在以及">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224103617911.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224103827942.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224104401726.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224104536649.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224104741974.png">
-<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224105112468.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224105844035.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224110112143.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224110239416.png">
@@ -29,6 +28,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224131039732.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224131254148.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224131551017.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240816111823708.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224132058874.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224132129371.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224135758774.png">
@@ -51,7 +51,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224174104565.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224174129605.png">
 <meta property="article:published_time" content="2024-02-07T13:49:36.390Z">
-<meta property="article:modified_time" content="2024-03-21T15:41:19.255Z">
+<meta property="article:modified_time" content="2024-09-02T02:28:46.568Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
@@ -205,28 +205,69 @@
 <h3 id="1-3SDS扩容"><a href="#1-3SDS扩容" class="headerlink" title="1.3SDS扩容"></a>1.3SDS扩容</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224104401726.png" alt="image-20240224104401726"></p>
 <h2 id="2-IntSet"><a href="#2-IntSet" class="headerlink" title="2.IntSet"></a>2.IntSet</h2><h3 id="2-1IntSet结构"><a href="#2-1IntSet结构" class="headerlink" title="2.1IntSet结构"></a>2.1IntSet结构</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224104536649.png" alt="image-20240224104536649"></p>
 <h3 id="2-2IntSet存储"><a href="#2-2IntSet存储" class="headerlink" title="2.2IntSet存储"></a>2.2IntSet存储</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224104741974.png" alt="image-20240224104741974"></p>
-<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224105112468.png" alt="image-20240224105112468"></p>
-<h3 id="2-3IntSet升级"><a href="#2-3IntSet升级" class="headerlink" title="2.3IntSet升级"></a>2.3IntSet升级</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224105844035.png" alt="image-20240224105844035"></p>
-<h3 id="2-4IntSet源码"><a href="#2-4IntSet源码" class="headerlink" title="2.4IntSet源码"></a>2.4IntSet源码</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224110112143.png" alt="image-20240224110112143"></p>
+<h3 id="2-3IntSet升级"><a href="#2-3IntSet升级" class="headerlink" title="2.3IntSet升级"></a>2.3IntSet升级</h3><blockquote>
+<p>IntSet升级过程中需要自动升级编码方式，这是为了保证统一寻址的方便性。 </p>
+</blockquote>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224105844035.png" alt="image-20240224105844035"></p>
+<h3 id="2-4IntSet源码"><a href="#2-4IntSet源码" class="headerlink" title="2.4IntSet源码"></a>2.4IntSet源码</h3><blockquote>
+<p>IntSet是用来保存不重复的整数集合的，底层采用整数数组+编码方式的实现，为了快速查询元素是否已经存在以及新元素需要插入的位置，IntSet实现上是一个有序整数数组，利用二分查找可以快速定位元素和待插入位置。</p>
+</blockquote>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224110112143.png" alt="image-20240224110112143"></p>
+<blockquote>
+<p>原数组元素倒序迁移，新加入的整数超出原编码方式的最大表示范围，可能为正数或负数；<br>1.如果新加入的整数newNum是大的正数，则原数组元素倒叙按序迁移，newNum放在末尾即可<br>2.如果新加入的整数newNum是大的负数，则原数组元素倒叙向后多迁移一位，newNum放在头部即可</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224110239416.png" alt="image-20240224110239416"></p>
+<blockquote>
+<p>IntSet由于是采用有序整数数组的实现方案，因此适用于元素数量不多的情况，此时可以兼顾速度和内存占用，一旦元素数量很多IntSet结构就不适用了，Dict是更好的方案。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224110427743.png" alt="image-20240224110427743"></p>
-<h2 id="3-Dict"><a href="#3-Dict" class="headerlink" title="3.Dict"></a>3.Dict</h2><h3 id="3-1Dict的结构"><a href="#3-1Dict的结构" class="headerlink" title="3.1Dict的结构"></a>3.1Dict的结构</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224114412952.png" alt="image-20240224114412952"></p>
+<h2 id="3-Dict"><a href="#3-Dict" class="headerlink" title="3.Dict"></a>3.Dict</h2><h3 id="3-1Dict的结构"><a href="#3-1Dict的结构" class="headerlink" title="3.1Dict的结构"></a>3.1Dict的结构</h3><blockquote>
+<p>Dict类似于Java中的HashMap，是数组+链表的结构，通过Key和哈希函数计算出对应的哈希值，哈希值取模(size-1或sizemask)就得到了哈希槽位置，哈希冲突后使用拉链法形成一个单向链表。</p>
+</blockquote>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224114412952.png" alt="image-20240224114412952"></p>
+<blockquote>
+<p>单向链表采用头插法</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224114744038.png" alt="image-20240224114744038"></p>
+<blockquote>
+<p>任何一个字典都包含两个哈希表，其中一个用于ReHash使用</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224115014777.png" alt="image-20240224115014777"></p>
-<h3 id="3-2Dict的渐进式扩容"><a href="#3-2Dict的渐进式扩容" class="headerlink" title="3.2Dict的渐进式扩容"></a>3.2Dict的渐进式扩容</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224131039732.png" alt="image-20240224131039732"></p>
+<h3 id="3-2Dict的渐进式扩容"><a href="#3-2Dict的渐进式扩容" class="headerlink" title="3.2Dict的渐进式扩容"></a>3.2Dict的渐进式扩容</h3><blockquote>
+<p>类似于Java中HashMap的扩容，Dict在负载因子超过一定阈值就会触发哈希表扩容，防止链表过长影响查询效率，扩容的大小是超过used+1的最小的2的n次方。</p>
+</blockquote>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224131039732.png" alt="image-20240224131039732"></p>
+<blockquote>
+<p>不仅新增时会扩容，删除时也会缩容，最终都是调用dictExpend函数，进行渐进式rehash</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224131254148.png" alt="image-20240224131254148"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224131551017.png" alt="image-20240224131551017"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240816111823708.png" alt="image-20240816111823708"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224132058874.png" alt="image-20240224132058874"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">dictRehash</span><span class="params">(dict *d, <span class="type">int</span> n)</span> &#123;</span><br><span class="line">    <span class="type">int</span> empty_visits = n*<span class="number">10</span>; <span class="comment">// 可以遍历的空哈希桶位的最大数量</span></span><br><span class="line">    <span class="keyword">if</span> (!dictIsRehashing(d)) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// ht[0]还有剩余未转移的元素，分批次rehash的批次为n，默认是1</span></span><br><span class="line">    <span class="keyword">while</span>(n-- &amp;&amp; d-&gt;ht[<span class="number">0</span>].used != <span class="number">0</span>) &#123;</span><br><span class="line">        dictEntry *de, *nextde;</span><br><span class="line">        <span class="comment">// rehashidx表明rehash进度，不能超过原哈希表的size</span></span><br><span class="line">        assert(d-&gt;ht[<span class="number">0</span>].size &gt; (<span class="type">unsigned</span> <span class="type">long</span>)d-&gt;rehashidx);</span><br><span class="line">        <span class="comment">// 遇到空的哈希桶可以跳过不需要rehahsh，最多跳过10*n个</span></span><br><span class="line">        <span class="keyword">while</span>(d-&gt;ht[<span class="number">0</span>].table[d-&gt;rehashidx] == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            d-&gt;rehashidx++;</span><br><span class="line">            <span class="keyword">if</span> (--empty_visits == <span class="number">0</span>) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 待rehash迁移的哈希链表</span></span><br><span class="line">        de = d-&gt;ht[<span class="number">0</span>].table[d-&gt;rehashidx];</span><br><span class="line">        <span class="comment">// 将链表的所有entry从原哈希表迁移到新哈希表</span></span><br><span class="line">        <span class="keyword">while</span>(de) &#123;</span><br><span class="line">            <span class="type">uint64_t</span> h;</span><br><span class="line">            <span class="comment">// 记录链表当前元素的下一个元素</span></span><br><span class="line">            nextde = de-&gt;next;</span><br><span class="line">            <span class="comment">// 计算链表当前元素在新哈希表的位置</span></span><br><span class="line">            h = dictHashKey(d, de-&gt;key) &amp; d-&gt;ht[<span class="number">1</span>].sizemask;</span><br><span class="line">            <span class="comment">// 头插法迁移</span></span><br><span class="line">            de-&gt;next = d-&gt;ht[<span class="number">1</span>].table[h];</span><br><span class="line">            d-&gt;ht[<span class="number">1</span>].table[h] = de;</span><br><span class="line">            <span class="comment">// 更新ht[0]和ht[1]的used</span></span><br><span class="line">            d-&gt;ht[<span class="number">0</span>].used--;</span><br><span class="line">            d-&gt;ht[<span class="number">1</span>].used++;</span><br><span class="line">            <span class="comment">// 链表元素后移</span></span><br><span class="line">            de = nextde;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 当前链表桶位rehash结束</span></span><br><span class="line">        d-&gt;ht[<span class="number">0</span>].table[d-&gt;rehashidx] = <span class="literal">NULL</span>;</span><br><span class="line">        <span class="comment">// 更新rehash进度</span></span><br><span class="line">        d-&gt;rehashidx++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 检查哈希表是否rehash全部完成</span></span><br><span class="line">    <span class="keyword">if</span> (d-&gt;ht[<span class="number">0</span>].used == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 释放原哈希表内存空间</span></span><br><span class="line">        zfree(d-&gt;ht[<span class="number">0</span>].table);</span><br><span class="line">        <span class="comment">// 将新哈希表ht[1]赋值给ht[0]</span></span><br><span class="line">        d-&gt;ht[<span class="number">0</span>] = d-&gt;ht[<span class="number">1</span>];</span><br><span class="line">        <span class="comment">// 将新哈希表置为NULL</span></span><br><span class="line">        _dictReset(&amp;d-&gt;ht[<span class="number">1</span>]);</span><br><span class="line">        <span class="comment">// rehash结束</span></span><br><span class="line">        d-&gt;rehashidx = <span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>1.rehash阶段数据是惰性渐进式迁移的，在每次增删改查时都会触发一个哈希桶位的数据迁移；<br>2.rehash过程中数据是双读单写的，双读指的是从ht[0]和ht[1]两个哈希表中查找数据，单写指的是只向ht[1]写入新数据，保证了旧哈希表的元素逐渐消亡。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224132129371.png" alt="image-20240224132129371"></p>
 <h2 id="4-ZipList"><a href="#4-ZipList" class="headerlink" title="4.ZipList"></a>4.ZipList</h2><h3 id="4-1ZipList结构"><a href="#4-1ZipList结构" class="headerlink" title="4.1ZipList结构"></a>4.1ZipList结构</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224135758774.png" alt="image-20240224135758774"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224135814010.png" alt="image-20240224135814010"></p>
+<blockquote>
+<p>entry的结构比较复杂，为了减少使用链表带来的双向指针的内存消耗，entry间是连续内存分布的，通过encoding中的长度信息从前往后遍历，通过previous_entry_length从后往前遍历。类似于MySQL中记录行格式中的变长字段列表(小于127占用一个字节，否则两个字节，首比特位0&#x2F;1标明变长字段长度占用字节数)，previous_entry_length前一节点长度信息小于254占用一个字节，否则五个字节，第一个字节为oxfe标明占用五个字节。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224140022527.png" alt="image-20240224140022527"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224140130363.png" alt="image-20240224140130363"></p>
+<blockquote>
+<p>ZipList的entry可以存放字符串和整数，具体的类型和长度信息由encoding表示。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224140301917.png" alt="image-20240224140301917"></p>
 <h3 id="4-2ZipList的连锁更新"><a href="#4-2ZipList的连锁更新" class="headerlink" title="4.2ZipList的连锁更新"></a>4.2ZipList的连锁更新</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224140523606.png" alt="image-20240224140523606"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224140653712.png" alt="image-20240224140653712"></p>
 <h2 id="5-QuickList"><a href="#5-QuickList" class="headerlink" title="5.QuickList"></a>5.QuickList</h2><h3 id="5-1QuickList的由来"><a href="#5-1QuickList的由来" class="headerlink" title="5.1QuickList的由来"></a>5.1QuickList的由来</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224142159399.png" alt="image-20240224142159399"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224142330417.png" alt="image-20240224142330417"></p>
+<blockquote>
+<p>ZipList虽然节省内存，但申请内存必须是连续空间，如果内存占用较多，申请内存效率很低，因此需要限制ZipList的大小，QuickList中可以通过list-max-ziplist-size配置项调整节点大小，同时还能对节点的ZipList进一步压缩，可以通过list-compress-depth配置项控制双端压缩节点个数。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224142432796.png" alt="image-20240224142432796"></p>
 <h3 id="5-2QuickList的结构"><a href="#5-2QuickList的结构" class="headerlink" title="5.2QuickList的结构"></a>5.2QuickList的结构</h3><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224142620725.png" alt="image-20240224142620725"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224142740182.png" alt="image-20240224142740182"></p>
@@ -236,7 +277,7 @@
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224144236794.png" alt="image-20240224144236794"></p>
 <h2 id="7-RedisObject"><a href="#7-RedisObject" class="headerlink" title="7.RedisObject"></a>7.RedisObject</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224173959297.png" alt="image-20240224173959297"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224174104565.png" alt="image-20240224174104565"></p>
-<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224174129605.png" alt="image-20240224174129605"></p>
+<p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/image-20240224174129605.png" alt="image-20240224174129605"> </p>
 
   </div>
 </article>

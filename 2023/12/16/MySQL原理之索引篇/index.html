@@ -36,7 +36,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/16db02bc7153fee5tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="og:image" content="https://hulingf.github.io/imgs/MySQL%E5%8E%9F%E7%90%86%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%AF%87/16db02bc77059366tplv-t2oaga2asx-jj-mark1890000q75.webp">
 <meta property="article:published_time" content="2023-12-15T16:00:00.000Z">
-<meta property="article:modified_time" content="2024-03-20T13:48:23.832Z">
+<meta property="article:modified_time" content="2024-08-13T03:18:37.040Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="MySQL原理">
 <meta name="twitter:card" content="summary">
@@ -392,7 +392,7 @@
 </ul>
 <p><strong>这个过程需要大家特别注意的是：一个B+树索引的根节点自诞生之日起，便不会再移动。</strong>这样只要我们对某个表建立一个索引，那么它的<code>根节点</code>的页号便会被记录到某个地方，然后凡是<code>InnoDB</code>存储引擎需要用到这个索引的时候，都会从那个固定的地方取出<code>根节点</code>的页号，从而来访问这个索引。</p>
 <blockquote>
-<p>跟大家剧透一下，这个存储某个索引的根节点在哪个页面中的信息就是传说中的数据字典中的一项信息，关于更多数据字典的内容，后边会详细唠叨，别着急哈。</p>
+<p>跟大家剧透一下，这个存储某个索引的根节点在哪个页面中的信息就是传说中的数据字典中的一项信息。可以类比操作系统中多级页表的根页表地址由固定的寄存器存放，也不会发生变化。</p>
 </blockquote>
 <h4 id="1-4-2内节点中目录项记录的唯一性"><a href="#1-4-2内节点中目录项记录的唯一性" class="headerlink" title="1.4.2内节点中目录项记录的唯一性"></a>1.4.2内节点中目录项记录的唯一性</h4><p>我们知道<code>B+</code>树索引的内节点中目录项记录的内容是<code>索引列 + 页号</code>的搭配，但是这个搭配对于二级索引来说有点儿不严谨。还拿<code>index_demo</code>表为例，假设这个表中的数据是这样的：</p>
 <p><img src="/../../AppData/Roaming/Typora/typora-user-images/image-20231218161037078.png" alt="image-20231218161037078"> </p>
@@ -408,7 +408,13 @@
 <p>也就是我们把<code>主键值</code>也添加到二级索引内节点中的目录项记录了，这样就能保证<code>B+</code>树每一层节点中各条目录项记录除<code>页号</code>这个字段外是唯一的，所以我们为<code>c2</code>列建立二级索引后的示意图实际上应该是这样子的：</p>
 <p><img src="https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2019/4/9/16a01bd2c92fbca0~tplv-t2oaga2asx-jj-mark:1890:0:0:0:q75.awebp" alt="image_1cpb919suginpp7lbgsk0147f20.png-58.6kB"></p>
 <p>这样我们再插入记录<code>(9, 1, &#39;c&#39;)</code>时，由于<code>页3</code>中存储的目录项记录是由<code>c2列 + 主键 + 页号</code>的值构成的，可以先把新记录的<code>c2</code>列的值和<code>页3</code>中各目录项记录的<code>c2</code>列的值作比较，如果<code>c2</code>列的值相同的话，可以接着比较主键值，因为<code>B+</code>树同一层中不同目录项记录的<code>c2列 + 主键</code>的值肯定是不一样的，所以最后肯定能定位唯一的一条目录项记录，在本例中最后确定新记录应该被插入到<code>页5</code>中。</p>
-<h4 id="1-4-3一个页面最少存储2条记录"><a href="#1-4-3一个页面最少存储2条记录" class="headerlink" title="1.4.3一个页面最少存储2条记录"></a>1.4.3一个页面最少存储2条记录</h4><p>我们前边说过一个B+树只需要很少的层级就可以轻松存储数亿条记录，查询速度杠杠的！<strong>这是因为B+树本质上就是一个大的多层级目录，每经过一个目录时都会过滤掉许多无效的子目录，直到最后访问到存储真实数据的目录。</strong>那如果一个大的目录中只存放一个子目录是个啥效果呢？那就是目录层级非常非常非常多，而且最后的那个存放真实数据的目录中只能存放一条记录。费了半天劲只能存放一条真实的用户记录？逗我呢？所以<code>InnoDB</code>的一个数据页至少可以存放两条记录，这也是我们之前唠叨记录行格式的时候说过一个结论（我们当时依据这个结论推导了表中只有一个列时该列在不发生行溢出的情况下最多能存储多少字节，忘了的话回去看看吧）。</p>
+<blockquote>
+<p>对于二级索引记录来说，是先按照二级索引记录列的值进行排序，在二级索引列值相同的情况下，再按照主键值进行排序。所以，为c2列建立索引其实相当于为(c2，c1)列建立了一个联合索引，另外对于唯一二级索引来说，也可能会出现多条记录键值相同的情况(一是声明UNIQUE属性的列可能存储多个NULL值，二是MVCC服务)，唯一二级索引的内节点的目录项记录也会包含记录的主键值。</p>
+</blockquote>
+<h4 id="1-4-3一个页面最少存储2条记录"><a href="#1-4-3一个页面最少存储2条记录" class="headerlink" title="1.4.3一个页面最少存储2条记录"></a>1.4.3一个页面最少存储2条记录</h4><p>我们前边说过一个B+树只需要很少的层级就可以轻松存储数亿条记录，查询速度杠杠的！<strong>这是因为B+树本质上就是一个大的多层级目录，每经过一个目录时都会过滤掉许多无效的子目录，直到最后访问到存储真实数据的目录。</strong>那如果一个大的目录中只存放一个子目录是个啥效果呢？那就是目录层级非常非常非常多，而且最后的那个存放真实数据的目录中只能存放一条记录。费了半天劲只能存放一条真实的用户记录？逗我呢？所以<code>InnoDB</code>的一个数据页至少可以存放两条记录，这也是我们之前唠叨记录行格式的时候说过一个结论。</p>
+<blockquote>
+<p>其实，让B+树的叶子节点只存储一条记录，让内节点存储多条记录，也还是可以发挥B+树作用的。但是，设计InnoDB的大叔为了避免B+树的层级增长的过高，而要求所有数据页都至少可以容纳2条记录。</p>
+</blockquote>
 <h3 id="1-5MyISAM中的索引方案简单介绍"><a href="#1-5MyISAM中的索引方案简单介绍" class="headerlink" title="1.5MyISAM中的索引方案简单介绍"></a>1.5MyISAM中的索引方案简单介绍</h3><p>至此，我们介绍的都是<code>InnoDB</code>存储引擎中的索引方案，为了内容的完整性，以及各位可能在面试的时候遇到这类的问题，我们有必要再简单介绍一下<code>MyISAM</code>存储引擎中的索引方案。我们知道<code>InnoDB</code>中索引即数据，也就是聚簇索引的那棵<code>B+</code>树的叶子节点中已经把所有完整的用户记录都包含了，而<code>MyISAM</code>的索引方案虽然也使用树形结构，但是却将索引和数据分开存储：</p>
 <ul>
 <li><p>将表中的记录按照记录的插入顺序单独存储在一个文件中，称之为<code>数据文件</code>。这个文件并不划分为若干个数据页，有多少记录就往这个文件中塞多少记录就成了。我们可以通过行号而快速访问到一条记录。</p>
@@ -423,7 +429,7 @@
 </li>
 </ul>
 <blockquote>
-<p>MyISAM的行格式有定长记录格式（Static）、变长记录格式（Dynamic）、压缩记录格式（Compressed）。上边用到index_demo表采用定长记录格式，也就是一条记录占用存储空间的大小是固定的，这样就可以轻松算出某条记录在数据文件中的地址偏移量。但是变长记录格式就不行了，MyISAM会直接在索引叶子节点处存储该条记录在数据文件中的地址偏移量。通过这个可以看出，MyISAM的回表操作是十分快速的，因为是拿着地址偏移量直接到文件中取数据的，反观InnoDB是通过获取主键之后再去聚簇索引里边儿找记录，虽然说也不慢，但还是比不上直接用地址去访问。<br>此处我们只是非常简要的介绍了一下MyISAM的索引，具体细节全拿出来又可以写一篇文章了。这里只是希望大家理解InnoDB中的索引即数据，数据即索引，而MyISAM中却是索引是索引、数据是数据。</p>
+<p>MyISAM的行格式有定长记录格式（Static）、变长记录格式（Dynamic）、压缩记录格式（Compressed）。上边用到index_demo表采用定长记录格式，也就是一条记录占用存储空间的大小是固定的，这样就可以轻松算出某条记录在数据文件中的地址偏移量。但是变长记录格式就不行了，MyISAM会直接在索引叶子节点处存储该条记录在数据文件中的地址偏移量。通过这个可以看出，MyISAM的回表操作是十分快速的，因为是拿着地址偏移量直接到文件中取数据的，反观InnoDB是通过获取主键之后再去聚簇索引里边儿找记录，虽然说也不慢，但还是比不上直接用地址去访问。<br>InnoDB中的索引即数据，数据即索引，而MyISAM中却是索引是索引、数据是数据。</p>
 </blockquote>
 <h3 id="1-6MySQL中创建和删除索引的语句"><a href="#1-6MySQL中创建和删除索引的语句" class="headerlink" title="1.6MySQL中创建和删除索引的语句"></a>1.6MySQL中创建和删除索引的语句</h3><p>光顾着唠叨索引的原理了，那我们如何使用<code>MySQL</code>语句去建立这种索引呢？<code>InnoDB</code>和<code>MyISAM</code>会自动为主键或者声明为<code>UNIQUE</code>的列去自动建立<code>B+</code>树索引，但是如果我们想为其他的列建立索引就需要我们显式的去指明。为啥不自动为每个列都建立个索引呢？别忘了，每建立一个索引都会建立一棵<code>B+</code>树，每插入一条记录都要维护各个记录、数据页的排序关系，这是很费性能和存储空间的。</p>
 <p>我们可以在创建表的时候指定需要建立索引的单个列或者建立联合索引的多个列：</p>
@@ -451,7 +457,7 @@
 <p>每次对表中的数据进行增、删、改操作时，都需要去修改各个<code>B+</code>树索引。而且我们讲过，<code>B+</code>树每层节点都是按照索引列的值从小到大的顺序排序而组成了双向链表。不论是叶子节点中的记录，还是内节点中的记录（也就是不论是用户记录还是目录项记录）都是按照索引列的值从小到大的顺序而形成了一个单向链表。而增、删、改操作可能会对节点和记录的排序造成破坏，所以存储引擎需要额外的时间进行一些记录移位，页面分裂、页面回收啥的操作来维护好节点和记录的排序。如果我们建了许多索引，每个索引对应的<code>B+</code>树都要进行相关的维护操作，这还能不给性能拖后腿么？</p>
 </li>
 </ul>
-<p>所以说，一个表上索引建的越多，就会占用越多的存储空间，在增删改记录的时候性能就越差。为了能建立又好又少的索引，我们先得学学这些索引在哪些条件下起作用的。</p>
+<p>所以说，一个表上索引建的越多，就会占用越多的存储空间，在增删改记录或生成执行计划的时候性能就越差。为了能建立又好又少的索引，我们先得学学这些索引在哪些条件下起作用的。</p>
 <h3 id="2-2B-树索引适用的条件"><a href="#2-2B-树索引适用的条件" class="headerlink" title="2.2B+树索引适用的条件"></a>2.2B+树索引适用的条件</h3><p>首先，<code>B+</code>树索引并不是万能的，并不是所有的查询语句都能用到我们建立的索引。下边介绍几个我们可能使用<code>B+</code>树索引来进行查询的情况。为了故事的顺利发展，我们需要先创建一个表，这个表是用来存储人的一些基本信息的：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person_info(</span><br><span class="line">    id <span class="type">INT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> auto_increment,</span><br><span class="line">    name <span class="type">VARCHAR</span>(<span class="number">100</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    birthday <span class="type">DATE</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    phone_number <span class="type">CHAR</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    country <span class="type">varchar</span>(<span class="number">100</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    <span class="keyword">PRIMARY</span> KEY (id),</span><br><span class="line">    KEY idx_name_birthday_phone_number (name, birthday, phone_number)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
 

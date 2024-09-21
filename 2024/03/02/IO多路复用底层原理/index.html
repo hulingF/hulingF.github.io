@@ -20,6 +20,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/%E5%A4%9A%E8%BF%9B%E7%A8%8B.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/%E7%BA%BF%E7%A8%8B%E6%B1%A0.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240816162906943.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303094309911.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303094409181.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303095433941.png">
@@ -29,7 +30,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303100952511.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303101002099.png">
 <meta property="article:published_time" content="2024-03-02T07:12:52.203Z">
-<meta property="article:modified_time" content="2024-03-21T16:37:43.356Z">
+<meta property="article:modified_time" content="2024-08-16T09:50:53.571Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Linux内核">
 <meta name="twitter:card" content="summary">
@@ -230,12 +231,11 @@
 </ol>
 <p>可以看到，非阻塞IO模型中，用户进程在<code>第一个阶段是非阻塞</code>，第二个阶段是阻塞状态。虽然是非阻塞，但性能并没有得到提高，而且<code>忙等机制会导致CPU空转，CPU使用率暴增</code>。</p>
 <p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303092745220.png" alt="image-20240303092745220"> </p>
-<h2 id="4-多进程模型"><a href="#4-多进程模型" class="headerlink" title="4.多进程模型"></a>4.多进程模型</h2><p>基于最原始的阻塞网络 I&#x2F;O， 如果服务器要支持多个客户端，其中比较传统的方式，就是使用<strong>多进程模型</strong>，也就是为每个客户端分配一个进程来处理请求。</p>
+<h2 id="4-多进程模型"><a href="#4-多进程模型" class="headerlink" title="4.多进程模型"></a>4.多进程模型</h2><p>基于最原始的阻塞网络 I&#x2F;O，如果服务器要支持多个客户端，其中比较传统的方式，就是使用<strong>多进程模型</strong>，也就是为每个客户端分配一个进程来处理请求。</p>
 <p>服务器的主进程负责监听客户的连接，一旦与客户端连接完成，accept() 函数就会返回一个「已连接 Socket」，这时就通过 <code>fork()</code> 函数创建一个子进程，实际上就把父进程所有相关的东西都<strong>复制</strong>一份，包括文件描述符、内存地址空间、程序计数器、执行的代码等。</p>
 <p>这两个进程刚复制完的时候，几乎一模一样。不过，会根据<strong>返回值</strong>来区分是父进程还是子进程，如果返回值是 0，则是子进程；如果返回值是其他的整数，就是父进程。</p>
-<p>正因为子进程会<strong>复制父进程的文件描述符</strong>，于是就可以直接使用「已连接 Socket」和客户端通信了，</p>
-<p>可以发现，子进程不需要关心「监听 Socket」，只需要关心「已连接 Socket」；父进程则相反，将客户服务交给子进程来处理，因此父进程不需要关心「已连接 Socket」，只需要关心「监听 Socket」。</p>
-<p>下面这张图描述了从连接请求到连接建立，父进程创建生子进程为客户服务。</p>
+<p>正因为子进程会<strong>复制父进程的文件描述符</strong>，于是就可以直接使用「已连接 Socket」和客户端通信了，可以发现，子进程不需要关心「监听 Socket」，只需要关心「已连接 Socket」；父进程则相反，将客户服务交给子进程来处理，因此父进程不需要关心「已连接 Socket」，只需要关心「监听 Socket」。</p>
+<p>下面这张图描述了从连接请求到连接建立，父进程创建子进程为客户服务。</p>
 <p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/%E5%A4%9A%E8%BF%9B%E7%A8%8B.png" alt="img"></p>
 <p>另外，当「子进程」退出时，实际上内核里还会保留该进程的一些信息，也是会占用内存的，如果不做好“回收”工作，就会变成<strong>僵尸进程</strong>，随着僵尸进程越多，会慢慢耗尽我们的系统资源。</p>
 <p>因此，父进程要“善后”好自己的孩子，怎么善后呢？那么有两种方式可以在子进程退出后回收资源，分别是调用 <code>wait()</code> 和 <code>waitpid()</code> 函数。</p>
@@ -256,7 +256,8 @@
 <p>我们熟悉的select&#x2F;poll&#x2F;epoll内核提供给用户态的多路复用系统调用，<strong>进程可以通过一个系统调用函数从内核中获取多个事件</strong>。</p>
 <p>select&#x2F;poll&#x2F;epoll是如何获取网络事件的呢？在获取事件时，先把所有连接（文件描述符）传给内核，再由内核返回产生了事件的连接，然后在用户态中再处理这些连接对应的请求即可。</p>
 <p>select&#x2F;poll&#x2F;epoll这是三个多路复用接口，都能实现C10K吗？接下来，我们分别说说它们。</p>
-<h3 id="6-1select-x2F-poll"><a href="#6-1select-x2F-poll" class="headerlink" title="6.1select&#x2F;poll"></a>6.1select&#x2F;poll</h3><p>select实现多路复用的方式是，将已连接的Socket都放到一个<strong>文件描述符集合</strong>，然后调用select函数将文件描述符集合<strong>拷贝</strong>到内核里，让内核来检查是否有网络事件产生，检查的方式很粗暴，就是通过<strong>遍历</strong>文件描述符集合的方式，当检查到有事件产生后，将此Socket标记为可读或可写，接着再把整个文件描述符集合<strong>拷贝</strong>回用户态里，然后用户态还需要再通过<strong>遍历</strong>的方法找到可读或可写的Socket，然后再对其处理。</p>
+<h3 id="6-1select-x2F-poll"><a href="#6-1select-x2F-poll" class="headerlink" title="6.1select&#x2F;poll"></a>6.1select&#x2F;poll</h3><p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240816162906943.png" alt="image-20240816162906943"></p>
+<p>select实现多路复用的方式是，将已连接的Socket都放到一个<strong>文件描述符集合</strong>，然后调用select函数将文件描述符集合<strong>拷贝</strong>到内核里，让内核来检查是否有网络事件产生，检查的方式很粗暴，就是通过<strong>遍历</strong>文件描述符集合的方式，当检查到有事件产生后，将此Socket标记为可读或可写，接着再把整个文件描述符集合<strong>拷贝</strong>回用户态里，然后用户态还需要再通过<strong>遍历</strong>的方法找到可读或可写的Socket，然后再对其处理。</p>
 <p>所以，对于select这种方式，需要进行<strong>2次「遍历」文件描述符集合</strong>，一次是在内核态里，一个次是在用户态里，而且还会发生<strong>2次「拷贝」文件描述符集合</strong>，先从用户空间传入内核空间，由内核修改后，再传出到用户空间中。</p>
 <p>select使用固定长度的<code>BitsMap</code>，表示文件描述符集合，而且所支持的文件描述符的个数是有限制的，在Linux系统中，由内核中的<code>FD_SETSIZE</code>限制，默认最大值为<code>1024</code>，只能监听0~1023的文件描述符。</p>
 <p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303094309911.png" alt="image-20240303094309911"></p>
@@ -287,9 +288,15 @@
 <p>如果使用水平触发模式，当内核通知文件描述符可读写时，接下来还可以继续去检测它的状态，看它是否依然可读或可写。所以在收到通知后，没必要一次执行尽可能多的读写操作。</p>
 <p>如果使用边缘触发模式，I&#x2F;O事件发生时只会通知一次，而且我们不知道到底能读写多少数据，所以在收到通知后应尽可能地读写数据，以免错失读写的机会。因此，我们会<strong>循环</strong>从文件描述符读写数据，那么如果文件描述符是阻塞的，没有数据可读写时，进程会阻塞在读写函数那里，程序就没办法继续往下执行。所以，<strong>边缘触发模式一般和非阻塞I&#x2F;O搭配使用</strong>，程序会一直执行I&#x2F;O操作，直到系统调用（如 <code>read</code> 和 <code>write</code>）返回错误，错误类型为<code>EAGAIN</code>或<code>EWOULDBLOCK</code>。</p>
 <p>一般来说，边缘触发的效率比水平触发的效率要高，因为<code>边缘触发可以减少epoll_wait的系统调用次数</code>，系统调用也是有一定的开销的的，毕竟也存在上下文的切换。</p>
+<blockquote>
+<p>LT模式下epoll_wait返回时就绪链表中的FD并不会立即删除，需要等待FD读取完毕，下次调用epoll_wait时就绪链表还存在相应的FD；ET模式下epoll_wait返回时就绪链表中的FD会被立即删除，下次调用epoll_wait时就绪链表不存在对应的FD了。</p>
+</blockquote>
 <p>select&#x2F;poll只有水平触发模式，epoll默认的触发模式是水平触发，但是可以根据应用场景设置为边缘触发模式。</p>
 <h3 id="6-4基于epoll的Web服务流程"><a href="#6-4基于epoll的Web服务流程" class="headerlink" title="6.4基于epoll的Web服务流程"></a>6.4基于epoll的Web服务流程</h3><p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303100143075.png" alt="image-20240303100143075"></p>
 <h2 id="7-异步IO"><a href="#7-异步IO" class="headerlink" title="7.异步IO"></a>7.异步IO</h2><p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303100952511.png" alt="image-20240303100952511"></p>
+<blockquote>
+<p>同步&#x2F;异步主要看第二阶段(数据从内核拷贝到用户空间)，阻塞&#x2F;非阻塞主要看第一阶段(等待数据准备就绪)，因此上面我们说的阻塞IO、非阻塞IO、IO多路复用和信号驱动IO都是同步IO。</p>
+</blockquote>
 <p><img src="/imgs/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/image-20240303101002099.png" alt="image-20240303101002099"></p>
 
   </div>

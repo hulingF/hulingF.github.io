@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="eBPF冒险记(二)1.内核跟踪实战跟踪类eBPF程序主要包含内核插桩（BPF_PROG_TYPE_KPROBE）、跟踪点（BPF_PROG_TYPE_TRACEPOINT）以及性能事件（BPF_PROG_TYPE_PERF_EVENT）等程序类型，而每类eBPF程序类型又可以挂载到不同的内核函数、内核跟踪点或性能事件上。当这些内核函数、内核跟踪点或性能事件被调用的时候，挂载到其上的eBPF程序就">
+<meta property="og:type" content="article">
+<meta property="og:title" content="eBPF冒险记(二)">
+<meta property="og:url" content="https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="eBPF冒险记(二)1.内核跟踪实战跟踪类eBPF程序主要包含内核插桩（BPF_PROG_TYPE_KPROBE）、跟踪点（BPF_PROG_TYPE_TRACEPOINT）以及性能事件（BPF_PROG_TYPE_PERF_EVENT）等程序类型，而每类eBPF程序类型又可以挂载到不同的内核函数、内核跟踪点或性能事件上。当这些内核函数、内核跟踪点或性能事件被调用的时候，挂载到其上的eBPF程序就">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916155815609.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/175853e38141433058e05770285ee5fb.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916160523099.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/efda99288b5366ca24a00f374c6fba1c.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916161253091.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916161452314.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916162446290.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916164717004.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916172901436.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/80c2a8fe3b36ee2fb033b4332431f750.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/e923026f577f7b991be2610734f9e415.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/3c2419d6a357eca924fe6b94ed5b0970.jpg">
+<meta property="article:published_time" content="2024-09-16T06:45:37.656Z">
+<meta property="article:modified_time" content="2024-09-16T12:41:41.618Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="性能优化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916155815609.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>eBPF冒险记(二)</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/09/21/HR%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/09/15/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&text=eBPF冒险记(二)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&is_video=false&description=eBPF冒险记(二)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=eBPF冒险记(二)&body=Check out this article: https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&name=eBPF冒险记(二)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&t=eBPF冒险记(二)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#eBPF%E5%86%92%E9%99%A9%E8%AE%B0-%E4%BA%8C"><span class="toc-number">1.</span> <span class="toc-text">eBPF冒险记(二)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%86%85%E6%A0%B8%E8%B7%9F%E8%B8%AA%E5%AE%9E%E6%88%98"><span class="toc-number">1.1.</span> <span class="toc-text">1.内核跟踪实战</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E5%88%A9%E7%94%A8%E8%B0%83%E8%AF%95%E4%BF%A1%E6%81%AF%E6%9F%A5%E8%AF%A2%E8%B7%9F%E8%B8%AA%E7%82%B9"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1利用调试信息查询跟踪点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E5%88%A9%E7%94%A8bpftrace%E6%9F%A5%E8%AF%A2%E8%B7%9F%E8%B8%AA%E7%82%B9"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2利用bpftrace查询跟踪点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3%E5%88%A9%E7%94%A8%E5%86%85%E6%A0%B8%E8%B7%9F%E8%B8%AA%E7%82%B9%E6%8E%92%E6%9F%A5%E7%9F%AD%E6%97%B6%E8%BF%9B%E7%A8%8B%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3利用内核跟踪点排查短时进程问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4bpftrace%E6%96%B9%E6%B3%95"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.4bpftrace方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5BCC%E6%96%B9%E6%B3%95"><span class="toc-number">1.1.5.</span> <span class="toc-text">1.5BCC方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%BD%91%E7%BB%9C%E8%B7%9F%E8%B8%AA%E5%AE%9E%E6%88%98"><span class="toc-number">1.2.</span> <span class="toc-text">2.网络跟踪实战</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E8%B7%9F%E8%B8%AA%E5%86%85%E6%A0%B8%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E6%A0%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1跟踪内核网络协议栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E6%8E%92%E6%9F%A5%E7%BD%91%E7%BB%9C%E4%B8%A2%E5%8C%85%E9%97%AE%E9%A2%98"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2排查网络丢包问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%BD%91%E7%BB%9C%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="toc-number">1.3.</span> <span class="toc-text">3.网络性能优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1Nginx%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1Nginx负载均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2%E5%A5%97%E6%8E%A5%E5%AD%97eBPF%E7%A8%8B%E5%BA%8F%E4%BC%98%E5%8C%96%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E6%80%A7%E8%83%BD"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2套接字eBPF程序优化负载均衡性能</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-1%E5%88%9B%E5%BB%BA%E5%A5%97%E6%8E%A5%E5%AD%97%E6%98%A0%E5%B0%84"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">3.2.1创建套接字映射</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2%E6%9B%B4%E6%96%B0%E5%A5%97%E6%8E%A5%E5%AD%97%E6%98%A0%E5%B0%84"><span class="toc-number">1.3.2.2.</span> <span class="toc-text">3.2.2更新套接字映射</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-3%E5%A5%97%E6%8E%A5%E5%AD%97%E8%BD%AC%E5%8F%91"><span class="toc-number">1.3.2.3.</span> <span class="toc-text">3.2.3套接字转发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-4%E5%8A%A0%E8%BD%BDeBPF%E7%A8%8B%E5%BA%8F"><span class="toc-number">1.3.2.4.</span> <span class="toc-text">3.2.4加载eBPF程序</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-5%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">1.3.2.5.</span> <span class="toc-text">3.2.5性能测试</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        eBPF冒险记(二)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-09-16T06:45:37.656Z" class="dt-published" itemprop="datePublished">2024-09-16</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="eBPF冒险记-二"><a href="#eBPF冒险记-二" class="headerlink" title="eBPF冒险记(二)"></a>eBPF冒险记(二)</h1><h2 id="1-内核跟踪实战"><a href="#1-内核跟踪实战" class="headerlink" title="1.内核跟踪实战"></a>1.内核跟踪实战</h2><p>跟踪类eBPF程序主要包含<code>内核插桩（BPF_PROG_TYPE_KPROBE）</code>、<code>跟踪点（BPF_PROG_TYPE_TRACEPOINT）</code>以及<code>性能事件（BPF_PROG_TYPE_PERF_EVENT）</code>等程序类型，而每类eBPF程序类型又可以挂载到不同的内核函数、内核跟踪点或性能事件上。当这些内核函数、内核跟踪点或性能事件被调用的时候，挂载到其上的eBPF程序就会自动执行。</p>
+<p>那么，你可能想问了：当我不知道内核中都有哪些内核函数、内核跟踪点或性能事件的时候，可以在哪里查询到它们的列表呢？对于内核函数和内核跟踪点，在需要跟踪它们的传入参数和返回值的时候，又该如何查询这些数据结构的定义格式呢？别担心，接下来就跟我一起去探索下吧。</p>
+<h3 id="1-1利用调试信息查询跟踪点"><a href="#1-1利用调试信息查询跟踪点" class="headerlink" title="1.1利用调试信息查询跟踪点"></a>1.1利用调试信息查询跟踪点</h3><p>为了方便调试，内核把所有函数以及非栈变量的地址都抽取到了<code>/proc/kallsyms</code>中，这样调试器就可以根据地址找出对应的函数和变量名称。很显然，具有实际含义的名称要比16进制的地址易读得多。对<code>内核插桩类</code>的eBPF程序来说，它们要挂载的内核函数就可以从&#x2F;proc&#x2F;kallsyms这个文件中查到。注意，<code>内核函数是一个非稳定API</code>，在新版本中可能会发生变化，并且内核函数的数量也在不断增长中。</p>
+<blockquote>
+<p>不过需要提醒你的是，这些符号表不仅包含了内核函数，还包含了非栈数据变量。而且，并不是所有的内核函数都是可跟踪的，只有<code>显式导出的内核函数</code>才可以被eBPF进行动态跟踪。因而，通常我们并不直接从内核符号表查询可跟踪点，而是使用我接下来介绍的方法。</p>
+</blockquote>
+<p>为了方便内核开发者获取所需的跟踪点信息，内核调试文件系统还向用户空间提供了内核调试所需的基本信息，如内核符号列表、跟踪点、函数跟踪（ftrace）状态以及参数格式等。你可以在终端中执行<code>sudo ls /sys/kernel/debug</code>来查询内核调试文件系统的具体信息。比如，执行下面的命令，就可以查询<code>execve</code>系统调用的参数格式：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916155815609.png" alt="image-20240916155815609"></p>
+<p>有了调试文件系统，你就可以从<code>/sys/kernel/debug/tracing</code>中找到所有内核预定义的跟踪点，进而可以在需要时把eBPF程序挂载到对应的跟踪点。除了内核函数和跟踪点之外，性能事件又该如何查询呢？你可以使用Linux性能工具<code>perf</code>来查询性能事件的列表。如下面的命令所示，你可以不带参数查询所有的性能事件，也可以加入可选的事件类型参数进行过滤：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo perf list [hw|sw|cache|tracepoint|pmu|sdt|metric|metricgroup]</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-2利用bpftrace查询跟踪点"><a href="#1-2利用bpftrace查询跟踪点" class="headerlink" title="1.2利用bpftrace查询跟踪点"></a>1.2利用bpftrace查询跟踪点</h3><p>bpftrace在eBPF和BCC之上构建了一个简化的跟踪语言，通过简单的几行脚本，就可以实现复杂的跟踪功能。并且，多行的跟踪指令也可以放到脚本文件中执行（脚本后缀通常为<code>.bt</code>）。bpftrace会把你开发的脚本借助BCC编译加载到内核中执行，再通过BPF映射获取执行的结果：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/175853e38141433058e05770285ee5fb.png" alt="img"></p>
+<p>因此，在编写简单的eBPF程序，特别是编写的eBPF程序用于临时的调试和排错时，你可以考虑直接使用bpftrace，而不需要用C或Python去开发一个复杂的程序。可以执行<code>bpftrace -l</code>来查询内核插桩和跟踪点了。比如你可以通过以下几种方式来查询：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查询所有内核插桩和跟踪点</span></span><br><span class="line">sudo bpftrace -l</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用通配符查询所有的系统调用跟踪点</span></span><br><span class="line">sudo bpftrace -l &#x27;tracepoint:syscalls:*&#x27;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用通配符查询所有名字包含<span class="string">&quot;execve&quot;</span>的跟踪点</span></span><br><span class="line">sudo bpftrace -l &#x27;*execve*&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>对于跟踪点来说，你还可以加上<code>-v</code>参数查询<code>函数的入口参数或返回值</code>。而由于内核函数属于不稳定的API，在bpftrace中只能通过arg0、arg1这样的参数来访问，具体的参数格式还需要参考内核源代码。</p>
+<p>比如，下面就是一个查询系统调用execve入口参数（对应系统调用<code>sys_enter_execve</code>）和返回值（对应系统调用<code>sys_exit_execve</code>）的示例：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916160523099.png" alt="image-20240916160523099"></p>
+<p>在这两种方法中，我更推荐使用更简单的bpftrace进行查询。这是因为，我们通常只需要在开发环境查询这些列表，以便去准备eBPF程序的挂载点。也就是说，虽然bpftrace依赖BCC和LLVM开发工具，但开发环境本来就需要这些库和开发工具。综合来看，用bpftrace工具来查询的方法显然更简单快捷。</p>
+<h3 id="1-3利用内核跟踪点排查短时进程问题"><a href="#1-3利用内核跟踪点排查短时进程问题" class="headerlink" title="1.3利用内核跟踪点排查短时进程问题"></a>1.3利用内核跟踪点排查短时进程问题</h3><p>在排查系统CPU使用率高的问题时，我想你很可能遇到过这样的困惑：明明通过<code>top</code>命令发现系统的CPU使用率（特别是用户CPU使用率）特别高，但通过<code>ps</code>、<code>pidstat</code>等工具都找不出CPU使用率高的进程。这是什么原因导致的呢？在我看来，一般情况下，这类问题很可能是以下两个原因导致的：</p>
+<ul>
+<li>第一，应用程序里面<code>直接调用其他二进制程序，并且这些程序的运行时间很短</code>，通过top工具不容易发现；</li>
+<li>第二，应用程序自身在<code>不停地崩溃重启中，且重启间隔较短</code>，启动过程中资源的初始化导致了高CPU使用率。</li>
+</ul>
+<p>使用top、ps等性能工具很难发现这类短时进程，这是因为它们都<code>只会按照给定的时间间隔采样，而不会实时采集到所有新创建的进程</code>。那要如何才能采集到所有的短时进程呢？你肯定已经想到了，那就是<code>利用eBPF的事件触发机制，跟踪内核每次新创建的进程</code>，这样就可以揪出这些短时进程。</p>
+<img src="/imgs/eBPF冒险记(二)/efda99288b5366ca24a00f374c6fba1c.jpg" alt="img" />
+
+<p>因为我们要关心的主要是新创建进程的基本信息，而像进程名称和参数等信息都在<code>execve()</code>的参数里，所以我们就要找出execve()所对应的内核函数或跟踪点。借助刚才提到的<code>bpftrace</code>工具，你可以执行下面的命令，查询所有包含execve关键字的跟踪点：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916161253091.png" alt="image-20240916161253091"></p>
+<p>从输出中可以发现这些函数可以分为内核插桩（kprobe）和跟踪点（tracepoint）两类。内核插桩属于不稳定接口，而跟踪点则是稳定接口。因而，在内核插桩和跟踪点两者都可用的情况下，应该选择更稳定的跟踪点，以保证eBPF程序的可移植性（即在不同版本的内核中都可以正常执行）。</p>
+<p>只有跟踪点的列表还不够，因为我们还想知道具体启动的进程名称、命令行选项以及返回值，而这些也都可以通过bpftrace来查询。在命令行中执行下面的命令，即可查询：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916161452314.png" alt="image-20240916161452314"></p>
+<p>从输出中可以看到，sys_enter_execveat()比sys_enter_execve()多了两个参数，而<code>文件名filename</code>、<code>命令行选项argv</code>以及<code>返回值ret</code>的定义都是一样的。</p>
+<p>为了帮你全方位掌握eBPF程序的开发过程，下面会以bpftrace、BCC和libbpf这三种方式为例，带你开发一个跟踪短时进程的eBPF程序。这三种方式各有优缺点，在实际的生产环境中都有大量的应用：</p>
+<ul>
+<li>bpftrace通常用在<code>快速排查和定位系统</code>上，它支持用单行脚本的方式来快速开发并执行一个eBPF程序。不过，bpftrace的功能有限，不支持特别复杂的eBPF程序，也依赖于BCC和LLVM动态编译执行。</li>
+<li>BCC通常用在<code>开发复杂的eBPF程序</code>中，其内置的各种小工具也是目前应用最为广泛的eBPF小程序。不过，BCC也不是完美的，它依赖于LLVM和内核头文件才可以动态编译和加载eBPF程序。</li>
+<li>libbpf是从内核中抽离出来的标准库，用它开发的eBPF程序可以<code>直接分发执行</code>，这样就不需要每台机器都安装LLVM和内核头文件了。不过，它要求内核开启BTF特性，需要非常新的发行版才会默认开启（如RHEL8.2+和Ubuntu20.10+等）。</li>
+</ul>
+<p>在实际应用中，你可以根据你的内核版本、内核配置、eBPF程序复杂度，以及是否允许安装内核头文件和LLVM等编译工具等，来选择最合适的方案。</p>
+<h3 id="1-4bpftrace方法"><a href="#1-4bpftrace方法" class="headerlink" title="1.4bpftrace方法"></a>1.4bpftrace方法</h3><p>由于execve()和execveat()这两个系统调用的入口参数文件名filename和命令行选项argv，以及返回值ret的定义都是一样的，因而我们可以把这两个跟踪点放到一起来处理。</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916162446290.png" alt="image-20240916162446290"></p>
+<p>不过，这个跟踪程序还是有一些比较大的限制，比如：</p>
+<ul>
+<li>没有输出时间戳，这样去大量日志里面定位问题就比较困难；</li>
+<li>没有父进程PID，还需要一些额外的工具或经验，才可以找出父进程。</li>
+</ul>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916164717004.png" alt="image-20240916164717004"></p>
+<h3 id="1-5BCC方法"><a href="#1-5BCC方法" class="headerlink" title="1.5BCC方法"></a>1.5BCC方法</h3><p>为了在系统调用入口跟踪点和出口跟踪点间共享进程信息等数据，我们可以定义一个哈希映射（比如命名为tasks）；同样地，因为我们想要在用户空间实时获取跟踪信息，这就需要一个性能事件映射。对于这两种映射的创建步骤，BCC已经提供了非常方便的宏定义，你可以直接使用。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">data_t</span> &#123;</span></span><br><span class="line">    u32 pid;</span><br><span class="line">    <span class="type">char</span> comm[TASK_COMM_LEN];</span><br><span class="line">    <span class="type">int</span> retval;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> args_size;</span><br><span class="line">    <span class="type">char</span> argv[FULL_MAX_ARGS_ARR];</span><br><span class="line">&#125;;</span><br><span class="line">BPF_PERF_OUTPUT(events);</span><br><span class="line">BPF_HASH(tasks, u32, <span class="keyword">struct</span> <span class="type">data_t</span>);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>struct data_t</code>定义了一个包含进程基本信息的数据结构，它将用在哈希映射的值中（其中的参数大小args_size会在读取参数内容的时候用到）；</li>
+<li><code>BPF_PERF_OUTPUT(events)</code>定义了一个性能事件映射；</li>
+<li><code>BPF_HASH(tasks, u32, struct data_t)</code>定义了一个哈希映射，其键为32位的进程PID，而值则是进程基本信息data_t。</li>
+</ul>
+<p>两个映射定义好之后，接下来就是定义跟踪点的处理函数。在BCC中，你可以通过<code>TRACEPOINT_PROBE(category, event)</code>来定义一个跟踪点处理函数。BCC会将所有的参数放入<code>args</code>这个变量中，这样使用<code>args-&gt;&lt;参数名&gt;</code>就可以访问跟踪点的参数值。对我们要跟踪的短时进程问题来说，也就是下面这两个跟踪点：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义sys_enter_execve跟踪点处理函数.</span></span><br><span class="line">TRACEPOINT_PROBE(syscalls, sys_enter_execve)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//待添加处理逻辑</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义sys_exit_execve跟踪点处理函数.</span></span><br><span class="line">TRACEPOINT_PROBE(syscalls, sys_exit_execve)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//待添加处理逻辑</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对于入口跟踪点sys_enter_execve的处理，还是先获取进程的PID、进程名称和参数列表之后，再存入刚刚定义的哈希映射中。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">data_t</span> <span class="title">data</span> =</span> &#123; &#125;;</span><br><span class="line">u32 pid = bpf_get_current_pid_tgid();  <span class="comment">// 取低32位为进程PID</span></span><br><span class="line">data.pid = pid;</span><br><span class="line">bpf_get_current_comm(&amp;data.comm, <span class="keyword">sizeof</span>(data.comm));</span><br><span class="line"><span class="type">const</span> <span class="type">char</span> **argv = (<span class="type">const</span> <span class="type">char</span> **)(args-&gt;argv);</span><br></pre></td></tr></table></figure>
+
+<p>注意，argv是一个用户空间的字符串数组（指针数组），这就需要调用<code>bpf_probe_read</code>系列的辅助函数，去这些指针中读取数据。并且，字符串的数量（即参数的个数）和每个字符串的长度（即每个参数的长度）都是未知的，由于eBPF栈大小只有512字节，如果想要把它们读入一个临时的字符数组中，必须要保证每次读取的内容不超过栈的大小。这类问题有很多种不同的处理方法，其中一个比较简单的方式就是<code>把多余的参数截断，使用...代替过长的参数</code>。一般来说，知道了进程的名称和前几个参数，对调试和排错来说就足够了。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义参数长度和参数个数常量</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ARGSIZE 64</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOTAL_MAX_ARGS 5</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> FULL_MAX_ARGS_ARR (TOTAL_MAX_ARGS * ARGSIZE)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> LAST_ARG (FULL_MAX_ARGS_ARR - ARGSIZE)</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">data_t</span> &#123;</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="type">char</span> argv[FULL_MAX_ARGS_ARR];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>有了字符数组，接下来再定义一个辅助函数，从参数数组中读取字符串参数（限定最长ARGSIZE）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 从用户空间读取字符串</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> __bpf_read_arg_str(<span class="keyword">struct</span> <span class="type">data_t</span> *data, <span class="type">const</span> <span class="type">char</span> *ptr)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (data-&gt;args_size &gt; LAST_ARG) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> ret = bpf_probe_read_user_str(&amp;data-&gt;argv[data-&gt;args_size], ARGSIZE, (<span class="type">void</span> *)ptr);</span><br><span class="line">    <span class="keyword">if</span> (ret &gt; ARGSIZE || ret &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// increase the args size. the first tailing &#x27;\0&#x27; is not counted and hence it</span></span><br><span class="line">    <span class="comment">// would be overwritten by the next call.</span></span><br><span class="line">    data-&gt;args_size += (ret - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个函数中，有几点需要你注意：</p>
+<ul>
+<li><code>bpf_probe_read_user_str()</code>返回的是包含字符串结束符<code>\0</code>的长度。为了拼接所有的字符串，在计算已读取参数长度的时候，需要把  \0排除在外。</li>
+<li><code>&amp;data-&gt;argv[data-&gt;args_size]</code>用来获取要存放参数的位置指针，这是为了把多个参数拼接到一起。</li>
+<li>在调用<code>bpf_probe_read_user_str()</code>前后，需要对指针位置和返回值进行校验，这可以帮助eBPF验证器获取指针读写的边界。</li>
+</ul>
+<p>有了这个辅助函数之后，因为eBPF在老版本内核中并不支持循环（有界循环在5.3之后才支持），要访问字符串数组，还需要一个小技巧：使用  <code>#pragma unroll</code>告诉编译器，把源码中的循环自动展开。这就避免了最终的字节码中包含循环。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 引入内核头文件</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;uapi/linux/ptrace.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/sched.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/fs.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义sys_enter_execve跟踪点处理函数.</span></span><br><span class="line">TRACEPOINT_PROBE(syscalls, sys_enter_execve)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 变量定义</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> ret = <span class="number">0</span>;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> **argv = (<span class="type">const</span> <span class="type">char</span> **)(args-&gt;argv);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取进程PID和进程名称</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">data_t</span> <span class="title">data</span> =</span> &#123; &#125;;</span><br><span class="line">    u32 pid = bpf_get_current_pid_tgid();</span><br><span class="line">    data.pid = pid;</span><br><span class="line">    bpf_get_current_comm(&amp;data.comm, <span class="keyword">sizeof</span>(data.comm));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取第一个参数（即可执行文件的名字）</span></span><br><span class="line">    <span class="keyword">if</span> (__bpf_read_arg_str(&amp;data, (<span class="type">const</span> <span class="type">char</span> *)argv[<span class="number">0</span>]) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">goto</span> out;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取其他参数（限定最多5个）</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> unroll</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt; TOTAL_MAX_ARGS; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (__bpf_read_arg_str(&amp;data, (<span class="type">const</span> <span class="type">char</span> *)argv[i]) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">goto</span> out;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> out:</span><br><span class="line">    <span class="comment">// 存储到哈希映射中</span></span><br><span class="line">    tasks.update(&amp;pid, &amp;data);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意，为了获取内核数据结构的定义，在文件的开头需要引入相关的内核头文件。此外，读取参数完成之后，不要忘记调用 <code>tasks.update()</code>把进程的基本信息存储到哈希映射中。因为返回值需要等到出口跟踪点时才可以获取，这儿只需要更新哈希映射就可以了，不需要把进程信息提交到性能事件映射中去。</p>
+</blockquote>
+<p>入口跟踪点sys_enter_execve处理好之后，我们再来看看出口跟踪点sys_exit_execve该如何处理。</p>
+<p>由于进程的基本信息已经保存在了哈希映射中，所以出口事件的处理可以分为<code>查询进程基本信息</code>、<code>填充返回值</code>、<code>最后再提交到性能事件映射</code>这三个步骤。具体代码如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义sys_exit_execve跟踪点处理函数.</span></span><br><span class="line">TRACEPOINT_PROBE(syscalls, sys_exit_execve)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 从哈希映射中查询进程基本信息</span></span><br><span class="line">    u32 pid = bpf_get_current_pid_tgid();</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">data_t</span> *<span class="title">data</span> =</span> tasks.lookup(&amp;pid);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 填充返回值并提交到性能事件映射中</span></span><br><span class="line">    <span class="keyword">if</span> (data != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        data-&gt;retval = args-&gt;ret;</span><br><span class="line">        events.perf_submit(args, data, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> <span class="type">data_t</span>));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 最后清理进程信息</span></span><br><span class="line">        tasks.delete(&amp;pid);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里，完整的eBPF程序就开发好了，你可以把上述的代码保存到一个本地文件中，并命名为execsnoop.c。eBPF程序开发完成后，最后一步就是为它增加一个Python前端。Python前端逻辑需要<code>eBPF程序加载</code>、<code>挂载到内核函数和跟踪点</code>，以及<code>通过BPF映射获取和打印执行结果</code>等几个步骤。其中，因为我们已经使用了TRACEPOINT_PROBE宏定义，来定义eBPF跟踪点处理函数，BCC在加载字节码的时候，会帮你自动把它挂载到正确的跟踪点上，所以挂载的步骤就可以忽略。完整的Python程序如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 引入库函数</span></span><br><span class="line"><span class="keyword">from</span> bcc <span class="keyword">import</span> BPF</span><br><span class="line"><span class="keyword">from</span> bcc.utils <span class="keyword">import</span> printb</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1) 加载eBPF代码</span></span><br><span class="line">b = BPF(src_file=<span class="string">&quot;execsnoop.c&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 输出头</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;%-6s %-16s %-3s %s&quot;</span> % (<span class="string">&quot;PID&quot;</span>, <span class="string">&quot;COMM&quot;</span>, <span class="string">&quot;RET&quot;</span>, <span class="string">&quot;ARGS&quot;</span>))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 定义性能事件打印函数</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">print_event</span>(<span class="params">cpu, data, size</span>):</span><br><span class="line">    <span class="comment"># BCC自动根据&quot;struct data_t&quot;生成数据结构</span></span><br><span class="line">    event = b[<span class="string">&quot;events&quot;</span>].event(data)</span><br><span class="line">    printb(<span class="string">b&quot;%-6d %-16s %-3d %-16s&quot;</span> % (event.pid, event.comm, event.retval, event.argv))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) 绑定性能事件映射和输出函数，并从映射中循环读取数据</span></span><br><span class="line">b[<span class="string">&quot;events&quot;</span>].open_perf_buffer(print_event)</span><br><span class="line"><span class="keyword">while</span> <span class="number">1</span>:</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        b.perf_buffer_poll()</span><br><span class="line">    <span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">        exit()</span><br></pre></td></tr></table></figure>
+
+<p>把上述的代码保存到execsnoop.py中，然后通过Python运行，并在另一个终端中执行ls命令，你就可以得到如下的输出：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/image-20240916172901436.png" alt="image-20240916172901436"></p>
+<p>不过，在你想要分发这个程序到生产环境时，又会碰到一个新的难题：BCC依赖于LLVM和内核头文件才可以动态编译和加载eBPF程序，而出于安全策略的需要，在生产环境中通常又不允许安装这些开发工具。这个难题应该怎么克服呢？一种很容易想到的方法是把BCC和开发工具都安装到容器中，容器本身不提供对外服务，这样可以降低安全风险。另外一种方法就是参考内核中的eBPF示例，开发一个匹配当前内核版本的eBPF程序，并编译为字节码，再分发到生产环境中。</p>
+<p>除此之外，如果内核已经支持了BPF类型格式 (BTF)，推荐使用从内核源码中抽离出来的libbpf进行开发，这样可以借助BTF和CO-RE获得更好的移植性。实际上，BCC的很多工具都在向BTF迁移中，相信未来libbpf会成为最受欢迎的eBPF程序开发基础库，甚至Windows eBPF也会支持libbpf。</p>
+<h2 id="2-网络跟踪实战"><a href="#2-网络跟踪实战" class="headerlink" title="2.网络跟踪实战"></a>2.网络跟踪实战</h2><p>既然想要使用eBPF排查网络问题，我想进入你头脑的第一个问题就是：eBPF到底提供了哪些网络相关的功能框架呢？要回答这个问题，首先要理解Linux网络协议栈的基本原理。下面是一个简化版的内核协议栈示意图，如下图所示，eBPF 实际上提供了贯穿整个网络协议栈的过滤、捕获以及重定向等丰富的网络功能：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/80c2a8fe3b36ee2fb033b4332431f750.jpg" alt="img"></p>
+<p>一方面，网络协议栈也是内核的一部分，因而网络相关的内核函数、跟踪点以及用户程序的函数等，也都可以使用kprobe、uprobe、USDT等跟踪类eBPF程序进行跟踪（如上图中紫色部分所示）。另一方面，eBPF提供了大量专用于网络的eBPF程序类型，包括XDP程序、TC程序、套接字程序以及cgroup程序等。这些类型的程序涵盖了从网卡（如卸载到硬件网卡中的XDP程序）到网卡队列（如TC程序）、封装路由（如轻量级隧道程序）、TCP拥塞控制、套接字（如sockops程序）等内核协议栈，再到同属于一个cgroup的一组进程的网络过滤和控制，而这些都是内核协议栈的核心组成部分（如上图中绿色部分所示）。</p>
+<p>接下来，我就以最常见的网络丢包为例，带你看看如何使用eBPF来排查网络问题。</p>
+<h3 id="2-1跟踪内核网络协议栈"><a href="#2-1跟踪内核网络协议栈" class="headerlink" title="2.1跟踪内核网络协议栈"></a>2.1跟踪内核网络协议栈</h3><p>即使理解了内核协议栈的基本原理，以及各种类型eBPF程序的基本功能，在想要跟踪网络相关的问题时，你可能还是觉得无从下手，这是为什么呢？究其原因，我认为最主要是<code>因为不清楚内核中都有哪些函数和跟踪点可以拿来跟踪</code>。而即使通过源码查询到了一系列的内核函数，还是没有一个清晰的思路把这些内核函数与所碰到的网络问题关联起来。</p>
+<p>如何把内核函数跟相关的网络问题关联起来呢？看到本小节的标题，你应该已经想到了：<code>跟踪调用栈，根据调用栈回溯路径，找出导致某个网络事件发生的整个流程，进而就可以再根据这些流程中的内核函数进一步跟踪</code>。</p>
+<p>既然是调用栈的回溯，只有我们知道了<code>最接近整个执行逻辑结尾的函数</code>，才有可能开始这个回溯过程。对Linux网络丢包问题来说，内核协议栈执行的结尾，当然就是释放最核心的SKB（Socket Buffer）数据结构。查询内核SKB文档，你可以发现，内核中释放SKB相关的函数有两个：</p>
+<ul>
+<li>第一个，<code>kfree_skb</code>，它经常在网络异常丢包时调用；</li>
+<li>第二个，<code>consume_skb</code>，它在正常网络连接完成时调用。</li>
+</ul>
+<p>这两个函数除了使用场景的不同，其功能和实现流程都是一样的，<code>即都是检查SKB的引用计数，当引用计数为0时释放其内核内存</code>。所以，要跟踪网络丢包的执行过程，也就可以跟踪kfree_skb的内核调用栈。</p>
+<p>接下来，我就以访问极客时间的网站time.geekbang.org为例，来带你一起看看，如何使用bpftrace来进行调用栈的跟踪。</p>
+<p>为了方便调用栈的跟踪，bpftrace提供了<code>kstack</code>和<code>ustack</code>这两个内置变量，分别用于获取内核和进程的调用栈。打开一个终端，执行下面的命令就可以跟踪<code>kfree_skb</code>的内核调用栈了：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo bpftrace -e &#x27;kprobe:kfree_skb /comm==&quot;curl&quot;/ &#123;printf(&quot;kstack: %s\n&quot;, kstack);&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>kprobe:kfree_skb指定跟踪的内核函数为kfree_skb；</li>
+<li>紧随其后的&#x2F;comm&#x3D;&#x3D;”curl”&#x2F;，表示只跟踪curl进程，这是为了过滤掉其他不相关的进程操作；</li>
+<li>最后的printf()函数就是把内核协议栈打印到终端中。</li>
+</ul>
+<p>打开一个新终端，并在终端中执行curl time.geekbang.org命令，然后回到第一个终端，就可以看到如下的输出：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">kstack:</span><br><span class="line">        kfree_skb+1</span><br><span class="line">        udpv6_destroy_sock+66</span><br><span class="line">        sk_common_release+34</span><br><span class="line">        udp_lib_close+9</span><br><span class="line">        inet_release+75</span><br><span class="line">        inet6_release+49</span><br><span class="line">        __sock_release+66</span><br><span class="line">        sock_close+21</span><br><span class="line">        __fput+159</span><br><span class="line">        ____fput+14</span><br><span class="line">        task_work_run+103</span><br><span class="line">        exit_to_user_mode_loop+411</span><br><span class="line">        exit_to_user_mode_prepare+187</span><br><span class="line">        syscall_exit_to_user_mode+23</span><br><span class="line">        do_syscall_64+110</span><br><span class="line">        entry_SYSCALL_64_after_hwframe+68</span><br><span class="line"></span><br><span class="line">kstack:</span><br><span class="line">        kfree_skb+1</span><br><span class="line">        udpv6_destroy_sock+66</span><br><span class="line">        sk_common_release+34</span><br><span class="line">        udp_lib_close+9</span><br><span class="line">        inet_release+75</span><br><span class="line">        inet6_release+49</span><br><span class="line">        __sock_release+66</span><br><span class="line">        sock_close+21</span><br><span class="line">        __fput+159</span><br><span class="line">        ____fput+14</span><br><span class="line">        task_work_run+103</span><br><span class="line">        exit_to_user_mode_loop+411</span><br><span class="line">        exit_to_user_mode_prepare+187</span><br><span class="line">        syscall_exit_to_user_mode+23</span><br><span class="line">        do_syscall_64+110</span><br><span class="line">        entry_SYSCALL_64_after_hwframe+68</span><br><span class="line"></span><br><span class="line">kstack:</span><br><span class="line">        kfree_skb+1</span><br><span class="line">        unix_release+29</span><br><span class="line">        __sock_release+66</span><br><span class="line">        sock_close+21</span><br><span class="line">        __fput+159</span><br><span class="line">        ____fput+14</span><br><span class="line">        task_work_run+103</span><br><span class="line">        exit_to_user_mode_loop+411</span><br><span class="line">        exit_to_user_mode_prepare+187</span><br><span class="line">        syscall_exit_to_user_mode+23</span><br><span class="line">        do_syscall_64+110</span><br><span class="line">        entry_SYSCALL_64_after_hwframe+68</span><br><span class="line"></span><br><span class="line">kstack:</span><br><span class="line">        kfree_skb+1</span><br><span class="line">        __sys_connect_file+95</span><br><span class="line">        __sys_connect+162</span><br><span class="line">        __x64_sys_connect+24</span><br><span class="line">        do_syscall_64+97</span><br><span class="line">        entry_SYSCALL_64_after_hwframe+68</span><br><span class="line"></span><br><span class="line">kstack:</span><br><span class="line">        kfree_skb+1</span><br><span class="line">        __sys_connect_file+95</span><br><span class="line">        __sys_connect+162</span><br><span class="line">        __x64_sys_connect+24</span><br><span class="line">        do_syscall_64+97</span><br><span class="line">        entry_SYSCALL_64_after_hwframe+68</span><br></pre></td></tr></table></figure>
+
+<p>这个输出包含了多个调用栈，每个调用栈从下往上就是kfree_skb被调用过程中的各个函数（函数名后的数字表示调用点相对函数地址的偏移），它们都是从系统调用（entry_SYSCALL_64）开始，通过一系列的内核函数之后，最终调用到了跟踪函数。</p>
+<p>输出中包含多个调用栈，是因为同一个内核函数是有可能在多个地方调用的。因此，我们需要对它进一步改进，加上网络信息的过滤，并把源IP 和目的IP等基本信息也打印出来。比如，我们访问一个网址，只需要关心TCP协议，而其他协议相关的内核栈就可以忽略掉。</p>
+<p>kfree_skb函数的定义格式如下所示，它包含一个<code>struct sk_buff</code>类型的参数，这样我们就可以从中获取协议、源IP和目的IP等基本信息：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">kfree_skb</span><span class="params">(<span class="keyword">struct</span> sk_buff * skb)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>由于我们需要添加数据结构读取的过程，为了更好的可读性，你可以把这些过程放入一个脚本文件中，通常后缀为<code>.bt</code>。下面就是一个改进了的跟踪程序：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">kprobe:kfree_skb /comm==&quot;curl&quot;/</span><br><span class="line">&#123;</span><br><span class="line">  // 1. 第一个参数是 struct sk_buff</span><br><span class="line"><span class="meta prompt_">  $</span><span class="language-bash">skb = (struct sk_buff *)arg0;</span></span><br><span class="line"></span><br><span class="line">  // 2. 从网络头中获取源IP和目的IP</span><br><span class="line"><span class="meta prompt_">  $</span><span class="language-bash">iph = (struct iphdr *)(<span class="variable">$skb</span>-&gt;<span class="built_in">head</span> + <span class="variable">$skb</span>-&gt;network_header);</span></span><br><span class="line"><span class="meta prompt_">  $</span><span class="language-bash">sip = ntop(AF_INET, <span class="variable">$iph</span>-&gt;saddr);</span></span><br><span class="line"><span class="meta prompt_">  $</span><span class="language-bash">dip = ntop(AF_INET, <span class="variable">$iph</span>-&gt;daddr);</span></span><br><span class="line"></span><br><span class="line">  // 3. 只处理TCP协议</span><br><span class="line">  if ($iph-&gt;protocol == IPPROTO_TCP)</span><br><span class="line">  &#123;</span><br><span class="line">    // 4. 打印源IP、目的IP和内核调用栈</span><br><span class="line">    printf(&quot;SKB dropped: %s-&gt;%s, kstack: %s\n&quot;, $sip, $dip, kstack);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>第1处是把bpftrace的<code>内置参数arg0</code>转换成SKB数据结构<code>struct sk_buff *</code>（注意使用指针）。</li>
+<li>第2处是从SKB数据结构中获取网络头之后，再从中拿到源IP和目的IP，最后再调用内置函数ntop()，把整数型的IP数据结构转换为可读性更好的字符串格式。</li>
+<li>第3处是对网络协议进行了过滤，只保留TCP协议。</li>
+<li>第4处是向终端中打印刚才获取的源IP和目的IP，同时也打印内核调用栈。</li>
+</ul>
+<p>我们在脚本文件中加入这些类型定义的头文件：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/skbuff.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/ip.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/socket.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/netdevice.h&gt;</span></span></span><br></pre></td></tr></table></figure>
+
+<p>然后，保存到文件dropwatch.bt中，就可以通过<code>sudo bpftrace dropwatch.bt</code>来运行了。</p>
+<h3 id="2-2排查网络丢包问题"><a href="#2-2排查网络丢包问题" class="headerlink" title="2.2排查网络丢包问题"></a>2.2排查网络丢包问题</h3><p>最常见的丢包是由系统防火墙阻止了相应的IP或端口导致的，你可以执行下面的<code>nslookup</code>命令，查询到极客时间的IP地址，然后再执iptables命令，禁止访问极客时间的80端口：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">首先查询极客时间的IP</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">nslookup time.geekbang.org</span></span><br><span class="line">Server:        127.0.0.53</span><br><span class="line">Address:    127.0.0.53#53</span><br><span class="line"></span><br><span class="line">Non-authoritative answer:</span><br><span class="line">Name:    time.geekbang.org</span><br><span class="line">Address: 39.106.233.176</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">然后增加防火墙规则阻止80端口</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">sudo iptables -I OUTPUT -d 39.106.233.176/32 -p tcp -m tcp --dport 80 -j DROP</span></span><br></pre></td></tr></table></figure>
+
+<p>防火墙规则加好之后，在终端一中启动跟踪脚本：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo bpftrace dropwatch.bt</span><br></pre></td></tr></table></figure>
+
+<p>然后，新建一个终端，访问极客时间，你应该会看到超时的错误：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">curl --connect-timeout 1 39.106.233.176</span></span><br><span class="line">curl: (28) Connection timed out after 1000 milliseconds</span><br></pre></td></tr></table></figure>
+
+<p>返回第一个终端，你就可以看到eBPF程序已经成功跟踪到了内核丢包的调用栈信息，如下所示：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">SKB dropped: 192.168.1.129-&gt;39.106.233.176, kstack:</span><br><span class="line">        kfree_skb+1</span><br><span class="line">        __ip_local_out+219</span><br><span class="line">        ip_local_out+29</span><br><span class="line">        __ip_queue_xmit+367</span><br><span class="line">        ip_queue_xmit+21</span><br><span class="line">        __tcp_transmit_skb+2237</span><br><span class="line">        tcp_connect+1009</span><br><span class="line">        tcp_v4_connect+951</span><br><span class="line">        __inet_stream_connect+206</span><br><span class="line">        inet_stream_connect+59</span><br><span class="line">        __sys_connect_file+95</span><br><span class="line">        __sys_connect+162</span><br><span class="line">        __x64_sys_connect+24</span><br><span class="line">        do_syscall_64+97</span><br><span class="line">        entry_SYSCALL_64_after_hwframe+68</span><br></pre></td></tr></table></figure>
+
+<p>从这个输出中，我们可以看到，第一行输出中我们成功拿到了源IP和目的IP，而接下来的每一行中都包含了指令地址、函数名以及函数地址偏移。从下往上看这个调用栈，最后调用kfree_skb函数的是__ip_local_out，那么__ip_local_out这个函数又是干什么的呢？根据函数名，你可以大致猜测出，它是用于向外发送网络包的，但具体的步骤我们就不太确定了。所以，这时候就需要去参考一下内核源代码。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __ip_local_out(<span class="keyword">struct</span> net *net, <span class="keyword">struct</span> sock *sk, <span class="keyword">struct</span> sk_buff *skb)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">iphdr</span> *<span class="title">iph</span> =</span> ip_hdr(skb);</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* 计算总长度 */</span></span><br><span class="line">    iph-&gt;tot_len = htons(skb-&gt;len);</span><br><span class="line">  <span class="comment">/* 计算校验和 */</span></span><br><span class="line">    ip_send_check(iph);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* L3主设备处理 */</span></span><br><span class="line">    skb = l3mdev_ip_out(sk, skb);</span><br><span class="line">    <span class="keyword">if</span> (unlikely(!skb))</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* 设置IP协议 */</span></span><br><span class="line">    skb-&gt;protocol = htons(ETH_P_IP);</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* 调用NF_INET_LOCAL_OUT钩子 */</span></span><br><span class="line">    <span class="keyword">return</span> nf_hook(NFPROTO_IPV4, NF_INET_LOCAL_OUT,</span><br><span class="line">               net, sk, skb, <span class="literal">NULL</span>, skb_dst(skb)-&gt;dev,</span><br><span class="line">               dst_output);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从这个代码来看，<code>__ip_local_out</code>函数的主要流程就是计算总长度和校验和，再设置L3主设备和协议等属性后，最终调用<code>nf_hook</code>。而nf就是netfilter的缩写，所以你就可以将其理解为调用iptables规则。再根据<code>NF_INET_LOCAL_OUT</code>参数，你就可以知道接下来调用了OUTPUT链（chain）的钩子。知道了发生丢包的问题来源，接下来再去定位iptables就比较容易了。在终端中执行下面的iptables命令，就可以查询OUTPUT链的过滤规则：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo iptables -nvL OUTPUT</span><br></pre></td></tr></table></figure>
+
+<p>命令执行后，你应该可以看到类似下面的输出。可以看到，正是我们之前加入的iptables规则导致了丢包：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination</span><br><span class="line">    1   180 DROP       tcp  --  *      *       0.0.0.0/0            39.106.233.176       tcp dpt:80</span><br></pre></td></tr></table></figure>
+
+<p>清楚了问题的根源，要解决它当然就很简单了。只要执行下面的命令，把导致丢包的iptables规则删除即可：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo iptables -D OUTPUT -d 39.106.233.176/32 -p tcp -m tcp --dport 80 -j DROP</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-网络性能优化"><a href="#3-网络性能优化" class="headerlink" title="3.网络性能优化"></a>3.网络性能优化</h2><p>以最常用的负载均衡器为例，带你一起来看看如何借助eBPF来优化网络的性能。既然要优化负载均衡器的网络性能，那么首先就需要有一个优化的目标，即初始版的负载均衡器。在今天的案例中，我们使用最常用的反向代理和Web服务器Nginx作为初始版的负载均衡器，同时也使用自定义的Nginx作为后端的Web服务器。</p>
+<h3 id="3-1Nginx负载均衡"><a href="#3-1Nginx负载均衡" class="headerlink" title="3.1Nginx负载均衡"></a>3.1Nginx负载均衡</h3><p>为了方便环境的重现，负载均衡器、Web服务器以及客户端都运行在容器中，它们的IP和MAC等基本信息如下图所示：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/e923026f577f7b991be2610734f9e415.jpg" alt="img"></p>
+<p>参考Nginx官方文档中HTTP负载均衡的配置方法，你可以通过以下几步来搭建上述的案例环境。</p>
+<p>1）执行下面的命令，创建上图中的4个容器：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Webserver (响应是hostname，如 http1 或 http2)</span></span><br><span class="line">docker run -itd --name=http1 --hostname=http1 feisky/webserver</span><br><span class="line">docker run -itd --name=http2 --hostname=http2 feisky/webserver</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Client</span></span><br><span class="line">docker run -itd --name=client alpine</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Nginx</span></span><br><span class="line">docker run -itd --name=nginx nginx</span><br></pre></td></tr></table></figure>
+
+<p>注意，这儿启动的Nginx容器使用的还是官方镜像，还需要额外的步骤更新它的负载均衡配置。</p>
+<p>2）执行下面的命令，查询两个Web服务器的IP地址：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">IP1=$(docker inspect http1 -f &#x27;&#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;&#x27;)</span><br><span class="line">IP2=$(docker inspect http2 -f &#x27;&#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;&#x27;)</span><br><span class="line">echo &quot;Webserver1&#x27;s IP: $IP1&quot;</span><br><span class="line">echo &quot;Webserver2&#x27;s IP: $IP2&quot;</span><br></pre></td></tr></table></figure>
+
+<p>命令执行后，你将会看到如下的输出：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Webserver1&#x27;s IP: 172.17.0.2</span><br><span class="line">Webserver2&#x27;s IP: 172.17.0.3</span><br></pre></td></tr></table></figure>
+
+<p>3）执行下面的命令，生成并更新Nginx配置：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">生成nginx.conf文件</span></span><br><span class="line"><span class="meta prompt_">cat&gt;</span><span class="language-bash">nginx.conf &lt;&lt;<span class="string">EOF</span></span></span><br><span class="line">user  nginx;</span><br><span class="line">worker_processes  auto;</span><br><span class="line"></span><br><span class="line">error_log  /var/log/nginx/error.log notice;</span><br><span class="line">pid        /var/run/nginx.pid;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections  1024;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">   include       /etc/nginx/mime.types;</span><br><span class="line">   default_type  application/octet-stream;</span><br><span class="line"></span><br><span class="line">    upstream webservers &#123;</span><br><span class="line">        server $IP1;</span><br><span class="line">        server $IP2;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    server &#123;</span><br><span class="line">        listen 80;</span><br><span class="line"></span><br><span class="line">        location / &#123;</span><br><span class="line">            proxy_pass http://webservers;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">更新Nginx配置</span></span></span><br><span class="line">docker cp nginx.conf nginx:/etc/nginx/nginx.conf</span><br><span class="line">docker exec nginx nginx -s reload</span><br></pre></td></tr></table></figure>
+
+<p>配置完成后，再执行下面的命令，验证负载均衡器是不是生效了（&#x2F; # 表示在容器终端中执行命令）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查询Nginx容器IP（输出为172.17.0.5）</span></span><br><span class="line">docker inspect nginx -f &#x27;&#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;&#x27;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">进入client容器终端，安装curl之后访问Nginx</span></span><br><span class="line">docker exec -it client sh</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">(以下命令运行在client容器中)</span></span><br><span class="line">/ # apk add curl wrk --update</span><br><span class="line">/ # curl &quot;http://172.17.0.5&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如果一切正常，多次执行curl命令后，你会看到如下的输出，即通过Nginx成功获得了两个Web服务器的输出，说明负载均衡器配置成功了：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">/ # curl &quot;http://172.17.0.5&quot;</span><br><span class="line">Hostname: http1</span><br><span class="line"></span><br><span class="line">/ # curl &quot;http://172.17.0.5&quot;</span><br><span class="line">Hostname: http2</span><br></pre></td></tr></table></figure>
+
+<p>负载均衡器配置成功后，它的性能怎么样呢？进入client容器终端中，执行下面的命令，就可以使用<code>wrk</code>给它做个性能测试：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/ # apk add wrk --update</span><br><span class="line">/ # wrk -c100 &quot;http://172.17.0.5&quot;</span><br></pre></td></tr></table></figure>
+
+<p>稍等一会，你可以看到如下的性能测试报告：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Running 10s test @ http://172.17.0.5</span><br><span class="line">  2 threads and 100 connections</span><br><span class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</span><br><span class="line">    Latency     7.53ms    4.96ms  39.33ms   70.78%</span><br><span class="line">    Req/Sec     6.96k   514.59     8.88k    74.00%</span><br><span class="line">  138711 requests in 10.05s, 21.83MB read</span><br><span class="line">Requests/sec:  13798.11</span><br><span class="line">Transfer/sec:      2.17MB</span><br></pre></td></tr></table></figure>
+
+<p>从报告中你可以发现，默认情况下，总的平均每秒请求数是13798，而每个线程的平均请求数和请求延迟是6.96k和7.53毫秒（在你的环境下可能看到不同数值，具体的性能指标取决于运行环境和配置）。你可以记录一下这些数值，以便后面跟eBPF进行比较。</p>
+<h3 id="3-2套接字eBPF程序优化负载均衡性能"><a href="#3-2套接字eBPF程序优化负载均衡性能" class="headerlink" title="3.2套接字eBPF程序优化负载均衡性能"></a>3.2套接字eBPF程序优化负载均衡性能</h3><p>根据原理的不同，套接字eBPF程序又分为很多不同的类型。其中，BPF_PROG_TYPE_SOCK_OPS、BPF_PROG_TYPE_SK_SKB、BPF_PROG_TYPE_SK_MSG等类型的eBPF程序可以与套接字映射（如BPF_MAP_TYPE_SOCKMAP或BPF_MAP_TYPE_SOCKHASH）配合，实现套接字的转发。套接字eBPF程序工作在内核空间中，无需把网络数据发送到用户空间就能完成转发。因此，我们可以先猜测，它应该是可以提升网络转发的性能（当然，具体能不能提升，还需要接下来的测试验证）。</p>
+<h4 id="3-2-1创建套接字映射"><a href="#3-2-1创建套接字映射" class="headerlink" title="3.2.1创建套接字映射"></a>3.2.1创建套接字映射</h4><p>首先，第一步是创建一个套接字类型的映射。以<code>BPF_MAP_TYPE_SOCKHASH</code>类型的套接字映射为例，它的值总是套接字文件描述符，而键则需要我们去定义。比如，可以定义一个包含IP协议五元组的结构体，作为套接字映射的键类型：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sock_key</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    __u32 sip;    <span class="comment">//源IP</span></span><br><span class="line">    __u32 dip;    <span class="comment">//目的IP</span></span><br><span class="line">    __u32 sport;  <span class="comment">//源端口</span></span><br><span class="line">    __u32 dport;  <span class="comment">//目的端口</span></span><br><span class="line">    __u32 family; <span class="comment">//协议</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>有了键类型之后，就可以使用<code>SEC</code>关键字来定义套接字映射了，如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/bpf.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> bpf_map_def <span class="title function_">SEC</span><span class="params">(<span class="string">&quot;maps&quot;</span>)</span> sock_ops_map = &#123;</span><br><span class="line">    .type = BPF_MAP_TYPE_SOCKHASH,</span><br><span class="line">    .key_size = <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sock_key),</span><br><span class="line">    .value_size = <span class="keyword">sizeof</span>(<span class="type">int</span>),</span><br><span class="line">    .max_entries = <span class="number">65535</span>,</span><br><span class="line">    .map_flags = <span class="number">0</span>,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>为了方便后续在eBPF程序中引用这两个数据结构，可以把它们保存到一个头文件sockops.h中。</p>
+<h4 id="3-2-2更新套接字映射"><a href="#3-2-2更新套接字映射" class="headerlink" title="3.2.2更新套接字映射"></a>3.2.2更新套接字映射</h4><p>套接字映射准备好之后，第二步就是在<code>BPF_PROG_TYPE_SOCK_OPS</code>类型的eBPF程序中跟踪套接字事件，并把套接字信息保存到<code>SOCKHASH</code>映射中。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> BPF_PROG_TYPE(_id, _name, prog_ctx_type, kern_ctx_type)</span></span><br><span class="line"></span><br><span class="line">BPF_PROG_TYPE(BPF_PROG_TYPE_SOCK_OPS, sock_ops,</span><br><span class="line">    <span class="keyword">struct</span> bpf_sock_ops, <span class="keyword">struct</span> bpf_sock_ops_kern)</span><br></pre></td></tr></table></figure>
+
+<p>因此，你就可以使用如下的格式来定义这个eBPF程序：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SEC(<span class="string">&quot;sockops&quot;</span>)</span><br><span class="line"><span class="type">int</span> <span class="title function_">bpf_sockmap</span><span class="params">(<span class="keyword">struct</span> bpf_sock_ops *skops)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// <span class="doctag">TODO:</span> 添加套接字映射更新操作</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在添加具体的套接字映射更新逻辑之前，还需要你先从struct bpf_sock_ops中获取作为键类型的五元组。参考内核中<code>struct bpf_sock_ops</code>的定义，如下的几个字段刚好可以满足我们的需要：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">bpf_sock_ops</span> &#123;</span></span><br><span class="line">  __u32 family;</span><br><span class="line">  __u32 remote_ip4;  <span class="comment">/* Stored in network byte order */</span></span><br><span class="line">  __u32 local_ip4;  <span class="comment">/* Stored in network byte order */</span></span><br><span class="line">  __u32 remote_port;<span class="comment">/* Stored in network byte order */</span></span><br><span class="line">  __u32 local_port;  <span class="comment">/* stored in host byte order */</span></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因此，你就可以直接使用它们来定义映射中所需要的键。下面就是<code>sock_key</code>的定义方法，注意这里把<code>local_port</code>转换为了同其他字段一样的网络字节序：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sock_key</span> <span class="title">key</span> =</span> &#123;</span><br><span class="line">  .dip = skops-&gt;remote_ip4,</span><br><span class="line">  .sip = skops-&gt;local_ip4,</span><br><span class="line">  .sport = bpf_htonl(skops-&gt;local_port),</span><br><span class="line">  .dport = skops-&gt;remote_port,</span><br><span class="line">  .family = skops-&gt;family,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>有了键之后，还不能立刻就去更新套接字映射。这是因为BPF_PROG_TYPE_SOCK_OPS程序跟踪了所有类型的套接字操作，而我们只需要把新创建的套接字更新到映射中。</p>
+<p>struct bpf_sock_ops中包含的<code>op</code>字段可用于判断<code>套接字操作类型</code>，内核头文件中已经为每种操作的具体含义加了详细的注释，对于新创建的连接，我们就可以使用以下两个状态（即主动连接和被动连接）作为判断条件：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* skip if it is not established op */</span></span><br><span class="line"><span class="keyword">if</span> (skops-&gt;op != BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB &amp;&amp; skops-&gt;op != BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB) &#123;</span><br><span class="line">  <span class="keyword">return</span> BPF_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里，说明套接字已经属于新创建的连接了，所以接下来就是调用BPF辅助函数去更新套接字映射，如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bpf_sock_hash_update(skops, &amp;sock_ops_map, &amp;key, BPF_NOEXIST);</span><br></pre></td></tr></table></figure>
+
+<p>其中，<code>BPF_NOEXIST</code>表示键不存在的时候才添加新元素。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/bpf.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;bpf/bpf_endian.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;bpf/bpf_helpers.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;sockops.h&quot;</span></span></span><br><span class="line"></span><br><span class="line">SEC(<span class="string">&quot;sockops&quot;</span>)</span><br><span class="line"><span class="type">int</span> <span class="title function_">bpf_sockmap</span><span class="params">(<span class="keyword">struct</span> bpf_sock_ops *skops)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* skip if the packet is not ipv4 */</span></span><br><span class="line">    <span class="keyword">if</span> (skops-&gt;family != AF_INET)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> BPF_OK;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* skip if it is not established op */</span></span><br><span class="line">    <span class="keyword">if</span> (skops-&gt;op != BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB &amp;&amp; skops-&gt;op != BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB) &#123;</span><br><span class="line">        <span class="keyword">return</span> BPF_OK;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sock_key</span> <span class="title">key</span> =</span> &#123;</span><br><span class="line">        .dip = skops-&gt;remote_ip4,</span><br><span class="line">        .sip = skops-&gt;local_ip4,</span><br><span class="line">        <span class="comment">/* convert to network byte order */</span></span><br><span class="line">        .sport = (bpf_htonl(skops-&gt;local_port)),</span><br><span class="line">        .dport = skops-&gt;remote_port,</span><br><span class="line">        .family = skops-&gt;family,</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    bpf_sock_hash_update(skops, &amp;sock_ops_map, &amp;key, BPF_NOEXIST);</span><br><span class="line">    <span class="keyword">return</span> BPF_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">char</span> LICENSE[] SEC(<span class="string">&quot;license&quot;</span>) = <span class="string">&quot;Dual BSD/GPL&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>把上述代码保存到<code>sockops.bpf.c</code>文件中，然后执行下面的命令，将其编译为BPF字节码：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clang -g -O2 -target bpf -D__TARGET_ARCH_x86 -I/usr/include/x86_64-linux-gnu -I. -c sockops.bpf.c -o sockops.bpf.o</span><br></pre></td></tr></table></figure>
+
+<p>到这里，套接字更新的eBPF程序就准备好了，接下来我们来看看如何转发套接字。</p>
+<h4 id="3-2-3套接字转发"><a href="#3-2-3套接字转发" class="headerlink" title="3.2.3套接字转发"></a>3.2.3套接字转发</h4><p>第三步的套接字转发可以使用<code>BPF_PROG_TYPE_SK_MSG</code>类型的eBPF程序，捕获套接字中的发送数据包，并根据上述的套接字映射进行转发。根据内核头文件中的定义格式，它的参数格式为<code>struct sk_msg_md</code>。struct sk_msg_md的定义格式如下所示，也已经包含了套接字映射所需的五元组信息：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sk_msg_md</span> &#123;</span></span><br><span class="line">  ...</span><br><span class="line">  __u32 family;</span><br><span class="line">  __u32 remote_ip4;  <span class="comment">/* Stored in network byte order */</span></span><br><span class="line">  __u32 local_ip4;   <span class="comment">/* Stored in network byte order */</span></span><br><span class="line">  __u32 remote_port; <span class="comment">/* Stored in network byte order */</span></span><br><span class="line">  __u32 local_port;  <span class="comment">/* stored in host byte order */</span></span><br><span class="line">  ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>了解清楚数据结构的定义格式之后，还需要你注意一点：BPF_PROG_TYPE_SK_MSG跟BPF_PROG_TYPE_SOCK_OPS属于不同的eBPF程序。虽然你可以把多个eBPF程序放入同一个源码文件，并编译到同一个字节码文件(即文件名.o）中，但由于它们的加载和挂载格式都是不同的，我推荐你把不同的eBPF程序放入不同的文件中，这样管理起来更为方便。</p>
+<p>因此，接下来创建一个新的文件（如<code>sockredir.bpf.c</code>），用于保存BPF_PROG_TYPE_SK_MSG程序。添加如下的代码，就定义了一个名为bpf_redir的eBPF程序：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SEC(<span class="string">&quot;sk_msg&quot;</span>)</span><br><span class="line"><span class="type">int</span> <span class="title function_">bpf_redir</span><span class="params">(<span class="keyword">struct</span> sk_msg_md *msg)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//<span class="doctag">TODO:</span> 添加套接字转发逻辑</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个eBPF程序中，既然还要访问相同的套接字映射，也就需要从参数struct sk_msg_md中提取五元组信息，并存入套接字映射所需要的键struct sock_key中。如下所示，我们就定义了一个新的struct sock_key（注意，这里同样需要把local_port转换为网络字节序）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sock_key</span> <span class="title">key</span> =</span> &#123;</span><br><span class="line">  .sip = msg-&gt;remote_ip4,</span><br><span class="line">  .dip = msg-&gt;local_ip4,</span><br><span class="line">  .dport = bpf_htonl(msg-&gt;local_port),</span><br><span class="line">  .sport = msg-&gt;remote_port,</span><br><span class="line">  .family = msg-&gt;family,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>需要你注意的是，这儿的源IP和源端口对应上述eBPF程序的目的IP和目的端口，也就是说，发送方向刚好是相反的。为什么是相反的呢？来看看下面这张图，原因就很清楚了：</p>
+<p><img src="/imgs/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/3c2419d6a357eca924fe6b94ed5b0970.jpg" alt="img"></p>
+<p>图中，灰色箭头是套接字转发之前的网络流向，而绿色箭头则是套接字转发后的网络流向。从这张图中你可以发现：</p>
+<ul>
+<li>在套接字转发之前，即便是在同一台机器的两个容器中，负载均衡器和Web服务器的两个套接字通信还是需要通过完整的内核协议栈进行处理的；</li>
+<li>而在套接字转发之后，来自发送端套接字1的网络包在套接字层就交给了接收端的套接字2，从而避免了额外的内核协议栈处理过程。</li>
+</ul>
+<p>由于这两个套接字一个是发送，一个是接收，因而它们的方向是相反的，所以在构造转发套接字的键时，就需要把源和目的交换。</p>
+<p>有了套接字映射所需要的键之后，最后还剩下添加套接字转发逻辑的步骤。参考BPF辅助函数文档（你可以执行man bpf-helpers查询）<code>bpf_msg_redirect_hash()</code>正好跟我们的需求完全匹配。为了方便你理解，我把它的使用文档也贴一下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">long bpf_msg_redirect_hash(struct sk_msg_buff *msg, struct bpf_map *map, void *key, u64 flags)</span><br><span class="line"></span><br><span class="line">Description</span><br><span class="line">This helper is used in programs implementing policies at the socket  level.  If  the</span><br><span class="line">message  msg  is allowed to pass (i.e. if the verdict eBPF program returns SK_PASS),</span><br><span class="line">redirect it to the socket referenced by map (of  type  BPF_MAP_TYPE_SOCKHASH)  using</span><br><span class="line">hash  key.  Both  ingress  and  egress  interfaces  can be used for redirection. The</span><br><span class="line">BPF_F_INGRESS value in flags is used to make the distinction (ingress  path  is  se‐</span><br><span class="line">lected  if  the  flag is present, egress path otherwise). This is the only flag sup‐</span><br><span class="line">ported for now.</span><br><span class="line"></span><br><span class="line">Return SK_PASS on success, or SK_DROP on error.</span><br></pre></td></tr></table></figure>
+
+<p>概括来说，bpf_msg_redirect_hash()的作用就是<code>把当前套接字转发给套接字映射中的套接字</code>。而参数key用于从套接字映射中查询待转发的套接字，flags用于区分入口或出口路径。根据每个参数的具体格式，你就可以通过下面的方式进行套接字转发。注意，对于负载均衡的场景来说，只需要对入口路径进行处理，因而这儿设置了<code>BPF_F_INGRESS</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bpf_msg_redirect_hash(msg, &amp;sock_ops_map, &amp;key, BPF_F_INGRESS);</span><br></pre></td></tr></table></figure>
+
+<p>再加上必要的头文件之后，完整的eBPF程序如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/bpf.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;bpf/bpf_endian.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;bpf/bpf_helpers.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;sockops.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">SEC(<span class="string">&quot;sk_msg&quot;</span>)</span><br><span class="line"><span class="type">int</span> <span class="title function_">bpf_redir</span><span class="params">(<span class="keyword">struct</span> sk_msg_md *msg)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sock_key</span> <span class="title">key</span> =</span> &#123;</span><br><span class="line">        .sip = msg-&gt;remote_ip4,</span><br><span class="line">        .dip = msg-&gt;local_ip4,</span><br><span class="line">        .dport = bpf_htonl(msg-&gt;local_port),</span><br><span class="line">        .sport = msg-&gt;remote_port,</span><br><span class="line">        .family = msg-&gt;family,</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    bpf_msg_redirect_hash(msg, &amp;sock_ops_map, &amp;key, BPF_F_INGRESS);</span><br><span class="line">    <span class="keyword">return</span> SK_PASS;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">char</span> LICENSE[] SEC(<span class="string">&quot;license&quot;</span>) = <span class="string">&quot;Dual BSD/GPL&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-2-4加载eBPF程序"><a href="#3-2-4加载eBPF程序" class="headerlink" title="3.2.4加载eBPF程序"></a>3.2.4加载eBPF程序</h4><p>得到套接字映射更新和转发这两个BPF字节码之后，还需要把它们加载到内核之中，再挂载到特定的内核事件之后才会生效。在之前的案例中，介绍的方法是利用BCC、libbpf等提供的库函数。今天介绍另外一种方法，即通过命令行工具bpftool加载和挂载eBPF程序。</p>
+<p>首先，对于sockops程序<code>sockops.bpf.o</code>来说，你可以执行下面的命令，将其加载到内核中：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo bpftool prog load sockops.bpf.o /sys/fs/bpf/sockops type sockops pinmaps /sys/fs/bpf</span><br></pre></td></tr></table></figure>
+
+<p>这条命令将sockops.bpf.o中的eBPF程序和映射加载到内核中，并固定到BPF文件系统中。固定到BPF文件系统的好处是，即便bpftool命令已经执行结束，eBPF程序还会继续在内核中运行，并且eBPF映射也会继续存在内核内存中。</p>
+<p>加载成功后，你还可以执行<code>bpftool prog show</code>和<code>bpftool map show</code>命令确认它们的加载结果。执行成功后，你会看到类似下面的输出：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">sudo bpftool prog show name bpf_sockmap</span></span><br><span class="line">1062: sock_ops  name bpf_sockmap  tag e37ef726a3a85a2e  gpl</span><br><span class="line">  loaded_at 2022-02-04T13:07:28+0000  uid 0</span><br><span class="line">  xlated 256B  jited 140B  memlock 4096B  map_ids 90</span><br><span class="line">  btf_id 234</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">sudo bpftool map show name sock_ops_map</span></span><br><span class="line">90: sockhash  name sock_ops_map  flags 0x0</span><br><span class="line">  key 20B  value 4B  max_entries 65535  memlock 1572864B</span><br></pre></td></tr></table></figure>
+
+<p>BPF字节码加载成功之后，其中的eBPF程序还不会自动运行，因为这时候它还没有与内核事件挂载。对sockops程序来说，它支持挂载到cgroups，从而对cgroups所拥有的所有进程生效，这跟我们案例的容器场景也是匹配的。</p>
+<p>通常情况下，主流的发行版都会把cgroups挂载到<code>/sys/fs/cgroup</code>路径下。接着，再执行下面的<code>bpftool cgroup attach</code>命令，把sockops程序挂载到cgroups路径中：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo bpftool cgroup attach /sys/fs/cgroup/ sock_ops pinned /sys/fs/bpf/sockops</span><br></pre></td></tr></table></figure>
+
+<p>接下来，再执行下面的命令，加载并挂载sk_msg程序sockredir.bpf.o：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo bpftool prog load sockredir.bpf.o /sys/fs/bpf/sockredir type sk_msg map name sock_ops_map pinned /sys/fs/bpf/sock_ops_map</span><br><span class="line">sudo bpftool prog attach pinned /sys/fs/bpf/sockredir msg_verdict pinned /sys/fs/bpf/sock_ops_map</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-2-5性能测试"><a href="#3-2-5性能测试" class="headerlink" title="3.2.5性能测试"></a>3.2.5性能测试</h4><p>执行下面的命令进入client容器终端，并在容器终端中执行<code>wrk</code>命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker exec -it client sh</span><br><span class="line">/ # wrk -c100 &quot;http://172.17.0.5&quot;</span><br></pre></td></tr></table></figure>
+
+<p>稍等一会，你会看到如下的输出:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Running 10s test @ http://172.17.0.5</span><br><span class="line">  2 threads and 100 connections</span><br><span class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</span><br><span class="line">    Latency     6.88ms    4.71ms  46.08ms   70.77%</span><br><span class="line">    Req/Sec     7.70k   548.11     9.10k    66.50%</span><br><span class="line">  153466 requests in 10.03s, 24.15MB read</span><br><span class="line">Requests/sec:  15300.71</span><br><span class="line">Transfer/sec:      2.41MB</span><br></pre></td></tr></table></figure>
+
+<p>你可以看到，新的平均每秒请求数是15300，相比优化之前的13798提升了10.8%；而每个线程的平均延迟6.88ms也比之前的7.53ms降低了8.6%。这说明，eBPF真的优化了负载均衡器的转发性能，这跟我们一开始的猜想是一致的。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#eBPF%E5%86%92%E9%99%A9%E8%AE%B0-%E4%BA%8C"><span class="toc-number">1.</span> <span class="toc-text">eBPF冒险记(二)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%86%85%E6%A0%B8%E8%B7%9F%E8%B8%AA%E5%AE%9E%E6%88%98"><span class="toc-number">1.1.</span> <span class="toc-text">1.内核跟踪实战</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E5%88%A9%E7%94%A8%E8%B0%83%E8%AF%95%E4%BF%A1%E6%81%AF%E6%9F%A5%E8%AF%A2%E8%B7%9F%E8%B8%AA%E7%82%B9"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1利用调试信息查询跟踪点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E5%88%A9%E7%94%A8bpftrace%E6%9F%A5%E8%AF%A2%E8%B7%9F%E8%B8%AA%E7%82%B9"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2利用bpftrace查询跟踪点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3%E5%88%A9%E7%94%A8%E5%86%85%E6%A0%B8%E8%B7%9F%E8%B8%AA%E7%82%B9%E6%8E%92%E6%9F%A5%E7%9F%AD%E6%97%B6%E8%BF%9B%E7%A8%8B%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.3利用内核跟踪点排查短时进程问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4bpftrace%E6%96%B9%E6%B3%95"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.4bpftrace方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5BCC%E6%96%B9%E6%B3%95"><span class="toc-number">1.1.5.</span> <span class="toc-text">1.5BCC方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%BD%91%E7%BB%9C%E8%B7%9F%E8%B8%AA%E5%AE%9E%E6%88%98"><span class="toc-number">1.2.</span> <span class="toc-text">2.网络跟踪实战</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E8%B7%9F%E8%B8%AA%E5%86%85%E6%A0%B8%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E6%A0%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1跟踪内核网络协议栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E6%8E%92%E6%9F%A5%E7%BD%91%E7%BB%9C%E4%B8%A2%E5%8C%85%E9%97%AE%E9%A2%98"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2排查网络丢包问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%BD%91%E7%BB%9C%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="toc-number">1.3.</span> <span class="toc-text">3.网络性能优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1Nginx%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1Nginx负载均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2%E5%A5%97%E6%8E%A5%E5%AD%97eBPF%E7%A8%8B%E5%BA%8F%E4%BC%98%E5%8C%96%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E6%80%A7%E8%83%BD"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2套接字eBPF程序优化负载均衡性能</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-1%E5%88%9B%E5%BB%BA%E5%A5%97%E6%8E%A5%E5%AD%97%E6%98%A0%E5%B0%84"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">3.2.1创建套接字映射</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2%E6%9B%B4%E6%96%B0%E5%A5%97%E6%8E%A5%E5%AD%97%E6%98%A0%E5%B0%84"><span class="toc-number">1.3.2.2.</span> <span class="toc-text">3.2.2更新套接字映射</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-3%E5%A5%97%E6%8E%A5%E5%AD%97%E8%BD%AC%E5%8F%91"><span class="toc-number">1.3.2.3.</span> <span class="toc-text">3.2.3套接字转发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-4%E5%8A%A0%E8%BD%BDeBPF%E7%A8%8B%E5%BA%8F"><span class="toc-number">1.3.2.4.</span> <span class="toc-text">3.2.4加载eBPF程序</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-5%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">1.3.2.5.</span> <span class="toc-text">3.2.5性能测试</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&text=eBPF冒险记(二)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&is_video=false&description=eBPF冒险记(二)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=eBPF冒险记(二)&body=Check out this article: https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&title=eBPF冒险记(二)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&name=eBPF冒险记(二)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/09/16/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%BA%8C)/&t=eBPF冒险记(二)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

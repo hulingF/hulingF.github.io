@@ -6,12 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="自研RPC框架之分布式ID设计 借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。  标准版雪花算法的几个缺点：  时钟敏感。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是记录上一次的时间戳，若发现当前时间戳小于">
+    <meta name="description" content="自研RPC框架之分布式ID设计1.改良的雪花算法 借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。  标准版雪花算法的几个缺点：  时钟敏感。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是记录上一次的时间戳，若">
 <meta property="og:type" content="article">
 <meta property="og:title" content="自研RPC框架之分布式ID设计">
 <meta property="og:url" content="https://hulingf.github.io/2024/02/10/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
-<meta property="og:description" content="自研RPC框架之分布式ID设计 借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。  标准版雪花算法的几个缺点：  时钟敏感。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是记录上一次的时间戳，若发现当前时间戳小于">
+<meta property="og:description" content="自研RPC框架之分布式ID设计1.改良的雪花算法 借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。  标准版雪花算法的几个缺点：  时钟敏感。因为ID生成总是和当前操作系统的时间戳绑定的(利用了时间的单调递增性)，因此若操作系统的时钟出现回拨，生成的ID就会重复(一般而言不会人为地去回拨时钟，但服务器会有偶发的”时钟漂移”现象)。对于此问题，Seata的解决策略是记录上一次的时间戳，若">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/before-8c52102c116e08f0b37d947b30008b58.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/after-cad00baeb92d348340136601174c9d8c.png">
@@ -20,8 +20,10 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page4-883fee2cd79ec31b7f1d67c9e6362bca.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/tinyid-easy.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/tinyid_final.png">
 <meta property="article:published_time" content="2024-02-10T13:31:22.792Z">
-<meta property="article:modified_time" content="2024-03-21T03:59:32.724Z">
+<meta property="article:modified_time" content="2024-09-02T14:17:27.258Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="RPC">
 <meta name="twitter:card" content="summary">
@@ -125,7 +127,7 @@
     
     
       <div id="toc">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之分布式ID设计</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之分布式ID设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%94%B9%E8%89%AF%E7%9A%84%E9%9B%AA%E8%8A%B1%E7%AE%97%E6%B3%95"><span class="toc-number">1.1.</span> <span class="toc-text">1.改良的雪花算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8F%B7%E6%AE%B5%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.</span> <span class="toc-text">2.数据库号段模式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1DB%E5%8F%B7%E6%AE%B5%E7%AE%97%E6%B3%95%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1DB号段算法描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E5%8F%B7%E6%AE%B5%E7%94%9F%E6%88%90%E6%96%B9%E6%A1%88%E7%9A%84%E7%AE%80%E5%8D%95%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2号段生成方案的简单架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E7%AE%80%E5%8D%95%E6%9E%B6%E6%9E%84%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3简单架构的问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E6%9E%B6%E6%9E%84%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4架构优化方案</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-1%E5%8F%8C%E5%8F%B7%E6%AE%B5%E7%BC%93%E5%AD%98"><span class="toc-number">1.2.4.1.</span> <span class="toc-text">2.4.1双号段缓存</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-2%E5%A2%9E%E5%8A%A0%E5%A4%9ADB%E6%94%AF%E6%8C%81"><span class="toc-number">1.2.4.2.</span> <span class="toc-text">2.4.2增加多DB支持</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-3%E5%A2%9E%E5%8A%A0tinyid-client"><span class="toc-number">1.2.4.3.</span> <span class="toc-text">2.4.3增加tinyid-client</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5tinyid%E6%9C%80%E7%BB%88%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5tinyid最终架构</span></a></li></ol></li></ol></li></ol>
       </div>
     
   </span>
@@ -170,7 +172,7 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <h1 id="自研RPC框架之分布式ID设计"><a href="#自研RPC框架之分布式ID设计" class="headerlink" title="自研RPC框架之分布式ID设计"></a>自研RPC框架之分布式ID设计</h1><blockquote>
+    <h1 id="自研RPC框架之分布式ID设计"><a href="#自研RPC框架之分布式ID设计" class="headerlink" title="自研RPC框架之分布式ID设计"></a>自研RPC框架之分布式ID设计</h1><h2 id="1-改良的雪花算法"><a href="#1-改良的雪花算法" class="headerlink" title="1.改良的雪花算法"></a>1.改良的雪花算法</h2><blockquote>
 <p>借鉴Seata的分布式ID生成设计方案，采用改良的雪花算法。</p>
 </blockquote>
 <p>标准版雪花算法的几个缺点：</p>
@@ -202,7 +204,7 @@
 <li>192.168.4.10</li>
 <li>192.168.8.10</li>
 </ul>
-<p>即只要IP的第4个字节和第3个字节的低2位一样就会重复。新版的策略改为优先从本机网卡的MAC地址截取低10位，若本机未配置有效的网卡，则在[0, 1023]中随机挑一个作为节点ID。这样调整后似乎没有新版的用户再报同样的问题了(当然，有待时间的检验，不管怎样，不会比IP截取策略更糟糕)。</p>
+<p>即只要IP的第4个字节和第3个字节的低2位一样就会重复。<code>新版的策略改为优先从本机网卡的MAC地址截取低10位</code>，若本机未配置有效的网卡，则在[0, 1023]中随机挑一个作为节点ID。这样调整后似乎没有新版的用户再报同样的问题了(当然，有待时间的检验，不管怎样，不会比IP截取策略更糟糕)。</p>
 <hr>
 <p>有细心的同学提出了一个问题：新版算法在单节点内部确实是单调递增的，但是在多实例部署时，它就不再是全局单调递增了啊！因为显而易见，节点ID排在高位，那么节点ID大的，生成的ID一定大于节点ID小的，不管时间上谁先谁后。而原版算法，时间戳在高位，并且始终追随系统时钟，可以保证早生成的ID小于晚生成的ID，只有当2个节点恰好在同一时间戳生成ID时，2个ID的大小才由节点ID决定。这样看来，新版算法是不是错的？</p>
 <blockquote>
@@ -218,20 +220,123 @@
 <p>理想的情况下，主键ID最好是顺序递增的(例如把主键设置为auto_increment)，这样就只会在当前数据页放满了的时候，才需要新建下一页，双向链表永远是顺序尾部增长的，不会有中间的节点发生分裂的情况。</p>
 <p>最糟糕的情况下，主键ID是随机无序生成的(例如Java中一个UUID字符串)，这种情况下，新插入的记录会随机分配到任何一个数据页，如果该页已满，就会触发页分裂。</p>
 <p>如果主键ID由标准版雪花算法生成，最好的情况下，是每个时间戳内只有一个节点在生成ID，这时候算法的效果等同于理想情况的顺序递增，即跟auto_increment无差。最坏的情况下，是每个时间戳内所有节点都在生成ID，这时候算法的效果接近于无序(但仍比UUID的完全无序要好得多，因为workerId只有10位决定了最多只有1024个节点)。实际生产中，算法的效果取决于业务流量，并发度越低，算法越接近理想情况。</p>
-<p>那么，换成新版算法又会如何呢？<br>新版算法从全局角度来看，ID是无序的，但对于每一个workerId，它生成的ID都是严格单调递增的，又因为workerId是有限的，所以最多可划分出1024个子序列，每个子序列都是单调递增的。对于数据库而言，也许它初期接收的ID都是无序的，来自各个子序列的ID都混在一起，就像这样：</p>
+<p>那么，换成新版算法又会如何呢？</p>
+<p><code>新版算法从全局角度来看，ID是无序的，但对于每一个workerId，它生成的ID都是严格单调递增的，又因为workerId是有限的，所以最多可划分出1024个子序列，每个子序列都是单调递增的。</code>对于数据库而言，也许它初期接收的ID都是无序的，来自各个子序列的ID都混在一起，就像这样：</p>
 <p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page3-00bbd658b09cdde9b7cb39a0bd38fbe0.png" alt="初期"></p>
 <p>如果这时候来了个worker1-seq2，显然会造成页分裂：</p>
 <p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page4-883fee2cd79ec31b7f1d67c9e6362bca.png" alt="首次分裂"></p>
 <p>但分裂之后，有趣的事情发生了，对于worker1而言，后续的seq3，seq4不会再造成页分裂(因为还装得下)，seq5也只需要像顺序增长那样新建页进行链接(区别是这个新页不是在双向链表的尾部)。注意，worker1的后续ID，不会排到worker2及之后的任意节点(因而不会造成后边节点的页分裂)，因为它们总比worker2的ID小；也不会排到worker1当前节点的前边(因而不会造成前边节点的页分裂)，因为worker1的子序列总是单调递增的。在这里，我们称worker1这样的子序列达到了稳态，意为这条子序列已经”稳定”了，它的后续增长只会出现在子序列的尾部，而不会造成其它节点的页分裂。</p>
 <p>同样的事情，可以推广到各个子序列上。无论前期数据库接收到的ID有多乱，经过有限次的页分裂后，双向链表总能达到这样一个稳定的终态：</p>
 <p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/page5-24bcb08065fcf74b8e6a55b3c54e81b2.png" alt="终态"></p>
-<p>到达终态后，后续的ID只会在该ID所属的子序列上进行顺序增长，而不会造成页分裂。该状态下的顺序增长与auto_increment的顺序增长的区别是，前者有1024个增长位点(各个子序列的尾部)，后者只有尾部一个。</p>
+<p><code>到达终态后，后续的ID只会在该ID所属的子序列上进行顺序增长，而不会造成页分裂。该状态下的顺序增长与auto_increment的顺序增长的区别是，前者有1024个增长位点(各个子序列的尾部)，后者只有尾部一个。</code></p>
 <p>到这里，我们可以回答开头所提出的问题了：新算法从全局来看的确不是全局递增的，但该算法是<strong>收敛</strong>的，达到稳态后，新算法同样能达成像全局顺序递增一样的效果。</p>
 <hr>
 <p>以上只提到了序列不停增长的情况，而实践生产中，不光有新数据的插入，也有旧数据的删除。而数据的删除有可能会导致页合并(innodb若发现<strong>相邻2个数据页的空间利用率都不到50%，就会把它俩合并</strong>)，这对新算法的影响如何呢？</p>
 <blockquote>
 <p>经过上面的流程，我们可以发现，新算法的本质是<code>利用前期的页分裂，把不同的子序列逐渐分离开来，让算法不断收敛到稳态</code>。而页合并则恰好相反，它有可能会把不同的子序列又合并回同一个数据页里，妨碍算法的收敛。尤其是在收敛的前期，频繁的页合并甚至可以让算法永远无法收敛(你刚分离出来我就又把它们合并回去，一夜回到解放前~)！但在收敛之后，只有在各个子序列的尾节点进行的页合并，才有可能破坏稳态(一个子序列的尾节点和下一个子序列的头节点进行合并)。而在子序列其余节点上的页合并，不影响稳态，因为子序列仍然是有序的，只不过长度变短了而已。</p>
 </blockquote>
+<h2 id="2-数据库号段模式"><a href="#2-数据库号段模式" class="headerlink" title="2.数据库号段模式"></a>2.数据库号段模式</h2><blockquote>
+<p>详细内容参见：<a target="_blank" rel="noopener" href="https://github.com/didi/tinyid">GitHub - didi&#x2F;tinyid: ID Generator id生成器 分布式id生成系统，简单易用、高性能、高可用的id生成系统</a></p>
+</blockquote>
+<p>在简单系统中，我们常常使用DB的Id自增方式来标识和保存数据，随着系统的复杂，数据的增多，分库分表成为了常见的方案，DB自增已无法满足要求。这时候全局唯一的Id生成系统就派上了用场。当然这只是Id生成其中的一种应用场景。那么Id生成系统有哪些要求呢？</p>
+<ol>
+<li><code>全局唯一的Id</code>:无论怎样都不能重复，这是最基本的要求了</li>
+<li><code>高性能</code>:基础服务尽可能耗时少，如果能够本地生成最好</li>
+<li><code>高可用</code>:虽说很难实现100%的可用性，但是也要无限接近于100%的可用性</li>
+<li><code>简单易用</code>: 能够拿来即用，接入方便，同时在系统设计和实现上要尽可能的简单</li>
+</ol>
+<p>我们先来看一下最常见的Id生成方式，DB的<code>auto_increment</code>，相信大家都非常熟悉，我也见过一些同学在实战中使用这种方案来获取一个Id，这个方案的优点是简单，缺点是每次只能向DB获取一个Id，性能比较差，对DB访问比较频繁，DB的压力会比较大。那么是不是可以对这种方案优化一下呢，可否一次向DB获取一批Id呢？答案当然是可以的。</p>
+<p>一批Id，我们可以看成是一个Id范围，例如(1000,2000]，这个1000到2000也可以称为一个”号段”，我们一次向DB申请一个号段，加载到内存中，然后采用自增的方式来生成Id，这个号段用完后，再次向DB申请一个新的号段，这样对DB的压力就减轻了很多，同时内存中直接生成Id，性能则提高了很多。那么保存DB号段的表该怎设计呢？</p>
+<h3 id="2-1DB号段算法描述"><a href="#2-1DB号段算法描述" class="headerlink" title="2.1DB号段算法描述"></a>2.1DB号段算法描述</h3><table>
+<thead>
+<tr>
+<th>id</th>
+<th>start_id</th>
+<th>end_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1000</td>
+<td>2000</td>
+</tr>
+</tbody></table>
+<p>如上表，我们很容易想到的是DB直接存储一个范围(start_id,end_id]，当这批Id使用完毕后，我们做一次update操作，update start_id&#x3D;2000(end_id), end_id&#x3D;3000(end_id+1000)，update成功了，则说明获取到了下一个Id范围。仔细想想，实际上start_id并没有起什么作用，新的号段总是(end_id,end_id+1000]。所以这里我们更改一下，DB设计应该是这样的:</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>biz_type</th>
+<th>max_id</th>
+<th>step</th>
+<th>version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1000</td>
+<td>2000</td>
+<td>1000</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<ul>
+<li>这里我们增加了<code>biz_type</code>，这个代表业务类型，<code>不同的业务的Id隔离</code></li>
+<li><code>max_id</code>则是上面的end_id了，代表当前最大的可用Id</li>
+<li><code>step</code>代表号段的长度，可以根据每个业务的QPS来设置一个合理的长度</li>
+<li><code>version</code>是一个乐观锁，每次更新都加上version，能够保证并发更新的正确性</li>
+</ul>
+<p>那么我们可以通过如下几个步骤来获取一个可用的号段:</p>
+<ul>
+<li>A.查询当前的max_id信息：select id, biz_type, max_id, step, version from tiny_id_info where biz_type &#x3D; ‘test’;</li>
+<li>B.计算新的max_id: new_max_id &#x3D; max_id + step</li>
+<li>C.更新DB中的max_id：update tiny_id_info set max_id &#x3D; #{new_max_id} , verison &#x3D; version + 1 where id &#x3D; #{id} and max_id &#x3D; #{max_id} and version &#x3D; #{version}</li>
+<li>D.如果更新成功，则可用号段获取成功，新的可用号段为(max_id, new_max_id]</li>
+<li>E.如果更新失败，则号段可能被其他线程获取，回到步骤A，进行重试</li>
+</ul>
+<h3 id="2-2号段生成方案的简单架构"><a href="#2-2号段生成方案的简单架构" class="headerlink" title="2.2号段生成方案的简单架构"></a>2.2号段生成方案的简单架构</h3><p>如上我们已经完成了号段生成逻辑，那么我们的Id生成服务架构可能是这样的:</p>
+<p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/tinyid-easy.png" alt="简单架构"></p>
+<p><code>Id生成系统向外提供http服务，请求经过我们的负载均衡router，到达其中一台tinyid-server，从事先加载好的号段中获取一个Id，如果号段还没有加载，或者已经用完，则向DB再申请一个新的可用号段，多台server之间因为号段生成算法的原子性，而保证每台server上的可用号段不重，从而使Id生成不重。</code>可以看到如果tinyid-server如果重启了，那么号段就作废了，会浪费一部分Id；同时Id也不会连续；每次请求可能会打到不同的机器上，Id也不是单调递增的，而是趋势递增的，不过这对于大部分业务都是可接受的。</p>
+<h3 id="2-3简单架构的问题"><a href="#2-3简单架构的问题" class="headerlink" title="2.3简单架构的问题"></a>2.3简单架构的问题</h3><p>到此一个简单的Id生成系统就完成了，那么是否还存在问题呢？回想一下我们最开始的Id生成系统要求，高性能、高可用、简单易用，在上面这套架构里，至少还存在以下问题:</p>
+<ul>
+<li>当Id用完时需要访问DB加载新的号段，DB更新也可能存在version冲突，此时Id生成耗时明显增加</li>
+<li>DB是一个单点，虽然DB可以建设主从等高可用架构，但始终是一个单点</li>
+<li>使用http方式获取一个Id，存在网络开销，性能和可用性都不太好</li>
+</ul>
+<h3 id="2-4架构优化方案"><a href="#2-4架构优化方案" class="headerlink" title="2.4架构优化方案"></a>2.4架构优化方案</h3><h4 id="2-4-1双号段缓存"><a href="#2-4-1双号段缓存" class="headerlink" title="2.4.1双号段缓存"></a>2.4.1双号段缓存</h4><p>对于号段用完需要访问DB，我们很容易想到<code>在号段用到一定程度的时候，就去异步加载下一个号段，保证内存中始终有可用号段</code>，则可避免性能波动。</p>
+<h4 id="2-4-2增加多DB支持"><a href="#2-4-2增加多DB支持" class="headerlink" title="2.4.2增加多DB支持"></a>2.4.2增加多DB支持</h4><p>DB只有一个master时，如果DB不可用(down掉或者主从延迟比较大)，则获取号段不可用。实际上我们可以支持多个DB，比如2个DB，A和B，我们获取号段可以随机从其中一台上获取。那么如果A,B都获取到了同一号段，我们怎么保证生成的Id不重呢？tinyid是这么做的，让A只生成偶数Id，B只生产奇数Id，对应的DB设计增加了两个字段，如下所示:</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>biz_type</th>
+<th>max_id</th>
+<th>step</th>
+<th>delta</th>
+<th>remainder</th>
+<th>version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1000</td>
+<td>2000</td>
+<td>1000</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>delta代表Id每次的增量，remainder代表余数，例如可以将A，B都delta都设置2，remainder分别设置为0、1，A的号段只生成偶数号段，B是奇数号段。<code>通过delta和remainder两个字段我们可以根据使用方的需求灵活设计DB个数</code>，同时也可以为使用方提供只生产类似奇数的Id序列。</p>
+<h4 id="2-4-3增加tinyid-client"><a href="#2-4-3增加tinyid-client" class="headerlink" title="2.4.3增加tinyid-client"></a>2.4.3增加tinyid-client</h4><p>使用http获取一个Id，存在网络开销，是否可以本地生成Id？为此我们提供了tinyid-client，<code>我们可以向tinyid-server发送请求来获取可用号段，之后在本地构建双号段、Id生成，如此Id生成则变成纯本地操作，性能大大提升</code>，因为本地有双号段缓存，则可以容忍tinyid-server一段时间的down掉，可用性也有了比较大的提升。</p>
+<h3 id="2-5tinyid最终架构"><a href="#2-5tinyid最终架构" class="headerlink" title="2.5tinyid最终架构"></a>2.5tinyid最终架构</h3><p><img src="/imgs/%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1/tinyid_final.png" alt="最终架构"></p>
+<ul>
+<li>tinyid提供http和tinyid-client两种方式接入</li>
+<li>tinyid-server内部缓存两个号段</li>
+<li>号段基于DB生成，具有原子性</li>
+<li>DB支持多个</li>
+<li>tinyid-server内置easy-router选择DB</li>
+</ul>
 
   </div>
 </article>
@@ -267,7 +372,7 @@
     
     
       <div id="toc-footer" style="display: none">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之分布式ID设计</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E7%A0%94RPC%E6%A1%86%E6%9E%B6%E4%B9%8B%E5%88%86%E5%B8%83%E5%BC%8FID%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">自研RPC框架之分布式ID设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%94%B9%E8%89%AF%E7%9A%84%E9%9B%AA%E8%8A%B1%E7%AE%97%E6%B3%95"><span class="toc-number">1.1.</span> <span class="toc-text">1.改良的雪花算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8F%B7%E6%AE%B5%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.</span> <span class="toc-text">2.数据库号段模式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1DB%E5%8F%B7%E6%AE%B5%E7%AE%97%E6%B3%95%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1DB号段算法描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E5%8F%B7%E6%AE%B5%E7%94%9F%E6%88%90%E6%96%B9%E6%A1%88%E7%9A%84%E7%AE%80%E5%8D%95%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2号段生成方案的简单架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E7%AE%80%E5%8D%95%E6%9E%B6%E6%9E%84%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3简单架构的问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E6%9E%B6%E6%9E%84%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4架构优化方案</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-1%E5%8F%8C%E5%8F%B7%E6%AE%B5%E7%BC%93%E5%AD%98"><span class="toc-number">1.2.4.1.</span> <span class="toc-text">2.4.1双号段缓存</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-2%E5%A2%9E%E5%8A%A0%E5%A4%9ADB%E6%94%AF%E6%8C%81"><span class="toc-number">1.2.4.2.</span> <span class="toc-text">2.4.2增加多DB支持</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-3%E5%A2%9E%E5%8A%A0tinyid-client"><span class="toc-number">1.2.4.3.</span> <span class="toc-text">2.4.3增加tinyid-client</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5tinyid%E6%9C%80%E7%BB%88%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5tinyid最终架构</span></a></li></ol></li></ol></li></ol>
       </div>
     
 

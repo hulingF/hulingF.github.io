@@ -6,12 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="Redis原理之数据类型1.String   2.List   3.Set   4.ZSet     5.Hash">
+    <meta name="description" content="Redis原理之数据类型1.String   2.List  List类型的默认编码方式是OBJ_ENCODING_QUICKLIST，并且会使用server.list_max_ziplist_size和server.list_compress_depth初始化QuickList的fill和compress属性。    3.Set   如果插入的元素数量不超过set_max_intset_entr">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis原理之数据类型">
 <meta property="og:url" content="https://hulingf.github.io/2024/02/24/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
-<meta property="og:description" content="Redis原理之数据类型1.String   2.List   3.Set   4.ZSet     5.Hash">
+<meta property="og:description" content="Redis原理之数据类型1.String   2.List  List类型的默认编码方式是OBJ_ENCODING_QUICKLIST，并且会使用server.list_max_ziplist_size和server.list_compress_depth初始化QuickList的fill和compress属性。    3.Set   如果插入的元素数量不超过set_max_intset_entr">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174650085-1708769238963-3.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174709255.png">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224181046644.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224181105151.png">
 <meta property="article:published_time" content="2024-02-24T10:06:53.193Z">
-<meta property="article:modified_time" content="2024-03-23T05:50:03.335Z">
+<meta property="article:modified_time" content="2024-08-16T08:02:59.877Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
@@ -186,14 +186,23 @@
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174709255.png" alt="image-20240224174709255"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240323112301166.png" alt="image-20240323112301166"></p>
 <h2 id="2-List"><a href="#2-List" class="headerlink" title="2.List"></a>2.List</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224174754519.png" alt="image-20240224174754519"></p>
+<blockquote>
+<p>List类型的默认编码方式是OBJ_ENCODING_QUICKLIST，并且会使用server.list_max_ziplist_size和server.list_compress_depth初始化QuickList的fill和compress属性。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175012514.png" alt="image-20240224175012514"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175119833.png" alt="image-20240224175119833"></p>
 <h2 id="3-Set"><a href="#3-Set" class="headerlink" title="3.Set"></a>3.Set</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175155680.png" alt="image-20240224175155680"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175350444.png" alt="image-20240224175350444"></p>
+<blockquote>
+<p>如果插入的元素数量不超过set_max_intset_entries限制并且存储的所有数据都是整数，则Set类型会采用IntSet编码。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175617900.png" alt="image-20240224175617900"></p>
 <h2 id="4-ZSet"><a href="#4-ZSet" class="headerlink" title="4.ZSet"></a>4.ZSet</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175705263.png" alt="image-20240224175705263"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224175736589.png" alt="image-20240224175736589"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180006820.png" alt="image-20240224180006820"></p>
+<blockquote>
+<p>如果插入的元素数量不超过zset_max_ziplist_entries且元素大小不超过zset_max_ziplist_value时，ZSet类型采用ZipList编码。</p>
+</blockquote>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180025965.png" alt="image-20240224180025965"></p>
 <p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180359901.png" alt="image-20240224180359901"></p>
 <h2 id="5-Hash"><a href="#5-Hash" class="headerlink" title="5.Hash"></a>5.Hash</h2><p><img src="/imgs/Redis%E5%8E%9F%E7%90%86%E4%B9%8B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/image-20240224180504427.png" alt="image-20240224180504427"></p>

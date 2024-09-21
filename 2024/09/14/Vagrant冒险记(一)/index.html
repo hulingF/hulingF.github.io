@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Vagrant冒险记(一)1.Vagrant简要介绍Vagrant实际上一套虚拟机管理工具，基于Ruby开发，底层支持VirtualBox、VMware甚至AWS、Docker等作为虚拟化系统。我们可以通过Vagrant封装一个Linux的开发环境，分发给团队成员。成员可以在自己喜欢的桌面系统（Mac&#x2F;Windows&#x2F;Linux）上开发程序，代码却能统一在封装好的环境里运行。V">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vagrant冒险记(一)">
+<meta property="og:url" content="https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Vagrant冒险记(一)1.Vagrant简要介绍Vagrant实际上一套虚拟机管理工具，基于Ruby开发，底层支持VirtualBox、VMware甚至AWS、Docker等作为虚拟化系统。我们可以通过Vagrant封装一个Linux的开发环境，分发给团队成员。成员可以在自己喜欢的桌面系统（Mac&#x2F;Windows&#x2F;Linux）上开发程序，代码却能统一在封装好的环境里运行。V">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914200349768.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914200440323.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914210926138.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914210649379.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914212119092.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914214346233.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914215513446.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915105309237-1726368789900-1.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915105537212.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915110602043.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915112124911-1726370485875-3.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915112447958.png">
+<meta property="article:published_time" content="2024-09-14T11:51:00.365Z">
+<meta property="article:modified_time" content="2024-09-15T04:47:16.760Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="虚拟化技术">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914200349768.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Vagrant冒险记(一)</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/09/15/eBPF%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/09/05/Java%E4%B8%AD%E7%9A%84%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&text=Vagrant冒险记(一)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&is_video=false&description=Vagrant冒险记(一)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Vagrant冒险记(一)&body=Check out this article: https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&name=Vagrant冒险记(一)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&t=Vagrant冒险记(一)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Vagrant%E5%86%92%E9%99%A9%E8%AE%B0-%E4%B8%80"><span class="toc-number">1.</span> <span class="toc-text">Vagrant冒险记(一)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Vagrant%E7%AE%80%E8%A6%81%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.Vagrant简要介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Vagrant%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2.Vagrant快速上手</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Vagrant%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C"><span class="toc-number">1.3.</span> <span class="toc-text">3.Vagrant基本操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Vagrant%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.4.</span> <span class="toc-text">4.Vagrant配置文件</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Vagrant冒险记(一)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-09-14T11:51:00.365Z" class="dt-published" itemprop="datePublished">2024-09-14</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E8%99%9A%E6%8B%9F%E5%8C%96%E6%8A%80%E6%9C%AF/" rel="tag">虚拟化技术</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Vagrant冒险记-一"><a href="#Vagrant冒险记-一" class="headerlink" title="Vagrant冒险记(一)"></a>Vagrant冒险记(一)</h1><h2 id="1-Vagrant简要介绍"><a href="#1-Vagrant简要介绍" class="headerlink" title="1.Vagrant简要介绍"></a>1.Vagrant简要介绍</h2><p>Vagrant实际上一套<code>虚拟机管理工具</code>，基于Ruby开发，底层支持VirtualBox、VMware甚至AWS、Docker等作为虚拟化系统。我们可以通过Vagrant封装一个Linux的开发环境，分发给团队成员。成员可以在自己喜欢的桌面系统（Mac&#x2F;Windows&#x2F;Linux）上开发程序，代码却能统一在封装好的环境里运行。Vagrant本身并没有能力创建虚拟机，它是调用一些虚拟化工具来创建，如HyperV、VirtualBox, VMWare。</p>
+<h2 id="2-Vagrant快速上手"><a href="#2-Vagrant快速上手" class="headerlink" title="2.Vagrant快速上手"></a>2.Vagrant快速上手</h2><blockquote>
+<p>通常的做法是命令行直接初始化并启动虚拟机，由于网络原因拉取vagrant cloud的box文件经常会失败，实际测试时先手动下载box文件，再通过vagrant box add添加本地box文件，后续流程不变。</p>
+<p>注意：笔者测试环境采用Windows的HyperV作为Vagrant的Provider，box镜像是Ubuntu22.04版本！</p>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914200349768.png" alt="image-20240914200349768"></p>
+<blockquote>
+<p>通过自带的Hyper-V管理器查看刚刚创建的虚拟机，包括虚拟机名称、状态、CPU使用率、内存分配、运行时间等。</p>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914200440323.png" alt="image-20240914200440323"></p>
+<h2 id="3-Vagrant基本操作"><a href="#3-Vagrant基本操作" class="headerlink" title="3.Vagrant基本操作"></a>3.Vagrant基本操作</h2><p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914210926138.png" alt="image-20240914210926138"></p>
+<blockquote>
+<p>Vagrant的基础操作包括启动、查看状态、SSH连接、暂停、恢复、重启、关闭、销毁虚拟机。</p>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914210649379.png" alt="image-20240914210649379"></p>
+<h2 id="4-Vagrant配置文件"><a href="#4-Vagrant配置文件" class="headerlink" title="4.Vagrant配置文件"></a>4.Vagrant配置文件</h2><blockquote>
+<p>查看一下Vagrant相关的文件，包括Vagrantfile和虚拟机相关数据文件</p>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914212119092.png" alt="image-20240914212119092"></p>
+<blockquote>
+<p>启动一个CentOS7的虚拟机实例，查看相关的Vagrantfile的内容，初始创建的Vagrantfile中只有下面三行:</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Vagrant</span>.configure(<span class="string">&quot;2&quot;</span>) <span class="keyword">do</span> |<span class="params">config</span>|</span><br><span class="line">    config.vm.box = <span class="string">&quot;centos7&quot;</span></span><br><span class="line"><span class="keyword">end</span>   </span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914214346233.png" alt="image-20240914214346233"></p>
+<blockquote>
+<p>增加Vagrantfile的配置项config.vm.hostname，重新加载并启动虚拟机实例，更多配置项见<a target="_blank" rel="noopener" href="https://developer.hashicorp.com/vagrant/docs/vagrantfile/machine_settings">config.vm-Vagrantfile</a>。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Vagrant</span>.configure(<span class="string">&quot;2&quot;</span>) <span class="keyword">do</span> |<span class="params">config</span>|</span><br><span class="line">    config.vm.box = <span class="string">&quot;centos7&quot;</span></span><br><span class="line">    config.vm.hostname = <span class="string">&quot;vagrant-demo&quot;</span></span><br><span class="line"><span class="keyword">end</span>  </span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240914215513446.png" alt="image-20240914215513446"></p>
+<blockquote>
+<p>关于SSH连接的小知识：默认Vagrant使用<code>虚拟机实例特定</code>的非对称密钥对进行安全连接，即虚拟机实例内部提前插入公钥，Vagrant保存私钥，保证安全无密码登录。</p>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915105309237-1726368789900-1.png" alt="image-20240915105309237"></p>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915105537212.png" alt="image-20240915105537212"></p>
+<blockquote>
+<p>增加Vagrantfile的配置项config.ssh.insert_key，重新加载并启动虚拟机实例，更多配置项见<a target="_blank" rel="noopener" href="https://developer.hashicorp.com/vagrant/docs/vagrantfile/ssh_settings">config.ssh-Vagrantfile</a>。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt;<span class="title class_">Vagrant</span>.configure(<span class="string">&quot;2&quot;</span>) <span class="keyword">do</span> |<span class="params">config</span>|</span><br><span class="line">   config.vm.box = <span class="string">&quot;centos7&quot;</span></span><br><span class="line">   config.ssh.insert_key = <span class="literal">false</span></span><br><span class="line">&gt;<span class="keyword">end</span>  </span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915110602043.png" alt="image-20240915110602043"></p>
+<blockquote>
+<p>Vagrant如何使用一个Vagrantfile创建多个不同Host呢，其实需要config.vm.define配置项：</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Vagrant</span>.configure(<span class="string">&quot;2&quot;</span>) <span class="keyword">do</span> |<span class="params">config</span>|</span><br><span class="line">    <span class="comment"># 全局配置</span></span><br><span class="line">    config.vm.box = <span class="string">&quot;centos7&quot;</span></span><br><span class="line">    config.vm.hostname = <span class="string">&quot;test&quot;</span></span><br><span class="line">    <span class="comment"># 具体Host配置</span></span><br><span class="line">  	config.vm.define <span class="string">&quot;web-server&quot;</span> <span class="keyword">do</span> |<span class="params">web</span>|</span><br><span class="line">		web.vm.hostname = <span class="string">&quot;web&quot;</span></span><br><span class="line">  	<span class="keyword">end</span></span><br><span class="line">    <span class="comment"># 具体Host配置</span></span><br><span class="line">  	config.vm.define <span class="string">&quot;database&quot;</span> <span class="keyword">do</span> |<span class="params">db</span>|</span><br><span class="line">		db.vm.hostname = <span class="string">&quot;db&quot;</span></span><br><span class="line">  	<span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span>  </span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915112124911-1726370485875-3.png" alt="image-20240915112124911"></p>
+<p><img src="/imgs/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/image-20240915112447958.png" alt="image-20240915112447958"></p>
+<p>使用Ruby的循环语法优化上面的Vagrantfile：</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">host_lit = [</span><br><span class="line">    &#123;</span><br><span class="line">       <span class="symbol">:name</span> =&gt; <span class="string">&quot;web-server&quot;</span>,</span><br><span class="line">       <span class="symbol">:box</span> =&gt; <span class="string">&quot;centos7&quot;</span>,</span><br><span class="line">       <span class="symbol">:hostname</span> =&gt; <span class="string">&quot;web&quot;</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">       <span class="symbol">:name</span> =&gt; <span class="string">&quot;database&quot;</span>,</span><br><span class="line">       <span class="symbol">:box</span> =&gt; <span class="string">&quot;centos7&quot;</span>,</span><br><span class="line">       <span class="symbol">:hostname</span> =&gt; <span class="string">&quot;db&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">]</span><br><span class="line"><span class="title class_">Vagrant</span>.configure(<span class="string">&quot;2&quot;</span>) <span class="keyword">do</span> |<span class="params">config</span>|</span><br><span class="line">    host_list.each <span class="keyword">do</span> |<span class="params">item</span>|</span><br><span class="line">        config.vm.define item[<span class="symbol">:name</span>] <span class="keyword">do</span> |<span class="params">host</span>|</span><br><span class="line">            host.vm.box = item[<span class="symbol">:box</span>]</span><br><span class="line">            host.vm.hostname = item[<span class="symbol">:hostname</span>]</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span>    </span><br><span class="line"><span class="keyword">end</span> </span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>利用SMB实现主机与虚拟机实例共享文件夹，需要新增配置项config.vm.synced_folder</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Vagrant</span>.configure(<span class="string">&quot;2&quot;</span>) <span class="keyword">do</span> |<span class="params">config</span>|</span><br><span class="line">    config.vm.box = <span class="string">&quot;centos7&quot;</span></span><br><span class="line">    config.vm.hostname = <span class="string">&quot;test&quot;</span></span><br><span class="line">    config.vm.synced_folder <span class="string">&quot;.&quot;</span>, <span class="string">&quot;/vagrant&quot;</span>, <span class="symbol">type:</span> <span class="string">&quot;smb&quot;</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure></blockquote>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Vagrant%E5%86%92%E9%99%A9%E8%AE%B0-%E4%B8%80"><span class="toc-number">1.</span> <span class="toc-text">Vagrant冒险记(一)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Vagrant%E7%AE%80%E8%A6%81%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.Vagrant简要介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Vagrant%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2.Vagrant快速上手</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Vagrant%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C"><span class="toc-number">1.3.</span> <span class="toc-text">3.Vagrant基本操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Vagrant%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.4.</span> <span class="toc-text">4.Vagrant配置文件</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&text=Vagrant冒险记(一)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&is_video=false&description=Vagrant冒险记(一)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Vagrant冒险记(一)&body=Check out this article: https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&title=Vagrant冒险记(一)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&name=Vagrant冒险记(一)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/09/14/Vagrant%E5%86%92%E9%99%A9%E8%AE%B0(%E4%B8%80)/&t=Vagrant冒险记(一)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

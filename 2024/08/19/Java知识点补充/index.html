@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Java知识点补充(一)1.虚拟线程是什么虚拟线程（Virtual Thread）是 JDK 而不是 OS 实现的轻量级线程(Lightweight Process，LWP），由 JVM 调度。许多虚拟线程共享同一个操作系统线程，虚拟线程的数量可以远大于操作系统线程的数量。 在引入虚拟线程之前，java.lang.Thread 包已经支持所谓的平台线程（Platform Thread），也就是没有">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java知识点补充(一)">
+<meta property="og:url" content="https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/index.html">
+<meta property="og:site_name" content="大军的秘密花园">
+<meta property="og:description" content="Java知识点补充(一)1.虚拟线程是什么虚拟线程（Virtual Thread）是 JDK 而不是 OS 实现的轻量级线程(Lightweight Process，LWP），由 JVM 调度。许多虚拟线程共享同一个操作系统线程，虚拟线程的数量可以远大于操作系统线程的数量。 在引入虚拟线程之前，java.lang.Thread 包已经支持所谓的平台线程（Platform Thread），也就是没有">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/virtual-threads-platform-threads-kernel-threads-relationship.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/virtual-threads-platform-threads-kernel-threads-relationship.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-5.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-6.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-7.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-5.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-8.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-9.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-10.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640.jpeg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240827212742812.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/f6e7326e.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/6eb9b856.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/1470cba5.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/a1532bd7.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/ae11fb41.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/ee8d24f9.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/09cf176b.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/eaa94379.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/6b73e4c0.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/df96e180.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/b15554ea.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828103008145.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828121626721.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828122441747.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828123010097.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828123704255.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828123900783.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828124249892.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828124942064.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125109442.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125241717.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125330235.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125712573.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125813984.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828130642336.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828230159488.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828230428642.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828230505012.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/e474abfb851dd015c9f87cf94db9a128.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858180029-4.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858230280-7.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858856576-10.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/4c71e0a0336e47372d4b3d861308b108.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858989740-14.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859031957-17.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859127157-20.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/e8f2de01ba710e7a26cdeddd0c80ffb9.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859357610-24.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/9aaaf12a160f3cac04c036b4c4cf0db8.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859477045-28.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859486648-31.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/t_student.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/ab%E4%BA%8B%E5%8A%A1%E6%AD%BB%E9%94%81.drawio.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861773342-55.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861817814-58.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861886634-61.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861982269-64.png">
+<meta property="article:published_time" content="2024-08-19T08:01:05.893Z">
+<meta property="article:modified_time" content="2024-08-30T05:25:40.730Z">
+<meta property="article:author" content="hulingF">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/virtual-threads-platform-threads-kernel-threads-relationship.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Java知识点补充(一)</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/08/26/%E6%8A%BD%E5%A5%96%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2024/08/18/Spring%E7%9A%84%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&text=Java知识点补充(一)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&is_video=false&description=Java知识点补充(一)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java知识点补充(一)&body=Check out this article: https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&name=Java知识点补充(一)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&t=Java知识点补充(一)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85-%E4%B8%80"><span class="toc-number">1.</span> <span class="toc-text">Java知识点补充(一)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">1.1.</span> <span class="toc-text">1.虚拟线程是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B9%B3%E5%8F%B0%E7%BA%BF%E7%A8%8B%E4%B8%8E%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2.平台线程与虚拟线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.3.</span> <span class="toc-text">3.虚拟线程实现原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%AD%97%E8%8A%82%E7%A0%81%E5%A2%9E%E5%BC%BA%E6%8A%80%E6%9C%AF"><span class="toc-number">1.4.</span> <span class="toc-text">4.字节码增强技术</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Agent%E5%90%AF%E5%8A%A8%E6%97%B6%E5%A2%9E%E5%BC%BA"><span class="toc-number">1.5.</span> <span class="toc-text">5.Agent启动时增强</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Attach%E8%BF%90%E8%A1%8C%E6%97%B6%E5%A2%9E%E5%BC%BA"><span class="toc-number">1.6.</span> <span class="toc-text">6.Attach运行时增强</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-GC%E5%8F%82%E6%95%B0%E5%9F%BA%E6%9C%AC%E7%AD%96%E7%95%A5"><span class="toc-number">1.7.</span> <span class="toc-text">7.GC参数基本策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-GC%E4%BC%98%E5%8C%96%E5%9F%BA%E6%9C%AC%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.8.</span> <span class="toc-text">8.GC优化基本步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1%E7%A1%AE%E8%AE%A4%E7%9B%AE%E6%A0%87"><span class="toc-number">1.8.1.</span> <span class="toc-text">8.1确认目标</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-2%E4%BC%98%E5%8C%96%E5%8F%82%E6%95%B0"><span class="toc-number">1.8.2.</span> <span class="toc-text">8.2优化参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-3%E9%AA%8C%E6%94%B6%E7%BB%93%E6%9E%9C"><span class="toc-number">1.8.3.</span> <span class="toc-text">8.3验收结果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-GC%E4%BC%98%E5%8C%96%E4%B8%89%E5%A4%A7%E6%A1%88%E4%BE%8B"><span class="toc-number">1.9.</span> <span class="toc-text">9.GC优化三大案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#9-1Major-GC%E5%92%8CMinor-GC%E9%A2%91%E7%B9%81"><span class="toc-number">1.9.1.</span> <span class="toc-text">9.1Major GC和Minor GC频繁</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-1%E7%A1%AE%E5%AE%9A%E7%9B%AE%E6%A0%87"><span class="toc-number">1.9.1.1.</span> <span class="toc-text">9.1.1确定目标</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-2%E4%BC%98%E5%8C%96%E5%86%85%E5%AE%B9"><span class="toc-number">1.9.1.2.</span> <span class="toc-text">9.1.2优化内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-3%E4%BC%98%E5%8C%96%E7%BB%93%E6%9E%9C"><span class="toc-number">1.9.1.3.</span> <span class="toc-text">9.1.3优化结果</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-4%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.9.1.4.</span> <span class="toc-text">9.1.4经验总结</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-2%E8%AF%B7%E6%B1%82%E9%AB%98%E5%B3%B0%E6%9C%9F%E5%8F%91%E7%94%9FGC%EF%BC%8C%E5%AF%BC%E8%87%B4%E6%9C%8D%E5%8A%A1%E5%8F%AF%E7%94%A8%E6%80%A7%E4%B8%8B%E9%99%8D"><span class="toc-number">1.9.2.</span> <span class="toc-text">9.2请求高峰期发生GC，导致服务可用性下降</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-1%E7%A1%AE%E5%AE%9A%E7%9B%AE%E6%A0%87"><span class="toc-number">1.9.2.1.</span> <span class="toc-text">9.2.1确定目标</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-2%E4%BC%98%E5%8C%96%E5%86%85%E5%AE%B9"><span class="toc-number">1.9.2.2.</span> <span class="toc-text">9.2.2优化内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-3%E4%BC%98%E5%8C%96%E7%BB%93%E6%9E%9C"><span class="toc-number">1.9.2.3.</span> <span class="toc-text">9.2.3优化结果</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-4%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.9.2.4.</span> <span class="toc-text">9.2.4经验总结</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-3%E5%8F%91%E7%94%9FStop-The-World%E7%9A%84GC"><span class="toc-number">1.9.3.</span> <span class="toc-text">9.3发生Stop-The-World的GC</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-1%E7%A1%AE%E5%AE%9A%E7%9B%AE%E6%A0%87"><span class="toc-number">1.9.3.1.</span> <span class="toc-text">9.3.1确定目标</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-2%E4%BC%98%E5%8C%96%E5%86%85%E5%AE%B9"><span class="toc-number">1.9.3.2.</span> <span class="toc-text">9.3.2优化内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-3%E4%BC%98%E5%8C%96%E7%BB%93%E6%9E%9C"><span class="toc-number">1.9.3.3.</span> <span class="toc-text">9.3.3优化结果</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-4%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.9.3.4.</span> <span class="toc-text">9.3.4经验总结</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-Java%E6%96%B0%E7%89%B9%E6%80%A7"><span class="toc-number">1.10.</span> <span class="toc-text">10.Java新特性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-Java%E5%BC%80%E5%8F%91%E6%89%8B%E5%86%8C"><span class="toc-number">1.11.</span> <span class="toc-text">11.Java开发手册</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#11-1OOP%E8%A7%84%E7%BA%A6"><span class="toc-number">1.11.1.</span> <span class="toc-text">11.1OOP规约</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#11-2%E9%9B%86%E5%90%88%E5%A4%84%E7%90%86"><span class="toc-number">1.11.2.</span> <span class="toc-text">11.2集合处理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#11-3%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6"><span class="toc-number">1.11.3.</span> <span class="toc-text">11.3并发控制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-MySQL%E8%A1%8C%E9%94%81"><span class="toc-number">1.12.</span> <span class="toc-text">12.MySQL行锁</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#12-1%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%AD%89%E5%80%BC%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.1.</span> <span class="toc-text">12.1唯一索引等值查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#12-1-1%E8%AE%B0%E5%BD%95%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.12.1.1.</span> <span class="toc-text">12.1.1记录存在的情况</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#12-1-2%E8%AE%B0%E5%BD%95%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.12.1.2.</span> <span class="toc-text">12.1.2记录不存在的情况</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#12-2%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.2.</span> <span class="toc-text">12.2唯一索引范围查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#12-2-1%E9%92%88%E5%AF%B9%E3%80%8C%E5%A4%A7%E4%BA%8E%E6%88%96%E8%80%85%E5%A4%A7%E4%BA%8E%E7%AD%89%E4%BA%8E%E3%80%8D%E7%9A%84%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.2.1.</span> <span class="toc-text">12.2.1针对「大于或者大于等于」的范围查询</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#12-2-2%E9%92%88%E5%AF%B9%E3%80%8C%E5%B0%8F%E4%BA%8E%E6%88%96%E8%80%85%E5%B0%8F%E4%BA%8E%E7%AD%89%E4%BA%8E%E3%80%8D%E7%9A%84%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.2.2.</span> <span class="toc-text">12.2.2针对「小于或者小于等于」的范围查询</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#12-3%E6%B2%A1%E6%9C%89%E5%8A%A0%E7%B4%A2%E5%BC%95%E7%9A%84%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.3.</span> <span class="toc-text">12.3没有加索引的查询</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#13-MySQL%E6%AD%BB%E9%94%81"><span class="toc-number">1.13.</span> <span class="toc-text">13.MySQL死锁</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#13-1%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.13.1.</span> <span class="toc-text">13.1准备工作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#13-2%E5%BC%80%E5%A7%8B%E5%AE%9E%E9%AA%8C"><span class="toc-number">1.13.2.</span> <span class="toc-text">13.2开始实验</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#13-3%E6%AD%BB%E9%94%81%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.13.3.</span> <span class="toc-text">13.3死锁原因</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Time1%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.1.</span> <span class="toc-text">Time1阶段加锁分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Time2%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.2.</span> <span class="toc-text">Time2阶段加锁分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Time3%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.3.</span> <span class="toc-text">Time3阶段加锁分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Time4%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.4.</span> <span class="toc-text">Time4阶段加锁分析</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Java知识点补充(一)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">hulingF</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-08-19T08:01:05.893Z" class="dt-published" itemprop="datePublished">2024-08-19</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Java/" rel="tag">Java</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Java知识点补充-一"><a href="#Java知识点补充-一" class="headerlink" title="Java知识点补充(一)"></a>Java知识点补充(一)</h1><h2 id="1-虚拟线程是什么"><a href="#1-虚拟线程是什么" class="headerlink" title="1.虚拟线程是什么"></a>1.虚拟线程是什么</h2><p>虚拟线程（Virtual Thread）是 JDK 而不是 OS 实现的轻量级线程(Lightweight Process，LWP），由 JVM 调度。许多虚拟线程共享同一个操作系统线程，虚拟线程的数量可以远大于操作系统线程的数量。</p>
+<p>在引入虚拟线程之前，<code>java.lang.Thread</code> 包已经支持所谓的平台线程（Platform Thread），也就是没有虚拟线程之前，我们一直使用的线程。JVM 调度程序通过平台线程（载体线程）来管理虚拟线程，一个平台线程可以在不同的时间执行不同的虚拟线程（多个虚拟线程挂载在一个平台线程上），当虚拟线程被阻塞或等待时，平台线程可以切换到执行另一个虚拟线程。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/virtual-threads-platform-threads-kernel-threads-relationship.png" alt="虚拟线程、平台线程和系统内核线程的关系"></p>
+<h2 id="2-平台线程与虚拟线程"><a href="#2-平台线程与虚拟线程" class="headerlink" title="2.平台线程与虚拟线程"></a>2.平台线程与虚拟线程</h2><p>因为引入了虚拟线程，原来<code>JDK</code>存在<code>java.lang.Thread</code>类，俗称线程，为了更好地区分虚拟线程和原有的线程类，引入了一个全新类<code>java.lang.VirtualThread</code>（<code>Thread</code>类的一个子类型），直译过来就是”虚拟线程”。</p>
+<ul>
+<li>题外话：在<code>Loom</code>项目早期规划里面，核心<code>API</code>其实命名为<code>Fiber</code>，直译过来就是”纤程”或者”协程”，后来成为了废案，在一些历史提交的<code>Test</code>类或者文档中还能看到类似于下面的代码：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// java.lang.Fiber</span></span><br><span class="line"><span class="type">Fiber</span> <span class="variable">f</span> <span class="operator">=</span> Fiber.execute(&#123;</span><br><span class="line">    out.println(<span class="string">&quot;Good morning&quot;</span>);</span><br><span class="line">    readLock.lock();</span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">        out.println(<span class="string">&quot;Good night&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">finally</span>&#123;</span><br><span class="line">        readLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    out.println(<span class="string">&quot;Good night&quot;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p><code>Thread</code>在此基础上做了不少兼容性工作。此外，还应用了建造者模式引入了线程建造器，提供了静态工厂方法<code>Thread#ofPlatform()</code>和<code>Thread#ofVirtual()</code>分别用于实例化<code>Thread</code>（工厂）建造器和<code>VirtualThread</code>（工厂）建造器，顾名思义，两种建造器分别用于创建<code>Thread</code>或者<code>VirtualThread</code>，例如：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// demo-1 build platform thread</span></span><br><span class="line"><span class="type">Thread</span> <span class="variable">platformThread</span> <span class="operator">=</span> Thread.ofPlatform().daemon().name(<span class="string">&quot;worker&quot;</span>).unstarted(runnable);</span><br><span class="line"></span><br><span class="line"><span class="comment">// demo-2 create platform thread factory</span></span><br><span class="line"><span class="type">ThreadFactory</span> <span class="variable">platformThreadFactory</span> <span class="operator">=</span> Thread.ofPlatform().daemon().name(<span class="string">&quot;worker-&quot;</span>, <span class="number">0</span>).factory();</span><br><span class="line"></span><br><span class="line"><span class="comment">// demo-3 build virtual thread</span></span><br><span class="line"><span class="type">Thread</span> <span class="variable">virtualThread</span> <span class="operator">=</span> Thread.ofVirtual().name(<span class="string">&quot;virtual-worker&quot;</span>).unstarted(runnable);</span><br><span class="line"></span><br><span class="line"><span class="comment">// demo-4 create virtual thread factory</span></span><br><span class="line"><span class="type">ThreadFactory</span> <span class="variable">virtualThreadFactory</span> <span class="operator">=</span> Thread.ofVirtual().name(<span class="string">&quot;virtual-worker-&quot;</span>, <span class="number">0</span>).factory();</span><br></pre></td></tr></table></figure>
+
+<p>更新的<code>JDK</code>文档中也把原来的<code>Thread</code>称为<code>Platform Thread</code>，可以更明晰地与<code>Virtual Thread</code>区分开来。这里<code>Platform Thread</code>直译为”平台线程”，其实就是”虚拟线程”出现之前的老生常谈的”线程”。</p>
+<p>总的来说，平台线程有下面的一些特点或者说限制：</p>
+<ul>
+<li>资源有限导致系统线程总量有限，进而导致与系统线程一一对应的平台线程有限</li>
+<li>平台线程的调度依赖于系统的线程调度程序，当平台线程创建过多，会消耗大量资源用于处理线程上下文切换</li>
+<li>每个平台线程都会开辟一块私有的栈空间，大量平台线程会占据大量内存</li>
+</ul>
+<p>这些限制导致开发者不能极大量地创建平台线程，为了满足性能需要，需要引入池化技术、添加任务队列构建消费者-生产者模式等方案去让平台线程适配多变的现实场景。显然，开发者们迫切需要一种轻量级线程实现，刚好可以弥补上面提到的平台线程的限制，这种轻量级线程可以满足：</p>
+<ul>
+<li>可以大量创建，例如十万级别、百万级别，而不会占据大量内存</li>
+<li>由<code>JVM</code>进行调度和状态切换，并且与系统线程”松绑”</li>
+<li>用法与原来平台线程差不多，或者说尽量兼容平台线程现存的<code>API</code></li>
+</ul>
+<p><code>Loom</code>项目中开发的虚拟线程就是为了解决这个问题，看起来它的运行示意图如下：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/virtual-threads-platform-threads-kernel-threads-relationship.png" alt="虚拟线程、平台线程和系统内核线程的关系"></p>
+<p>当然，平台线程不是简单地与虚拟线程进行<code>1:N</code>的绑定，后面的章节会深入分析虚拟线程的运行原理。</p>
+<h2 id="3-虚拟线程实现原理"><a href="#3-虚拟线程实现原理" class="headerlink" title="3.虚拟线程实现原理"></a>3.虚拟线程实现原理</h2><blockquote>
+<p>详细内容参见：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/throwable/p/16758997.html">虚拟线程 - VirtualThread源码透视 - throwable - 博客园 (cnblogs.com)</a></p>
+</blockquote>
+<p>虚拟线程是一种轻量级（用户模式）线程，这种线程是由<code>Java</code>虚拟机调度，而不是操作系统。虚拟线程占用空间小，任务切换开销几乎可以忽略不计，因此可以极大量地创建和使用。总体来看，虚拟线程实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">virtual</span> <span class="variable">thread</span> <span class="operator">=</span> continuation + scheduler</span><br></pre></td></tr></table></figure>
+
+<p>虚拟线程会把任务（一般是<code>java.lang.Runnable</code>）包装到一个<code>Continuation</code>实例中：</p>
+<ul>
+<li>当任务需要阻塞挂起的时候，会调用<code>Continuation</code>的<code>yield</code>操作进行阻塞</li>
+<li>当任务需要解除阻塞继续执行的时候，<code>Continuation</code>会被继续执行</li>
+</ul>
+<p><code>Scheduler</code>也就是调度执行器，会把任务提交到一个载体线程池中执行：</p>
+<ul>
+<li>执行器是<code>java.util.concurrent.Executor</code>的子类</li>
+<li>虚拟线程框架提供了一个默认的<code>ForkJoinPool</code>用于执行虚拟线程任务</li>
+</ul>
+<blockquote>
+<p>下文会把carrier thread称为”载体线程”，指的是负责执行虚拟线程中任务的平台线程，或者说运行虚拟线程的平台线程称为它的载体线程</p>
+</blockquote>
+<p>操作系统调度系统线程，而<code>Java</code>平台线程与系统线程一一映射，所以平台线程被操作系统调度，但是虚拟线程是由<code>JVM</code>调度。<code>JVM</code>把虚拟线程分配给平台线程的操作称为<code>mount</code>（挂载），反过来取消分配平台线程的操作称为<code>unmount</code>（卸载）：</p>
+<ul>
+<li><code>mount</code>操作：虚拟线程挂载到平台线程，虚拟线程中包装的<code>Continuation</code>栈数据帧或者引用栈数据会被拷贝到平台线程的线程栈，这是一个从堆复制到栈的过程</li>
+<li><code>unmount</code>操作：虚拟线程从平台线程卸载，大多数虚拟线程中包装的<code>Continuation</code>栈数据帧会留在堆内存中</li>
+</ul>
+<p>这个<code>mount -&gt; run -&gt; unmount</code>过程用伪代码表示如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mount();</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    Continuation.run();</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    unmount();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从<code>Java</code>代码的角度来看，虚拟线程和它的载体线程暂时共享一个<code>OS</code>线程实例这个事实是不可见，因为虚拟线程的堆栈跟踪和线程本地变量与平台线程是完全隔离的。<code>JDK</code>中专门是用了一个<code>FIFO</code>模式的<code>ForkJoinPool</code>作为虚拟线程的调度程序，从这个调度程序看虚拟线程任务的执行流程大致如下：</p>
+<ul>
+<li><p>调度器（线程池）中的平台线程等待处理任务<br><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-5.jpg" alt="vt-source-code-5"></p>
+</li>
+<li><p>一个虚拟线程被分配平台线程，该平台线程作为运载线程执行虚拟线程中的任务<br><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-6.jpg" alt="vt-source-code-6"></p>
+</li>
+<li><p>虚拟线程运行其<code>Continuation</code>，从而执行基于<code>Runnable</code>包装的用户任务<br><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-7.jpg" alt="vt-source-code-7"></p>
+</li>
+<li><p>虚拟线程任务执行完成，标记<code>Continuation</code>终结，标记虚拟线程为终结状态，清空一些上下文变量，载体线程”返还”到调度器（线程池）中作为平台线程等待处理下一个任务<br><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-5.jpg" alt="vt-source-code-5"></p>
+</li>
+</ul>
+<p>上面是描述一般的虚拟线程任务执行情况，在执行任务时候首次调用<code>Continuation#run()</code>获取锁（<code>ReentrantLock</code>）的时候会触发<code>Continuation</code>的<code>yield</code>操作让出控制权，等待虚拟线程重新分配运载线程并且执行，见下面的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">VirtualThreadLock</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">ReentrantLock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line">        Thread.startVirtualThread(() -&gt; &#123;</span><br><span class="line">            lock.lock();     <span class="comment">// &lt;------ 这里确保锁已经被另一个虚拟线程持有</span></span><br><span class="line">        &#125;);</span><br><span class="line">        Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        Thread.startVirtualThread(() -&gt; &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;first&quot;</span>);</span><br><span class="line">            lock.lock();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;second&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                lock.unlock();</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(<span class="string">&quot;third&quot;</span>);</span><br><span class="line">        &#125;);</span><br><span class="line">        Thread.sleep(Long.MAX_VALUE);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>虚拟线程中任务执行时候首次调用<code>Continuation#run()</code>执行了部分任务代码，然后尝试获取锁，会导致<code>Continuation</code>的<code>yield</code>操作让出控制权（任务切换），也就是<code>unmount</code>，载体线程栈数据会移动到<code>Continuation</code>栈的数据帧中，保存在堆内存，虚拟线程任务完成（但是虚拟线程没有终结，同时其<code>Continuation</code>也没有终结和释放），载体线程被释放到调度执行器中等待新的任务；如果<code>Continuation</code>的<code>yield</code>操作失败，则会对载体线程进行<code>park</code>调用，阻塞在载体线程上<br><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-8.jpg" alt="vt-source-code-8"></p>
+</li>
+<li><p>当锁持有者释放锁之后，会唤醒虚拟线程获取锁（成功后），虚拟线程会重新进行<code>mount</code>，让虚拟线程任务再次执行，有可能是分配到另一个载体线程中执行，<code>Continuation</code>栈会的数据帧会被恢复到载体线程栈中，然后再次调用<code>Continuation#run()</code>恢复任务执行：<br><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-9.jpg" alt="vt-source-code-9"></p>
+</li>
+<li><p>最终虚拟线程任务执行完成，标记<code>Continuation</code>终结，标记虚拟线程为终结状态，清空一些上下文变量，载体线程”返还”到调度执行器（线程池）中作为平台线程等待处理下一个任务</p>
+</li>
+</ul>
+<p><code>Continuation</code>组件十分重要，它既是用户真实任务的包装器，也是任务切换虚拟线程与平台线程之间数据转移的一个句柄，它提供的<code>yield</code>操作可以实现任务上下文的中断和恢复。由于<code>Continuation</code>被封闭在<code>java.base/jdk.internal.vm</code>下，可以通过增加编译参数<code>--add-exports java.base/jdk.internal.vm=ALL-UNNAMED</code>暴露对应的功能，从而编写实验性案例，<code>IDEA</code>中可以按下图进行编译参数添加：<br><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/vt-source-code-10.jpg" alt="vt-source-code-10"></p>
+<p>然后编写和运行下面的例子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> jdk.internal.vm.Continuation;</span><br><span class="line"><span class="keyword">import</span> jdk.internal.vm.ContinuationScope;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ContinuationDemo</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">ContinuationScope</span> <span class="variable">scope</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ContinuationScope</span>(<span class="string">&quot;scope&quot;</span>);</span><br><span class="line">        <span class="type">Continuation</span> <span class="variable">continuation</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Continuation</span>(scope, () -&gt; &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;Running before yield&quot;</span>);</span><br><span class="line">            Continuation.<span class="keyword">yield</span>(scope);</span><br><span class="line">            System.out.println(<span class="string">&quot;Running after yield&quot;</span>);</span><br><span class="line">        &#125;);</span><br><span class="line">        System.out.println(<span class="string">&quot;First run&quot;</span>);</span><br><span class="line">        <span class="comment">// 第一次执行Continuation.run</span></span><br><span class="line">        continuation.run();</span><br><span class="line">        System.out.println(<span class="string">&quot;Second run&quot;</span>);</span><br><span class="line">        <span class="comment">// 第二次执行Continuation.run</span></span><br><span class="line">        continuation.run();</span><br><span class="line">        System.out.println(<span class="string">&quot;Done&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 运行代码，神奇的结果出现了</span></span><br><span class="line">First run</span><br><span class="line">Running before <span class="keyword">yield</span></span><br><span class="line">Second run</span><br><span class="line">Running after <span class="keyword">yield</span></span><br><span class="line">Done</span><br></pre></td></tr></table></figure>
+
+<p>这里可以看出<code>Continuation</code>的奇妙之处，<code>Continuation</code>实例进行<code>yield</code>调用后，再次调用其<code>run</code>方法就可以从<code>yield</code>的调用之处往下执行，从而实现了程序的中断和恢复。</p>
+<h2 id="4-字节码增强技术"><a href="#4-字节码增强技术" class="headerlink" title="4.字节码增强技术"></a>4.字节码增强技术</h2><p>团队中有同事在做性能优化相关的工作，因为公司基础设施不足，同事在代码中写了大量的代码统计某个方法的耗时，大概的代码形式就是：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">method</span><span class="params">(Req req)</span> &#123;</span><br><span class="line">    <span class="type">StopWatch</span> <span class="variable">stopWatch</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StopWatch</span>();</span><br><span class="line">    stopWatch.start(<span class="string">&quot;某某方法-耗时统计&quot;</span>);</span><br><span class="line">    method()</span><br><span class="line">    stopWatch.stop();</span><br><span class="line">    log.info(<span class="string">&quot;查询耗时分布：&#123;&#125;&quot;</span>, stopWatch.prettyPrint());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样的代码非常多，侵入性很大，联想到之前学习的Java Agent技术，可以无侵入式地解决这类问题，所以做了一个很小很小的demo。</p>
+<p>在了解Agent之前需要先看看Instrumentation，JDK从1.5版本开始引入了<code>java.lang.instrument</code>包，该包提供了一些工具帮助开发人员实现<code>字节码增强</code>，Instrumentation接口的常用方法如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Instrumentation</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 注册Class文件转换器，转换器用于改变Class文件二进制流的数据</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> transformer          注册的转换器</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> canRetransform       设置是否允许重新转换</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">addTransformer</span><span class="params">(ClassFileTransformer transformer, <span class="type">boolean</span> canRetransform)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 移除一个转换器</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> transformer          需要移除的转换器</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">removeTransformer</span><span class="params">(ClassFileTransformer transformer)</span>;</span><br><span class="line">  </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 在类加载之后，重新转换类，如果重新转换的方法有活跃的栈帧，那些活跃的栈帧继续运行未转换前的方法</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> 重新转换的类数组</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">retransformClasses</span><span class="params">(Class&lt;?&gt;... classes)</span> <span class="keyword">throws</span> UnmodifiableClassException;</span><br><span class="line">  </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 当前JVM配置是否支持重新转换</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">isRetransformClassesSupported</span><span class="params">()</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取所有已加载的类</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;rawtypes&quot;)</span></span><br><span class="line">    Class[] getAllLoadedClasses();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ClassFileTransformer</span> &#123;</span><br><span class="line">    <span class="comment">// className参数表示当前加载类的类名，classfileBuffer参数是待加载类文件的字节数组</span></span><br><span class="line">    <span class="comment">// 调用addTransformer注册ClassFileTransformer以后，后续所有JVM加载类都会被它的transform方法拦截</span></span><br><span class="line">    <span class="comment">// 这个方法接收原类文件的字节数组，在这个方法中做类文件改写，最后返回转换过的字节数组，由JVM加载这个修改过的类文件</span></span><br><span class="line">    <span class="comment">// 如果transform方法返回null，表示不对此类做处理，如果返回值不为null，JVM会用返回的字节数组替换原来类的字节数组</span></span><br><span class="line">    <span class="type">byte</span>[] transform(  ClassLoader         loader,</span><br><span class="line">                String              className,</span><br><span class="line">                Class&lt;?&gt;            classBeingRedefined,</span><br><span class="line">                ProtectionDomain    protectionDomain,</span><br><span class="line">                <span class="type">byte</span>[]              classfileBuffer)</span><br><span class="line">        <span class="keyword">throws</span> IllegalClassFormatException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Instrumentation有两种使用方式:</p>
+<ol>
+<li>在JVM启动的时候添加一个Agent的jar包。</li>
+<li>在JVM运行时的任意时刻通过Attach API远程加载Agent的jar包。</li>
+</ol>
+<h2 id="5-Agent启动时增强"><a href="#5-Agent启动时增强" class="headerlink" title="5.Agent启动时增强"></a>5.Agent启动时增强</h2><p>使用Java Agent需要借助一个方法，该方法的方法签名如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">premain</span> <span class="params">(String agentArgs, Instrumentation instrumentation)</span> &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在Java虚拟机启动时，在执行main函数之前，会先运行指定类的premain方法，在premain方法中对Class文件进行修改，它有两个入参:</p>
+<ol>
+<li>agentArgs：启动参数，在JVM启动时指定。</li>
+<li>instrumentation：上文所说的Instrumentation的实例，我们可以在方法中调用上文所讲的addTransformer方法，注册对应的Class转换器，对Class文件进行修改。</li>
+</ol>
+<p>如下图，借助Instrumentation，JVM启动时的处理流程是这样的：JVM会执行指定类的premain方法，在premain中可以调用Instrumentation对象的addTransformer方法注册ClassFileTransformer。当JVM加载类时会将类文件的字节数组传递给ClassFileTransformer的transform方法，在transform方法中对Class文件进行解析和修改，之后JVM就会加载转换后的Class文件：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640.jpeg" alt="img"></p>
+<p>那我们需要做的就是写一个转换Class文件的ClassFileTransformer，下面用一个计算函数耗时的小例子看看Java Agent是怎么使用的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">ublic <span class="keyword">class</span> <span class="title class_">MyClassFileTransformer</span> <span class="keyword">implements</span> <span class="title class_">ClassFileTransformer</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined, ProtectionDomain protectionDomain, <span class="type">byte</span>[] classfileBuffer) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="string">&quot;com/example/aop/agent/MyTest&quot;</span>.equals(className)) &#123;</span><br><span class="line">            <span class="comment">// 使用ASM框架进行字节码转换</span></span><br><span class="line">            <span class="type">ClassReader</span> <span class="variable">cr</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassReader</span>(classfileBuffer);</span><br><span class="line">            <span class="type">ClassWriter</span> <span class="variable">cw</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassWriter</span>(cr, ClassWriter.COMPUTE_FRAMES);</span><br><span class="line">            <span class="type">ClassVisitor</span> <span class="variable">cv</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TimeStatisticsVisitor</span>(Opcodes.ASM7, cw);</span><br><span class="line">            cr.accept(cv, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);</span><br><span class="line">            <span class="keyword">return</span> cw.toByteArray();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> classfileBuffer;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TimeStatisticsVisitor</span> <span class="keyword">extends</span> <span class="title class_">ClassVisitor</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TimeStatisticsVisitor</span><span class="params">(<span class="type">int</span> api, ClassVisitor classVisitor)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(Opcodes.ASM7, classVisitor);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> MethodVisitor <span class="title function_">visitMethod</span><span class="params">(<span class="type">int</span> access, String name, String descriptor, String signature, String[] exceptions)</span> &#123;</span><br><span class="line">        <span class="type">MethodVisitor</span> <span class="variable">mv</span> <span class="operator">=</span> cv.visitMethod(access, name, descriptor, signature, exceptions);</span><br><span class="line">        <span class="keyword">if</span> (name.equals(<span class="string">&quot;&lt;init&gt;&quot;</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> mv;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">TimeStatisticsAdapter</span>(api, mv, access, name, descriptor);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TimeStatisticsAdapter</span> <span class="keyword">extends</span> <span class="title class_">AdviceAdapter</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="title function_">TimeStatisticsAdapter</span><span class="params">(<span class="type">int</span> api, MethodVisitor methodVisitor, <span class="type">int</span> access, String name, String descriptor)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(api, methodVisitor, access, name, descriptor);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onMethodEnter</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// 进入函数时调用TimeStatistics的静态方法start</span></span><br><span class="line">        <span class="built_in">super</span>.visitMethodInsn(Opcodes.INVOKESTATIC, <span class="string">&quot;com/example/aop/agent/TimeStatistics&quot;</span>, <span class="string">&quot;start&quot;</span>, <span class="string">&quot;()V&quot;</span>, <span class="literal">false</span>);</span><br><span class="line">        <span class="built_in">super</span>.onMethodEnter();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onMethodExit</span><span class="params">(<span class="type">int</span> opcode)</span> &#123;</span><br><span class="line">        <span class="comment">// 退出函数时调用TimeStatistics的静态方法end</span></span><br><span class="line">        <span class="built_in">super</span>.onMethodExit(opcode);</span><br><span class="line">        <span class="built_in">super</span>.visitMethodInsn(Opcodes.INVOKESTATIC, <span class="string">&quot;com/example/aop/agent/TimeStatistics&quot;</span>, <span class="string">&quot;end&quot;</span>, <span class="string">&quot;()V&quot;</span>, <span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TimeStatistics</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ThreadLocal&lt;Long&gt; t = <span class="keyword">new</span> <span class="title class_">ThreadLocal</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">start</span><span class="params">()</span> &#123;</span><br><span class="line">        t.set(System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">end</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">time</span> <span class="operator">=</span> System.currentTimeMillis() - t.get();</span><br><span class="line">        System.out.println(Thread.currentThread().getStackTrace()[<span class="number">2</span>] + <span class="string">&quot; spend: &quot;</span> + time);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AgentMain</span> &#123;</span><br><span class="line">    <span class="comment">// premain()函数中注册MyClassFileTransformer转换器</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">premain</span><span class="params">(String agentArgs, Instrumentation instrumentation)</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;premain方法&quot;</span>);</span><br><span class="line">        instrumentation.addTransformer(<span class="keyword">new</span> <span class="title class_">MyClassFileTransformer</span>(), <span class="literal">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对应的XML配置如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-assembly-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">descriptorRef</span>&gt;</span>jar-with-dependencies<span class="tag">&lt;/<span class="name">descriptorRef</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">archive</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!--指定premain的所在方法--&gt;</span> </span><br><span class="line">            <span class="tag">&lt;<span class="name">Agent-CLass</span>&gt;</span>com.example.aop.agent.AgentMain<span class="tag">&lt;/<span class="name">Agent-CLass</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">Premain-Class</span>&gt;</span>com.example.aop.agent.AgentMain<span class="tag">&lt;/<span class="name">Premain-Class</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">Can-Redefine-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Redefine-Classes</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">Can-Retransform-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Retransform-Classes</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">archive</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">goal</span>&gt;</span>single<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-compiler-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">source</span>&gt;</span>$&#123;maven.compiler.source&#125;<span class="tag">&lt;/<span class="name">source</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">target</span>&gt;</span>$&#123;maven.compiler.target&#125;<span class="tag">&lt;/<span class="name">target</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>使用命令行执行下面的测试类:</p>
+<blockquote>
+<p>java -javaagent:&#x2F;Users&#x2F;xxx&#x2F;IdeaProjects&#x2F;aop-demo&#x2F;target&#x2F;aop-0.0.1-SNAPSHOT-jar-with-dependencies.jar com.example.aop.agent.MyTest</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        Thread.sleep(<span class="number">3000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-Attach运行时增强"><a href="#6-Attach运行时增强" class="headerlink" title="6.Attach运行时增强"></a>6.Attach运行时增强</h2><p>在上面的例子中，我们只能在JVM启动时指定一个Agent，这种方式局限在main方法执行前，如果我们想在项目启动后随时随地地修改Class文件，要怎么办呢？这个时候需要借助Java Agent的另外一个方法，该方法的签名如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">agentmain</span> <span class="params">(String agentArgs, Instrumentation inst)</span> &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>agentmain的参数与premain有着同样的含义，但是agentmain是在Java Agent被Attach到Java虚拟机上时执行的，当Java Agent被attach到Java虚拟机上，Java程序的main函数一般已经启动，并且程序很可能已经运行了相当长的时间，此时通过Instrumentation.retransformClasses方法，可以动态转换Class文件并使之生效，下面用一个小例子演示一下这个功能:</p>
+<p>下面的类启动后，会不断打印出100这个数字，我们通过Attach功能使之打印出50这个数字。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PrintNumTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            System.out.println(getNum());</span><br><span class="line">            Thread.sleep(<span class="number">3000</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">getNum</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">100</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>依然是定义一个ClassFileTransformer，使用ASM框架修改getNum方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PrintNumTransformer</span> <span class="keyword">implements</span> <span class="title class_">ClassFileTransformer</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined, ProtectionDomain protectionDomain, <span class="type">byte</span>[] classfileBuffer) <span class="keyword">throws</span> IllegalClassFormatException &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="string">&quot;com/example/aop/agent/PrintNumTest&quot;</span>.equals(className)) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;asm&quot;</span>);</span><br><span class="line">            <span class="type">ClassReader</span> <span class="variable">cr</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassReader</span>(classfileBuffer);</span><br><span class="line">            <span class="type">ClassWriter</span> <span class="variable">cw</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassWriter</span>(cr, ClassWriter.COMPUTE_FRAMES);</span><br><span class="line">            <span class="type">ClassVisitor</span> <span class="variable">cv</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TransformPrintNumVisitor</span>(Opcodes.ASM7, cw);</span><br><span class="line">            cr.accept(cv, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);</span><br><span class="line">            <span class="keyword">return</span> cw.toByteArray();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> classfileBuffer;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TransformPrintNumVisitor</span> <span class="keyword">extends</span> <span class="title class_">ClassVisitor</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TransformPrintNumVisitor</span><span class="params">(<span class="type">int</span> api, ClassVisitor classVisitor)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(Opcodes.ASM7, classVisitor);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> MethodVisitor <span class="title function_">visitMethod</span><span class="params">(<span class="type">int</span> access, String name, String descriptor, String signature, String[] exceptions)</span> &#123;</span><br><span class="line">        <span class="type">MethodVisitor</span> <span class="variable">mv</span> <span class="operator">=</span> cv.visitMethod(access, name, descriptor, signature, exceptions);</span><br><span class="line">        <span class="keyword">if</span> (name.equals(<span class="string">&quot;getNum&quot;</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">TransformPrintNumAdapter</span>(api, mv, access, name, descriptor);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> mv;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TransformPrintNumAdapter</span> <span class="keyword">extends</span> <span class="title class_">AdviceAdapter</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="title function_">TransformPrintNumAdapter</span><span class="params">(<span class="type">int</span> api, MethodVisitor methodVisitor, <span class="type">int</span> access, String name, String descriptor)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(api, methodVisitor, access, name, descriptor);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onMethodEnter</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.visitIntInsn(BIPUSH, <span class="number">50</span>);</span><br><span class="line">        <span class="built_in">super</span>.visitInsn(IRETURN);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PrintNumAgent</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">agentmain</span><span class="params">(String agentArgs, Instrumentation inst)</span> <span class="keyword">throws</span> UnmodifiableClassException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;agentmain&quot;</span>);</span><br><span class="line">        inst.addTransformer(<span class="keyword">new</span> <span class="title class_">PrintNumTransformer</span>(), <span class="literal">true</span>);</span><br><span class="line">        Class[] allLoadedClasses = inst.getAllLoadedClasses();</span><br><span class="line">        <span class="keyword">for</span> (Class allLoadedClass : allLoadedClasses) &#123;</span><br><span class="line">            <span class="keyword">if</span> (allLoadedClass.getSimpleName().equals(<span class="string">&quot;PrintNumTest&quot;</span>)) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;Reloading: &quot;</span> + allLoadedClass.getName());</span><br><span class="line">                inst.retransformClasses(allLoadedClass);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对应的XML文件配置如下:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-assembly-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">descriptorRef</span>&gt;</span>jar-with-dependencies<span class="tag">&lt;/<span class="name">descriptorRef</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">archive</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">Agent-CLass</span>&gt;</span>com.example.aop.agent.PrintNumAgent<span class="tag">&lt;/<span class="name">Agent-CLass</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">Premain-Class</span>&gt;</span>com.example.aop.agent.PrintNumAgent<span class="tag">&lt;/<span class="name">Premain-Class</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">Can-Redefine-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Redefine-Classes</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">Can-Retransform-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Retransform-Classes</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">archive</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">goal</span>&gt;</span>single<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-compiler-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">source</span>&gt;</span>$&#123;maven.compiler.source&#125;<span class="tag">&lt;/<span class="name">source</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">target</span>&gt;</span>$&#123;maven.compiler.target&#125;<span class="tag">&lt;/<span class="name">target</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>因为是跨进程通信，Attach的发起端是一个独立的Java程序，这个Java程序会调用<code>VirtualMachine.attach</code>方法开始和目标JVM进行跨进程通信:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyAttachMain</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException, AttachNotSupportedException, AgentLoadException, AgentInitializationException &#123;</span><br><span class="line">        <span class="type">VirtualMachine</span> <span class="variable">virtualMachine</span> <span class="operator">=</span> VirtualMachine.attach(args[<span class="number">0</span>]);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            virtualMachine.loadAgent(<span class="string">&quot;/Users/zhangxiaobin/IdeaProjects/aop-demo/target/aop-0.0.1-SNAPSHOT-jar-with-dependencies.jar&quot;</span>);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            virtualMachine.detach();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用<code>jps</code>查询到PrintNumTest的进程id，再用下面的命令执行MyAttachMain类:</p>
+<blockquote>
+<p>java -cp &#x2F;Library&#x2F;Java&#x2F;JavaVirtualMachines&#x2F;jdk1.8.0_311.jdk&#x2F;Contents&#x2F;Home&#x2F;lib&#x2F;tools.jar:&#x2F;Users&#x2F;zhangxiaobin&#x2F;IdeaProjects&#x2F;aop-demo&#x2F;target&#x2F;aop-0.0.1-SNAPSHOT-jar-with-dependencies.jar com.example.aop.agent.MyAttachMain 49987</p>
+</blockquote>
+<h2 id="7-GC参数基本策略"><a href="#7-GC参数基本策略" class="headerlink" title="7.GC参数基本策略"></a>7.GC参数基本策略</h2><blockquote>
+<p>详细内容参见:<a target="_blank" rel="noopener" href="https://tech.meituan.com/2017/12/29/jvm-optimize.html">从实际案例聊聊Java应用的GC优化 - 美团技术团队 (meituan.com)</a></p>
+</blockquote>
+<p>各分区的大小对GC的性能影响很大。如何将各分区调整到合适的大小，分析活跃数据的大小是很好的切入点。</p>
+<p><code>活跃数据的大小</code>是指，<code>应用程序稳定运行时长期存活对象在堆中占用的空间大小，也就是Full GC后堆中老年代占用空间的大小</code>。可以通过GC日志中Full GC之后老年代数据大小得出，比较准确的方法是在程序稳定后，多次获取GC数据，通过取平均值的方式计算活跃数据的大小。活跃数据和各分区之间的比例关系如下：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240827212742812.png" alt="image-20240827212742812"></p>
+<p>例如，根据GC日志获得老年代的活跃数据大小为300M，那么各分区大小可以设为：</p>
+<blockquote>
+<p>总堆：1200MB &#x3D; 300MB × 4 新生代：450MB &#x3D; 300MB × 1.5 老年代：750MB &#x3D; 1200MB - 450MB</p>
+</blockquote>
+<p>这部分设置仅仅是堆大小的初始值，后面的优化中，可能会调整这些值，具体情况取决于应用程序的特性和需求。</p>
+<h2 id="8-GC优化基本步骤"><a href="#8-GC优化基本步骤" class="headerlink" title="8.GC优化基本步骤"></a>8.GC优化基本步骤</h2><h3 id="8-1确认目标"><a href="#8-1确认目标" class="headerlink" title="8.1确认目标"></a>8.1确认目标</h3><p>明确应用程序的系统需求是性能优化的基础，系统的需求是指应用程序运行时某方面的要求，譬如：高可用，可用性达到几个9。低延迟，请求必须多少毫秒内完成响应。高吞吐，每秒完成多少次事务。</p>
+<p>明确系统需求之所以重要，是因为上述性能指标间可能冲突。比如通常情况下，<code>缩小延迟的代价是降低吞吐量或者消耗更多的内存或者两者同时发生</code>。</p>
+<p>由于笔者所在团队主要关注<code>高可用</code>和<code>低延迟</code>两项指标，所以接下来分析，如何量化GC时间和频率对于响应时间和可用性的影响。通过这个量化指标，可以计算出当前GC情况对服务的影响，也能评估出GC优化后对响应时间的收益，这两点对于低延迟服务很重要。</p>
+<p>举例：假设单位时间T内发生一次持续25ms的GC，接口平均响应时间为50ms，且请求均匀到达，根据下图所示：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/f6e7326e.png" alt="img"></p>
+<p>那么有(50ms+25ms)&#x2F;T比例的请求会受GC影响，其中GC前的50ms内到达的请求都会增加25ms，GC期间的25ms内到达的请求，会增加0-25ms不等，如果时间T内发生N次GC，<code>受GC影响请求占比=(接口响应时间+GC时间)×N/T</code> 。</p>
+<blockquote>
+<p>可见无论<code>降低单次GC时间</code>还是<code>降低GC次数N</code>都可以有效减少GC对响应时间的影响。</p>
+</blockquote>
+<h3 id="8-2优化参数"><a href="#8-2优化参数" class="headerlink" title="8.2优化参数"></a>8.2优化参数</h3><p>通过收集GC信息，结合系统需求，确定优化方案，例如选用合适的GC回收器、重新设置内存比例、调整JVM参数等。进行调整后，<code>将不同的优化方案分别应用到多台机器上，然后比较这些机器上GC的性能差异</code>，有针对性的做出选择，再通过不断的试验和观察，找到最合适的参数。</p>
+<h3 id="8-3验收结果"><a href="#8-3验收结果" class="headerlink" title="8.3验收结果"></a>8.3验收结果</h3><p>将修改应用到所有服务器，判断优化结果是否符合预期，总结相关经验。接下来，我们通过三个案例来实践以上的优化流程和基本原则（本文中三个案例使用的垃圾回收器均为<code>ParNew+CMS，CMS失败时Serial Old替补</code>)。</p>
+<h2 id="9-GC优化三大案例"><a href="#9-GC优化三大案例" class="headerlink" title="9.GC优化三大案例"></a>9.GC优化三大案例</h2><h3 id="9-1Major-GC和Minor-GC频繁"><a href="#9-1Major-GC和Minor-GC频繁" class="headerlink" title="9.1Major GC和Minor GC频繁"></a>9.1Major GC和Minor GC频繁</h3><h4 id="9-1-1确定目标"><a href="#9-1-1确定目标" class="headerlink" title="9.1.1确定目标"></a>9.1.1确定目标</h4><p>服务情况：Minor GC每分钟100次 ，Major GC每4分钟一次，单次Minor GC耗时25ms，单次Major GC耗时200ms，接口响应时间50ms。</p>
+<p>由于这个服务要求低延时高可用，结合上文中提到的GC对服务响应时间的影响，计算可知由于Minor GC的发生，12.5%的请求响应时间会增加，其中8.3%的请求响应时间会增加25ms，可见当前GC情况对响应时间影响较大。</p>
+<blockquote>
+<p><em>（50ms+25ms）× 100次&#x2F;60000ms &#x3D; 12.5%，50ms × 100次&#x2F;60000ms &#x3D; 8.3%</em> 。</p>
+</blockquote>
+<p>优化目标：降低TP99、TP90时间。</p>
+<h4 id="9-1-2优化内容"><a href="#9-1-2优化内容" class="headerlink" title="9.1.2优化内容"></a>9.1.2优化内容</h4><p>首先优化Minor GC频繁问题。通常情况下，由于新生代空间较小，Eden区很快被填满，就会导致频繁Minor GC，因此<code>可以通过增大新生代空间来降低Minor GC的频率</code>。例如在相同的内存分配率的前提下，新生代中的Eden区增加一倍，Minor GC的次数就会减少一半。</p>
+<p>这时很多人有这样的疑问，扩容Eden区虽然可以减少Minor GC的次数，但会增加单次Minor GC时间么？根据上面公式，如果单次Minor GC时间也增加，很难保证最后的优化效果。我们结合下面情况来分析，单次Minor GC时间主要受哪些因素影响？是否和新生代大小存在线性关系？ 首先，单次Minor GC时间由以下两部分组成：<code>T1（扫描新生代）</code>和 <code>T2（复制存活对象到Survivor区）</code>如下图。（注：这里为了简化问题，我们认为T1只扫描新生代判断对象是否存活的时间，其实该阶段还需要扫描部分老年代，后面案例中有详细描述。）</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/6eb9b856.png" alt="img"></p>
+<ul>
+<li>扩容前：新生代容量为R，假设对象A的存活时间为750ms，Minor GC间隔500ms，那么本次Minor GC时间&#x3D; T1（扫描新生代R）+T2（复制对象A到S）。</li>
+<li>扩容后：新生代容量为2R ，对象A的生命周期为750ms，那么Minor GC间隔增加为1000ms，此时Minor GC对象A已不再存活，不需要把它复制到Survivor区，那么本次GC时间 &#x3D; 2 × T1（扫描新生代R），没有T2复制时间。</li>
+</ul>
+<p>可见，扩容后，Minor GC时增加了T1（扫描时间），但省去T2（复制对象）的时间，更重要的是对于虚拟机来说，复制对象的成本要远高于扫描成本，所以，<code>单次Minor GC时间更多取决于GC后存活对象的数量，而非Eden区的大小</code>。因此如果堆中短期对象很多，那么扩容新生代，单次Minor GC时间不会显著增加。下面需要确认下服务中对象的生命周期分布情况：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/1470cba5.png" alt="img"></p>
+<p>通过上图GC日志中两处红色框标记内容可知： 1. new threshold &#x3D; 2（动态年龄判断，对象的晋升年龄阈值为2），对象仅经历2次Minor GC后就晋升到老年代，这样老年代会迅速被填满，直接导致了频繁的Major GC。 2. Major GC后老年代使用空间为300M+，意味着此时绝大多数(86% &#x3D; 2G&#x2F;2.3G)的对象已经不再存活，也就是说生命周期长的对象占比很小。</p>
+<p><code>由此可见，服务中存在大量短期临时对象，扩容新生代空间后，Minor GC频率降低，对象在新生代得到充分回收，只有生命周期长的对象才进入老年代。这样老年代增速变慢，Major GC频率自然也会降低。</code></p>
+<h4 id="9-1-3优化结果"><a href="#9-1-3优化结果" class="headerlink" title="9.1.3优化结果"></a>9.1.3优化结果</h4><p>通过扩容新生代为为原来的三倍，单次Minor GC时间增加小于5ms，频率下降了60%，服务响应时间TP90，TP99都下降了10ms+，服务可用性得到提升。</p>
+<p>调整前：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/a1532bd7.png" alt="img"></p>
+<p>调整后：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/ae11fb41.png" alt="img"></p>
+<h4 id="9-1-4经验总结"><a href="#9-1-4经验总结" class="headerlink" title="9.1.4经验总结"></a>9.1.4经验总结</h4><p>如何选择各分区大小应该依赖应用程序中<strong>对象生命周期的分布情况：如果应用存在大量的短期对象，应该选择较大的年轻代；如果存在相对较多的持久对象，老年代应该适当增大。</strong></p>
+<blockquote>
+<p>关于上文中提到晋升年龄阈值为2，很多同学有疑问，为什么设置了MaxTenuringThreshold&#x3D;15，对象仍然仅经历2次Minor GC，就晋升到老年代？这里涉及到“动态年龄计算”的概念。</p>
+<p><strong>动态年龄计算</strong>：Hotspot遍历所有对象时，按照年龄<code>从小到大对其所占用的大小进行累积</code>，当累积的某个年龄大小超过了survivor区的一半时，取这个年龄和MaxTenuringThreshold中更小的一个值，作为新的晋升年龄阈值。在本案例中，调优前：Survivor区 &#x3D; 64M，desired survivor &#x3D; 32M，此时Survivor区中age&lt;&#x3D;2的对象累计大小为41M，41M大于32M，所以晋升年龄阈值被设置为2，下次Minor GC时将年龄超过2的对象被晋升到老年代。</p>
+<p>JVM引入动态年龄计算，主要基于如下两点考虑：</p>
+<ol>
+<li>如果固定按照MaxTenuringThreshold设定的阈值作为晋升条件： a）MaxTenuringThreshold设置的过大，原本应该晋升的对象一直停留在Survivor区，直到Survivor区溢出，一旦溢出发生，Eden+Svuvivor中对象将不再依据年龄全部提升到老年代，这<code>样对象老化的机制就失效了</code>。 b）MaxTenuringThreshold设置的过小，“过早晋升”即对象不能在新生代充分被回收，<code>大量短期对象被晋升到老年代，老年代空间迅速增长，引起频繁的Major GC</code>。分代回收失去了意义，严重影响GC性能。</li>
+<li>相同应用在不同时间的表现不同：<code>特殊任务的执行或者流量成分的变化，都会导致对象的生命周期分布发生波动</code>，那么固定的阈值设定，因为无法动态适应变化，会造成和上面相同的问题。</li>
+</ol>
+<p>总结来说，为了更好的适应不同程序的内存情况，虚拟机并不总是要求对象年龄必须达到Maxtenuringthreshhold再晋级老年代。</p>
+</blockquote>
+<h3 id="9-2请求高峰期发生GC，导致服务可用性下降"><a href="#9-2请求高峰期发生GC，导致服务可用性下降" class="headerlink" title="9.2请求高峰期发生GC，导致服务可用性下降"></a>9.2请求高峰期发生GC，导致服务可用性下降</h3><h4 id="9-2-1确定目标"><a href="#9-2-1确定目标" class="headerlink" title="9.2.1确定目标"></a>9.2.1确定目标</h4><p>GC日志显示，高峰期CMS在<code>重标记（Remark）</code>阶段耗时1.39s。Remark阶段是Stop-The-World（以下简称为STW）的，即在执行垃圾回收时，Java应用程序中除了垃圾回收器线程之外其他所有线程都被挂起，意味着在此期间，用户正常工作的线程全部被暂停下来，这是低延时服务不能接受的。本次优化目标是降低Remark时间。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/ee8d24f9.png" alt="img"></p>
+<h4 id="9-2-2优化内容"><a href="#9-2-2优化内容" class="headerlink" title="9.2.2优化内容"></a>9.2.2优化内容</h4><p>解决问题前，先回顾一下CMS的四个主要阶段，以及各个阶段的工作内容。下图展示了CMS各个阶段可以标记的对象，用不同颜色区分。 </p>
+<ol>
+<li><p>Init-mark初始标记(STW) ，该阶段进行可达性分析，标记GC Root能直接关联到的对象，所以很快。</p>
+</li>
+<li><p>Concurrent-mark并发标记，由前阶段标记过的绿色对象出发，所有可到达的对象都在本阶段中标记。 </p>
+</li>
+<li><p>Remark重标记(STW) ，暂停所有用户线程，重新扫描堆中的对象，进行可达性分析，标记活着的对象。因为并发标记阶段是和用户线程并发执行的过程，所以该过程中可能有用户线程修改某些活跃对象的字段，指向了一个未标记过的对象，如下图中红色对象在并发标记开始时不可达，但是并行期间引用发生变化，变为对象可达，这个阶段需要重新标记出此类对象，防止在下一阶段被清理掉，这个过程也是需要STW的。特别需要注意一点，这个阶段是以新生代中对象为根来判断对象是否存活的。 </p>
+</li>
+<li><p>并发清理，进行并发的垃圾清理。</p>
+</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/09cf176b.png" alt="img"></p>
+<p>可见，Remark阶段主要是通过扫描堆来判断对象是否存活。那么准确判断对象是否存活，需要扫描哪些对象？CMS对老年代做回收，Remark阶段仅扫描老年代是否可行？结论是不可行，原因如下：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/eaa94379.png" alt="img"></p>
+<p>如果仅扫描老年代中对象，即以老年代中对象为根，判断对象是否存在引用，上图中，对象A因为引用存在新生代中，它在Remark阶段就不会被修正标记为可达，GC时会被错误回收。新生代对象持有老年代中对象的引用，这种情况称为<strong>“跨代引用”</strong>。因它的存在，Remark阶段必须扫描整个堆来判断对象是否存活，包括图中灰色的不可达对象。</p>
+<p>灰色对象已经不可达，但仍然需要扫描的原因：<strong>新生代GC和老年代的GC是各自分开独立进行的</strong>，只有Minor GC时才会使用根搜索算法，标记新生代对象是否可达，也就是说虽然一些对象已经不可达，但在Minor GC发生前不会被标记为不可达，CMS也无法辨认哪些对象存活，只能全堆扫描（新生代+老年代）。由此可见堆中对象的数目影响了Remark阶段耗时。<code>分析GC日志可以得出同样的规律，Remark耗时&gt;500ms时，新生代使用率都在75%以上。这样降低Remark阶段耗时问题转换成如何减少新生代对象数量</code>。</p>
+<p>新生代中对象的特点是“朝生夕灭”，这样如果Remark前执行一次Minor GC，大部分对象就会被回收。<code>CMS就采用了这样的方式，在Remark前增加了一个可中断的并发预清理（CMS-concurrent-abortable-preclean），该阶段主要工作仍然是并发标记对象是否存活，只是这个过程可被中断</code>。此阶段在Eden区使用超过2M时启动，当然2M是默认的阈值，可以通过参数修改。如果此阶段执行时等到了Minor GC，那么上述灰色对象将被回收，Reamark阶段需要扫描的对象就少了。</p>
+<p>除此之外CMS为了避免这个阶段没有等到Minor GC而陷入无限等待，提供了参数<code>CMSMaxAbortablePrecleanTime</code>，默认为5s，含义是如果可中断的预清理执行超过5s，不管发没发生Minor GC，都会中止此阶段，进入Remark。根据GC日志红色标记2处显示，可中断的并发预清理执行了5.35s，超过了设置的5s被中断，期间没有等到Minor GC，所以Remark时新生代中仍然有很多对象。</p>
+<blockquote>
+<p>对于这种情况，CMS提供<code>CMSScavengeBeforeRemark</code>参数，用来保证Remark前强制进行一次Minor GC。</p>
+</blockquote>
+<h4 id="9-2-3优化结果"><a href="#9-2-3优化结果" class="headerlink" title="9.2.3优化结果"></a>9.2.3优化结果</h4><p>经过增加CMSScavengeBeforeRemark参数，单次执行时间&gt;200ms的GC停顿消失，从监控上观察，<code>GCtime和业务波动保持一致，不再有明显的毛刺</code>。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/6b73e4c0.png" alt="img"></p>
+<h4 id="9-2-4经验总结"><a href="#9-2-4经验总结" class="headerlink" title="9.2.4经验总结"></a>9.2.4经验总结</h4><p>通过案例分析了解到，<code>由于跨代引用的存在，CMS在Remark阶段必须扫描整个堆，同时为了避免扫描时新生代有很多对象，增加了可中断的预清理阶段用来等待Minor GC的发生</code>。只是该阶段有时间限制，如果超时等不到Minor GC，Remark时新生代仍然有很多对象，我们的调优策略是，通过参数强制Remark前进行一次Minor GC，从而降低Remark阶段的时间。</p>
+<blockquote>
+<p>案例中只涉及老年代GC，其实新生代GC存在同样的问题，即老年代可能持有新生代对象引用，所以Minor GC时也必须扫描老年代。</p>
+<p><strong>JVM是如何避免Minor GC时扫描全堆的？</strong>经过统计信息显示，老年代持有新生代对象引用的情况不足1%，根据这一特性JVM引入了卡表（card table）来实现这一目的。如下图所示：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/df96e180.png" alt="img"></p>
+<p><strong>卡表</strong>的具体策略是将老年代的空间分成大小为<code>512B</code>的若干张卡（card）。<code>卡表本身是单字节数组，数组中的每个元素对应着一张卡，当发生老年代引用新生代时，虚拟机将该卡对应的卡表元素设置为适当的值</code>。如上图所示，卡表3被标记为脏（卡表还有另外的作用，标识并发标记阶段哪些块被修改过），之后Minor GC时通过扫描卡表就可以很快的识别哪些卡中存在老年代指向新生代的引用。这样虚拟机通过空间换时间的方式，避免了全堆扫描。</p>
+</blockquote>
+<h3 id="9-3发生Stop-The-World的GC"><a href="#9-3发生Stop-The-World的GC" class="headerlink" title="9.3发生Stop-The-World的GC"></a>9.3发生Stop-The-World的GC</h3><h4 id="9-3-1确定目标"><a href="#9-3-1确定目标" class="headerlink" title="9.3.1确定目标"></a>9.3.1确定目标</h4><p>GC日志如下图（在GC日志中，Full GC是用来说明这次垃圾回收的停顿类型，代表STW类型的GC，并不特指老年代GC），根据GC日志可知本次Full GC耗时1.23s。这个在线服务同样要求低时延高可用。本次优化目标是降低单次STW回收停顿时间，提高可用性。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/b15554ea.png" alt="img"></p>
+<h4 id="9-3-2优化内容"><a href="#9-3-2优化内容" class="headerlink" title="9.3.2优化内容"></a>9.3.2优化内容</h4><p>首先，什么时候可能会触发STW的Full GC呢？ </p>
+<ol>
+<li>Perm空间不足；</li>
+<li>CMS GC时出现promotion failed和concurrent mode failure（concurrent mode failure发生的原因一般是CMS正在进行，但是由于老年代空间不足，需要尽快回收老年代里面的不再被使用的对象，这时停止所有的线程，同时终止CMS，直接进行Serial Old GC）； </li>
+<li>统计得到的Young GC晋升到老年代的平均大小大于老年代的剩余空间；</li>
+<li>主动触发Full GC（执行jmap -histo:live [pid]）来避免碎片问题。</li>
+</ol>
+<p>然后，我们来逐一分析一下：排除原因2：如果是原因2中两种情况，日志中会有特殊标识，目前没有。排除原因3：根据GC日志，当时老年代使用量仅为20%，也不存在大于2G的大对象产生。排除原因4：因为当时没有相关命令执行。锁定原因1：根据日志发现Full GC后，Perm区变大了，推断是由于永久代空间不足容量扩展导致的。</p>
+<p>找到原因后解决方法有两种： 1. 通过把<code>-XX:PermSize</code>参数和<code>-XX:MaxPermSize</code>设置成一样，强制虚拟机在启动的时候就把永久代的容量固定下来，避免运行时自动扩容。 2. CMS默认情况下不会回收Perm区，通过参数<code>CMSPermGenSweepingEnabled</code>、<code>CMSClassUnloadingEnabled</code>，可以让CMS在Perm区容量不足时对其回收。</p>
+<blockquote>
+<p>由于该服务没有生成大量动态类，回收Perm区收益不大，所以我们采用方案1，启动时将Perm区大小固定，避免进行动态扩容。</p>
+</blockquote>
+<h4 id="9-3-3优化结果"><a href="#9-3-3优化结果" class="headerlink" title="9.3.3优化结果"></a>9.3.3优化结果</h4><p>调整参数后，服务不再有Perm区扩容导致的STW GC发生。</p>
+<h4 id="9-3-4经验总结"><a href="#9-3-4经验总结" class="headerlink" title="9.3.4经验总结"></a>9.3.4经验总结</h4><p>对于性能要求很高的服务，建议将MaxPermSize和MinPermSize设置成一致（JDK8开始，Perm区完全消失，转而使用元空间。而元空间是直接存在内存中，不在JVM中），Xms和Xmx也设置为相同，<code>这样可以减少内存自动扩容和收缩带来的性能损失</code>。虚拟机启动的时候就会把参数中所设定的内存全部化为私有，即使扩容前有一部分内存不会被用户代码用到，这部分内存在虚拟机中被标识为虚拟内存，也不会交给其他进程使用。</p>
+<blockquote>
+<p>结合上述GC优化案例做个总结：1. 首先再次声明，在进行GC优化之前，需要确认项目的架构和代码等已经没有优化空间。我们不能指望一个系统架构有缺陷或者代码层次优化没有穷尽的应用，通过GC优化令其性能达到一个质的飞跃。2. 其次，通过上述分析，可以看出虚拟机内部已有很多优化来保证应用的稳定运行，所以不要为了调优而调优，不当的调优可能适得其反。3. 最后，GC优化是一个系统而复杂的工作，没有万能的调优策略可以满足所有的性能指标。GC优化必须建立在我们深入理解各种垃圾回收器的基础上，才能有事半功倍的效果。</p>
+</blockquote>
+<h2 id="10-Java新特性"><a href="#10-Java新特性" class="headerlink" title="10.Java新特性"></a>10.Java新特性</h2><p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828103008145.png" alt="image-20240828103008145"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Optional</span>&lt;T&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Optional&lt;?&gt; EMPTY = <span class="keyword">new</span> <span class="title class_">Optional</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> T value;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">Optional</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.value = <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span>&lt;T&gt; Optional&lt;T&gt; <span class="title function_">empty</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">        Optional&lt;T&gt; t = (Optional&lt;T&gt;) EMPTY;</span><br><span class="line">        <span class="keyword">return</span> t;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">Optional</span><span class="params">(T value)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.value = Objects.requireNonNull(value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; Optional&lt;T&gt; <span class="title function_">of</span><span class="params">(T value)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Optional</span>&lt;&gt;(value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; Optional&lt;T&gt; <span class="title function_">ofNullable</span><span class="params">(T value)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> value == <span class="literal">null</span> ? empty() : of(value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> T <span class="title function_">get</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (value == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NoSuchElementException</span>(<span class="string">&quot;No value present&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isPresent</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> value != <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">ifPresent</span><span class="params">(Consumer&lt;? <span class="built_in">super</span> T&gt; consumer)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (value != <span class="literal">null</span>)</span><br><span class="line">            consumer.accept(value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Optional&lt;T&gt; <span class="title function_">filter</span><span class="params">(Predicate&lt;? <span class="built_in">super</span> T&gt; predicate)</span> &#123;</span><br><span class="line">        Objects.requireNonNull(predicate);</span><br><span class="line">        <span class="keyword">if</span> (!isPresent())</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> predicate.test(value) ? <span class="built_in">this</span> : empty();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span>&lt;U&gt; Optional&lt;U&gt; <span class="title function_">map</span><span class="params">(Function&lt;? <span class="built_in">super</span> T, ? extends U&gt; mapper)</span> &#123;</span><br><span class="line">        Objects.requireNonNull(mapper);</span><br><span class="line">        <span class="keyword">if</span> (!isPresent())</span><br><span class="line">            <span class="keyword">return</span> empty();</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> Optional.ofNullable(mapper.apply(value));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span>&lt;U&gt; Optional&lt;U&gt; <span class="title function_">flatMap</span><span class="params">(Function&lt;? <span class="built_in">super</span> T, Optional&lt;U&gt;&gt; mapper)</span> &#123;</span><br><span class="line">        Objects.requireNonNull(mapper);</span><br><span class="line">        <span class="keyword">if</span> (!isPresent())</span><br><span class="line">            <span class="keyword">return</span> empty();</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> Objects.requireNonNull(mapper.apply(value));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> T <span class="title function_">orElse</span><span class="params">(T other)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> value != <span class="literal">null</span> ? value : other;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> T <span class="title function_">orElseGet</span><span class="params">(Supplier&lt;? extends T&gt; other)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> value != <span class="literal">null</span> ? value : other.get();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> &lt;X <span class="keyword">extends</span> <span class="title class_">Throwable</span>&gt; T <span class="title function_">orElseThrow</span><span class="params">(Supplier&lt;? extends X&gt; exceptionSupplier)</span> <span class="keyword">throws</span> X 	 &#123;</span><br><span class="line">        <span class="keyword">if</span> (value != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> value;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> exceptionSupplier.get();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="11-Java开发手册"><a href="#11-Java开发手册" class="headerlink" title="11.Java开发手册"></a>11.Java开发手册</h2><h3 id="11-1OOP规约"><a href="#11-1OOP规约" class="headerlink" title="11.1OOP规约"></a>11.1OOP规约</h3><p>【强制】避免通过一个类的对象引用访问此类的静态变量或静态方法，无谓增加编译器解析成本，直接用类名来访问即可。</p>
+<p>【强制】所有的<code>覆写</code>方法，必须加 <code>@Override</code> 注解。</p>
+<blockquote>
+<p>说明：getObject()与 get0bject()的问题。一个是字母的 O，一个是数字的 0，加 @Override 可以准确判断是否覆盖成功。另外，如果在抽象类中对方法签名进行修改，其实现类会马上编译报错。</p>
+</blockquote>
+<p>【强制】相同参数类型，相同业务含义，才可以使用 Java 的可变参数，避免使用 Object。</p>
+<blockquote>
+<p>说明：可变参数必须放置在参数列表的最后。（<code>提倡同学们尽量不用可变参数编程</code>）</p>
+<p>正例：public List&lt;User&gt; listUsers(String type, Long… ids) {…}</p>
+</blockquote>
+<p>【强制】外部正在调用或者二方库依赖的接口，不允许修改方法签名，避免对接口调用方产生影响。接口过时必须加 <code>@Deprecated</code> 注解，并清晰地说明采用的新接口或者新服务是什么。</p>
+<p>【强制】Object 的 equals 方法容易抛空指针异常，应使用常量或确定有值的对象来调用 equals。</p>
+<blockquote>
+<p>正例：”test”.equals(object);</p>
+<p>反例：object.equals(“test”);</p>
+<p>说明：推荐使用 <code>java.util.Objects#equals</code>（JDK7 引入的工具类）。</p>
+</blockquote>
+<p>【强制】所有整型包装类对象之间值的比较，全部使用 <code>equals</code> 方法比较。</p>
+<blockquote>
+<p>说明：对于 Integer var &#x3D; ? 在 <code>-128 至 127</code> 之间的赋值，Integer 对象是在 <code>IntegerCache.cache</code> 产生，会复用已有对象，这个区间内的 Integer 值可以直接使用&#x3D;&#x3D;进行判断，但是这个区间之外的所有数据，都会在堆上产生，并不会复用已有对象，这是一个大坑，推荐使用 equals 方法进行判断。</p>
+</blockquote>
+<p>【强制】浮点数之间的等值判断，基本数据类型不能用&#x3D;&#x3D;来比较，包装数据类型不能用 equals 来判断。 </p>
+<blockquote>
+<p>说明：浮点数采用<code>“尾数+阶码”</code>的编码方式，类似于科学计数法的“有效数字+指数”的表示方式。二进制无法精确表示大部分的十进制小数。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828121626721.png" alt="image-20240828121626721"></p>
+</blockquote>
+<p>【强制】定义数据对象 DO 类时，属性类型要与数据库字段类型相匹配。</p>
+<blockquote>
+<p>正例：数据库字段的 bigint 必须与类属性的 Long 类型相对应。</p>
+<p>反例：某个案例的数据库表 id 字段定义类型 bigint unsigned，实际类对象属性为 Integer，随着 id 越来越大，超过 Integer 的表示范围而溢出成为负数。</p>
+</blockquote>
+<p>【强制】禁止使用构造方法 BigDecimal(double) 的方式把 double 值转化为 BigDecimal 对象。</p>
+<blockquote>
+<p>说明：BigDecimal(double) 存在精度损失风险，在精确计算或值比较的场景中可能会导致业务逻辑异常。</p>
+<p>如：BigDecimal g &#x3D; new BigDecimal(0.1f); 实际的存储值为：0.10000000149</p>
+<p>正例：优先推荐入参为 String 的构造方法，或使用 BigDecimal 的 valueOf 方法，此方法内部其实执行了 Double 的 toString，而 Double 的 toString 按 double 的实际能表达的精度对尾数进行了截断。</p>
+<p>BigDecimal recommend1 &#x3D; new BigDecimal(“0.1”);</p>
+<p>BigDecimal recommend2 &#x3D; BigDecimal.valueOf(0.1);</p>
+</blockquote>
+<p>关于基本数据类型与包装数据类型的使用标准如下：</p>
+<p>1）【强制】所有的 POJO 类属性必须使用包装数据类型。</p>
+<p>2）【强制】RPC 方法的返回值和参数必须使用包装数据类型。</p>
+<p>3）【推荐】所有的局部变量使用基本数据类型。</p>
+<blockquote>
+<p>说明：POJO 类属性没有初值是<code>提醒使用者在需要使用时，必须自己显式地进行赋值，任何 NPE 问题，或者入库检查，都由使用者来保证</code>。</p>
+<p>正例：数据库的查询结果可能是 null，因为自动拆箱，用基本数据类型接收有 NPE 风险。</p>
+<p>反例：某业务的交易报表上显示成交总额涨跌情况，即正负x%，x 为基本数据类型，调用的 RPC 服务，调用不成功时，返回的是默认值，页面显示为0%，这是不合理的，应该显示成中划线-。所以包装数据类型的 null 值，能够表示额外的信息，如：远程调用失败，异常退出。</p>
+</blockquote>
+<p>【推荐】循环体内，字符串的连接方式，使用 StringBuilder 的 append 方法进行扩展。</p>
+<blockquote>
+<p>说明：下例中，反编译出的字节码文件显示每次循环都会 new 出一个 StringBuilder 对象，然后进行 append 操作，最后通过 toString 方法返回 String 对象，造成内存资源浪费。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828122441747.png" alt="image-20240828122441747"></p>
+</blockquote>
+<p>【推荐】慎用 Object 的 clone 方法来拷贝对象。</p>
+<blockquote>
+<p>说明：对象 clone 方法默认是<code>浅拷贝</code>，若想实现深拷贝需覆写 clone 方法实现域对象的深度遍历式拷贝。</p>
+</blockquote>
+<h3 id="11-2集合处理"><a href="#11-2集合处理" class="headerlink" title="11.2集合处理"></a>11.2集合处理</h3><p>【强制】在使用 java.util.stream.Collectors 类的 <code>toMap()</code> 方法转为 Map 集合时，一定要使用含有参数类型为<code>BinaryOperator</code>，参数名为 <code>mergeFunction</code> 的方法，否则当出现相同 key值时会抛出 IllegalStateException 异常。</p>
+<blockquote>
+<p>说明：<code>参数 mergeFunction 的作用是当出现 key 重复时，自定义对 value 的处理策略。</code></p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828123010097.png" alt="image-20240828123010097"></p>
+</blockquote>
+<p>【强制】ArrayList 的 subList 结果不可强转成 ArrayList，否则会抛出 ClassCastException 异常：java.util.RandomAccessSubList cannot be cast to java.util.ArrayList。</p>
+<blockquote>
+<p>说明：<code>subList</code> 返回的是 ArrayList 的内部类 SubList，并不是 ArrayList 而是 ArrayList 的一个<code>视图</code>，对于 SubList 子列表的所有操作最终会反映到原列表上。</p>
+</blockquote>
+<p>【强制】Collections 类返回的对象，如：emptyList()&#x2F;singletonList()等都是 <code>immutable list</code>，不可对其进行添加或者删除元素的操作。</p>
+<blockquote>
+<p>反例：如果查询无结果，返回 <code>Collections.emptyList()</code> 空集合对象，调用方一旦进行了添加元素的操作，就会触发 UnsupportedOperationException 异常。</p>
+</blockquote>
+<p>【强制】使用集合转数组的方法，必须使用集合的 <code>toArray(T[] array)</code>，传入的是类型完全一致、长度为 0 的空数组。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828123704255.png" alt="image-20240828123704255"></p>
+<p>【强制】使用工具类 <code>Arrays.asList()</code> 把数组转换成集合时，不能使用其修改集合相关的方法，它的 add&#x2F;remove&#x2F;clear 方法会抛出 UnsupportedOperationException 异常。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828123900783.png" alt="image-20240828123900783"></p>
+<p>【强制】不要在 foreach 循环里进行元素的 remove&#x2F;add 操作。remove 元素请使用 Iterator 方式，如果并发操作，需要对 Iterator 对象加锁。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828124249892.png" alt="image-20240828124249892"></p>
+<p>【推荐】集合初始化时，指定集合初始值大小。</p>
+<blockquote>
+<p>说明：HashMap 使用 HashMap(int initialCapacity) 初始化，如果暂时无法确定集合大小，那么指定默认值（16）即可。</p>
+<p>正例：initialCapacity &#x3D; (需要存储的元素个数 &#x2F; 负载因子) + 1。注意负载因子（即 loader factor）默认为 0.75，如果暂时无法确定初始值大小，请设置为 16（即默认值）。</p>
+<p>反例：HashMap 需要放置 1024 个元素，由于没有设置容量初始大小，随着元素不断增加，容量 7 次被迫扩大，resize 需要重建 hash 表。<code>当放置的集合元素个数达千万级别时，不断扩容会严重影响性能。</code></p>
+</blockquote>
+<h3 id="11-3并发控制"><a href="#11-3并发控制" class="headerlink" title="11.3并发控制"></a>11.3并发控制</h3><p>【强制】创建线程或线程池时请指定有意义的线程名称，方便出错时回溯。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828124942064.png" alt="image-20240828124942064"></p>
+<p>【强制】线程资源必须通过线程池提供，不允许在应用中自行显式创建线程。</p>
+<blockquote>
+<p>说明：线程池的好处是<code>减少在创建和销毁线程上所消耗的时间以及系统资源的开销</code>，解决资源不足的问题。如果不使用线程池，有可能造成系统创建大量同类线程而导致消耗完内存或者“过度切换”的问题。</p>
+</blockquote>
+<p>【强制】线程池不允许使用 Executors 去创建，而是通过 <code>ThreadPoolExecutor</code> 的方式，这样的处理方式让写的同学更加明确线程池的运行规则，规避资源耗尽的风险。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125109442.png" alt="image-20240828125109442"></p>
+<p>【强制】SimpleDateFormat 是<code>线程不安全</code>的类，一般不要定义为 static 变量，如果定义为 static，必须加锁，或者使用DateUtils工具类。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125241717.png" alt="image-20240828125241717"></p>
+<p>【强制】必须回收自定义的 ThreadLocal 变量，尤其在线程池场景下，线程经常会被复用，如果不清理自定义的 ThreadLocal 变量，可能会影响后续业务逻辑和造成内存泄露等问题。<code>尽量在代理中使用 try-finally 块进行回收</code>。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125330235.png" alt="image-20240828125330235"></p>
+<p>【强制】高并发时，同步调用应该去考量锁的性能损耗。能用无锁数据结构，就不要用锁；能锁区块，就不要锁整个方法体；能用对象锁，就不要用类锁。</p>
+<blockquote>
+<p>说明：尽可能使加锁的代码块工作量尽可能的小，避免在锁代码块中调用 RPC 方法。</p>
+</blockquote>
+<p>【强制】对多个资源、数据库表、对象同时加锁时，需要保持一致的加锁顺序，否则可能会造成死锁。</p>
+<blockquote>
+<p>说明：线程一需要对表 A、B、C 依次全部加锁后才可以进行更新操作，那么线程二的加锁顺序也必须是 A、B、C，否则可能出现死锁。</p>
+</blockquote>
+<p>【强制】在使用阻塞等待获取锁的方式中，必须在 try 代码块之外，并且在加锁方法与 try 代码块之间没有任何可能抛出异常的方法调用，避免加锁成功后，在 finally 中无法解锁。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125712573.png" alt="image-20240828125712573"></p>
+<p>【强制】在使用尝试机制来获取锁的方式中，进入业务代码块之前，必须先判断当前线程是否持有锁。锁的释放规则与锁的阻塞等待方式相同。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828125813984.png" alt="image-20240828125813984"></p>
+<p>【强制】并发修改同一记录时，避免更新丢失，需要加锁。要么在应用层加锁，要么在缓存加锁，要么在数据库层使用乐观锁，使用 version 作为更新依据。</p>
+<blockquote>
+<p>说明：如果每次访问冲突概率小于 20%，推荐使用乐观锁，否则使用悲观锁。乐观锁的重试次数不得小于 3 次。</p>
+</blockquote>
+<p>【推荐】资金相关的金融敏感信息，使用悲观锁策略。</p>
+<blockquote>
+<p>说明：<code>乐观锁在获得锁的同时已经完成了更新操作，校验逻辑容易出现漏洞，另外，乐观锁对冲突的解决策略有较复杂的要求，处理不当容易造成系统压力或数据异常，所以资金相关的金融敏感信息不建议使用乐观锁更新</code>。</p>
+<p>正例：悲观锁遵循一锁二判三更新四释放的原则。</p>
+</blockquote>
+<p>【推荐】使用 CountDownLatch 进行异步转同步操作，每个线程退出前必须调用 countDown 方法，线程执行代码注意 catch 异常，确保 countDown 方法被执行到，避免主线程无法执行至 await 方法，直到超时才返回结果。</p>
+<blockquote>
+<p>说明：注意，子线程抛出异常堆栈，不能在主线程 try-catch 到。</p>
+</blockquote>
+<p>【推荐】通过双重检查锁（double-checked locking）（在并发场景下）实现延迟初始化的优化问题隐患(可参考 The “Double-Checked Locking is Broken” Declaration)，推荐解决方案中较为简单一种（适用于 JDK5 及以上版本），将目标属性声明为 volatile 型（比如修改 helper 的属性声明为 <code>private volatile Helper helper = null;</code>）。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828130642336.png" alt="image-20240828130642336"></p>
+<p>【参考】volatile 解决多线程内存不可见问题。对于<code>一写多读</code>，是可以解决变量同步问题，但是如果多写，同样无法解决线程安全问题。</p>
+<blockquote>
+<p>说明：如果是 count++ 操作，使用如下类实现：AtomicInteger count &#x3D; new AtomicInteger(); count.addAndGet(1); 如果是 JDK8，推荐使用 LongAdder 对象，比 AtomicLong 性能更好（减少乐观锁的重试次数）。</p>
+</blockquote>
+<h2 id="12-MySQL行锁"><a href="#12-MySQL行锁" class="headerlink" title="12.MySQL行锁"></a>12.MySQL行锁</h2><blockquote>
+<p>详细内容参见：<a target="_blank" rel="noopener" href="https://xiaolincoding.com/mysql/lock/how_to_lock.html">MySQL 是怎么加锁的？ | 小林coding (xiaolincoding.com)</a></p>
+</blockquote>
+<p>行级锁加锁规则比较复杂，不同的场景，加锁的形式是不同的。<code>加锁的对象是索引，加锁的基本单位是 next-key lock</code>，它是由记录锁和间隙锁组合而成的，<code>next-key lock 是前开后闭区间，而间隙锁是前开后开区间</code>。</p>
+<p>但是，next-key lock 在一些场景下会退化成记录锁或间隙锁。那到底是什么场景呢？总结一句，<code>在能使用记录锁或者间隙锁就能避免幻读现象的场景下， next-key lock 就会退化成退化成记录锁或间隙锁</code>。</p>
+<p>这次会以下面这个表结构来进行实验说明：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `<span class="keyword">user</span>` (</span><br><span class="line">  `id` <span class="type">bigint</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">30</span>) <span class="keyword">COLLATE</span> utf8mb4_unicode_ci <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `age` <span class="type">int</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (`id`),</span><br><span class="line">  KEY `index_age` (`age`) <span class="keyword">USING</span> BTREE</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB  <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8mb4 <span class="keyword">COLLATE</span><span class="operator">=</span>utf8mb4_unicode_ci;</span><br></pre></td></tr></table></figure>
+
+<p>其中，id 是主键索引（唯一索引），age 是普通索引（非唯一索引），name 是普通的列。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828230159488.png" alt="image-20240828230159488"></p>
+<p>这次实验环境的 <strong>MySQL 版本是 8.0.26，隔离级别是「可重复读」</strong>。</p>
+<h3 id="12-1唯一索引等值查询"><a href="#12-1唯一索引等值查询" class="headerlink" title="12.1唯一索引等值查询"></a>12.1唯一索引等值查询</h3><p>当我们用唯一索引进行等值查询的时候，查询的记录存不存在，加锁的规则也会不同：</p>
+<ul>
+<li>当查询的记录是「存在」的，在索引树上定位到这一条记录后，将该记录的索引中的 next-key lock 会<code>退化成「记录锁」</code>。</li>
+<li>当查询的记录是「不存在」的，在索引树找到第一条大于该查询记录的记录后，将该记录的索引中的 next-key lock 会<code>退化成「间隙锁」</code>。</li>
+</ul>
+<p>接下里用两个案例来说明。</p>
+<h4 id="12-1-1记录存在的情况"><a href="#12-1-1记录存在的情况" class="headerlink" title="12.1.1记录存在的情况"></a>12.1.1记录存在的情况</h4><p>假设事务 A 执行了这条等值查询语句，查询的记录是「存在」于表中的。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 路飞   <span class="operator">|</span>  <span class="number">19</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.02</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>那么，事务 A 会为 id 为 1 的这条记录就会加上 <strong>X 型的记录锁</strong>。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828230428642.png" alt="image-20240828230428642"></p>
+<p>接下来，如果有其他事务，对 id 为 1 的记录进行更新或者删除操作的话，这些操作都会被阻塞，因为更新或者删除操作也会对记录加 X 型的记录锁，而 X 锁和 X 锁之间是互斥关系。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/image-20240828230505012.png" alt="image-20240828230505012"></p>
+<p>因为事务 A 对 id &#x3D; 1的记录加了 X 型的记录锁，所以事务 B 在修改 id&#x3D;1 的记录时会被阻塞，事务 C 在删除 id&#x3D;1 的记录时也会被阻塞。</p>
+<blockquote>
+<p>有什么命令可以分析加了什么锁？</p>
+</blockquote>
+<p>我们可以通过 <code>select * from performance_schema.data_locks\G;</code> 这条语句，查看事务执行 SQL 过程中加了什么锁。</p>
+<p>我们以前面的事务 A 作为例子，分析下下它加了什么锁。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/e474abfb851dd015c9f87cf94db9a128.png" alt="e474abfb851dd015c9f87cf94db9a128"></p>
+<p>从上图可以看到，共加了两个锁，分别是：</p>
+<ul>
+<li>表锁：X 类型的意向锁；</li>
+<li>行锁：X 类型的记录锁；</li>
+</ul>
+<p>这里我们重点关注行级锁，图中 LOCK_TYPE 中的 RECORD 表示行级锁，而不是记录锁的意思。</p>
+<p>通过 LOCK_MODE 可以确认是 next-key 锁，还是间隙锁，还是记录锁：</p>
+<ul>
+<li>如果 LOCK_MODE 为 <code>X</code>，说明是 next-key 锁；</li>
+<li>如果 LOCK_MODE 为 <code>X, REC_NOT_GAP</code>，说明是记录锁；</li>
+<li>如果 LOCK_MODE 为 <code>X, GAP</code>，说明是间隙锁；</li>
+</ul>
+<p>因此，<code>此时事务 A 在 id = 1 记录的主键索引上加的是记录锁，锁住的范围是 id 为 1 的这条记录</code>。这样其他事务就无法对 id 为 1 的这条记录进行更新和删除操作了。</p>
+<p>从这里我们也可以得知，<strong>加锁的对象是针对索引</strong>，因为这里查询语句扫描的 B+ 树是聚簇索引树，即主键索引树，所以是对主键索引加锁。将对应记录的主键索引加记录锁后，就意味着其他事务无法对该记录进行更新和删除操作了。</p>
+<blockquote>
+<p>为什么唯一索引等值查询并且查询记录存在的场景下，该记录的索引中的 next-key lock 会退化成记录锁？</p>
+</blockquote>
+<p>原因就是在唯一索引等值查询并且查询记录存在的场景下，仅靠记录锁也能避免幻读的问题。</p>
+<p>幻读的定义就是，当一个事务前后两次查询的结果集，不相同时，就认为发生幻读。所以，要避免幻读就是避免结果集某一条记录被其他事务删除，或者有其他事务插入了一条新记录，这样前后两次查询的结果集就不会出现不相同的情况。</p>
+<ul>
+<li><p>由于主键具有唯一性，所以<strong>其他事务插入 id &#x3D; 1 的时候，会因为主键冲突，导致无法插入 id &#x3D; 1 的新记录</strong>。这样事务 A 在多次查询  id &#x3D; 1 的记录的时候，不会出现前后两次查询的结果集不同，也就避免了幻读的问题。</p>
+</li>
+<li><p>由于对 id &#x3D; 1 加了记录锁，<strong>其他事务无法删除该记录</strong>，这样事务 A 在多次查询  id &#x3D; 1 的记录的时候，不会出现前后两次查询的结果集不同，也就避免了幻读的问题。</p>
+</li>
+</ul>
+<h4 id="12-1-2记录不存在的情况"><a href="#12-1-2记录不存在的情况" class="headerlink" title="12.1.2记录不存在的情况"></a>12.1.2记录不存在的情况</h4><p>假设事务 A 执行了这条等值查询语句，查询的记录是「不存在」于表中的。</p>
+<blockquote>
+<p>mysql&gt; begin;<br>Query OK, 0 rows affected (0.00 sec)</p>
+<p>mysql&gt; select * from user where id &#x3D; 2 for update;<br>Empty set (0.03 sec)</p>
+</blockquote>
+<p>接下来，通过 <code>select * from performance_schema.data_locks\G;</code> 这条语句，查看事务执行 SQL 过程中加了什么锁。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640.png" alt="img"></p>
+<p>从上图可以看到，共加了两个锁，分别是：</p>
+<ul>
+<li>表锁：X 类型的意向锁；</li>
+<li>行锁：X 类型的间隙锁；</li>
+</ul>
+<p>因此，<strong>此时事务 A 在 id &#x3D; 5 记录的主键索引上加的是间隙锁，锁住的范围是 (1, 5)。</strong></p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858180029-4.png" alt="img"></p>
+<p>接下来，如果有其他事务插入 id 值为 2、3、4 这一些记录的话，这些插入语句都会发生阻塞。注意，如果其他事务插入的 id &#x3D; 1 或者 id &#x3D; 5 的记录话，并不会发生阻塞，而是报主键冲突的错误，因为表中已经存在 id &#x3D; 1 和 id &#x3D; 5 的记录了。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858230280-7.png" alt="img"></p>
+<p>因为事务 A 在 id &#x3D; 5 记录的主键索引上加了范围为 (1, 5) 的 X 型间隙锁，所以事务 B 在插入一条 id 为 3 的记录时会被阻塞住，即无法插入 id &#x3D; 3 的记录。</p>
+<blockquote>
+<p>间隙锁的范围<code>(1, 5)</code> ，是怎么确定的？</p>
+</blockquote>
+<p>根据我的经验，如果 <code>LOCK_MODE</code> 是 next-key 锁或者间隙锁，那么 LOCK_DATA 就表示锁的范围「右边界」，此次的事务 A 的 LOCK_DATA 是 5。</p>
+<p>然后锁范围的「左边界」是表中 id 为 5 的上一条记录的 id 值，即 1。因此，间隙锁的范围<code>(1, 5)</code>。</p>
+<blockquote>
+<p>为什么唯一索引等值查询并且查询记录「不存在」的场景下，在索引树找到第一条大于该查询记录的记录后，要将该记录的索引中的 next-key lock 会退化成「间隙锁」？</p>
+</blockquote>
+<p>原因就是在唯一索引等值查询并且查询记录不存在的场景下，仅靠间隙锁就能避免幻读的问题。</p>
+<ul>
+<li>为什么 id &#x3D; 5 记录上的主键索引的锁不可以是 next-key lock？如果是 next-key lock，就意味着其他事务无法删除 id &#x3D; 5 这条记录，但是这次的案例是查询 id &#x3D; 2 的记录，只要保证前后两次查询 id &#x3D; 2 的结果集相同，就能避免幻读的问题了，所以即使 id &#x3D;5 被删除，也不会有什么影响，那就没必须加 next-key lock，因此只需要在 id &#x3D; 5 加间隙锁，避免其他事务插入 id &#x3D; 2 的新记录就行了。</li>
+<li>为什么不可以针对不存在的记录加记录锁？<code>锁是加在索引上的，而这个场景下查询的记录是不存在的，自然就没办法锁住这条不存在的记录</code>。</li>
+</ul>
+<h3 id="12-2唯一索引范围查询"><a href="#12-2唯一索引范围查询" class="headerlink" title="12.2唯一索引范围查询"></a>12.2唯一索引范围查询</h3><p>范围查询和等值查询的加锁规则是不同的。当唯一索引进行范围查询时，<strong>会对每一个扫描到的索引加 next-key 锁，然后如果遇到下面这些情况，会退化成记录锁或者间隙锁</strong>：</p>
+<ul>
+<li>情况一：针对「大于等于」的范围查询，因为存在等值查询的条件，那么如果等值查询的记录是存在于表中，那么该记录的索引中的 next-key 锁会<code>退化成记录锁</code>。</li>
+<li>情况二：针对「小于或者小于等于」的范围查询，要看条件值的记录是否存在于表中：<ul>
+<li>当条件值的记录不在表中，那么不管是「小于」还是「小于等于」条件的范围查询，<code>扫描到终止范围查询的记录时，该记录的索引的 next-key 锁会退化成间隙锁</code>，其他扫描到的记录，都是在这些记录的索引上加 next-key 锁。</li>
+<li>当条件值的记录在表中，如果是「小于」条件的范围查询，<code>扫描到终止范围查询的记录时，该记录的索引的 next-key 锁会退化成间隙锁</code>，其他扫描到的记录，都是在这些记录的索引上加 next-key 锁；如果「小于等于」条件的范围查询，扫描到终止范围查询的记录时，该记录的索引 next-key 锁不会退化成间隙锁。其他扫描到的记录，都是在这些记录的索引上加 next-key 锁。</li>
+</ul>
+</li>
+</ul>
+<p>接下来，通过几个实验，才验证我上面说的结论。</p>
+<h4 id="12-2-1针对「大于或者大于等于」的范围查询"><a href="#12-2-1针对「大于或者大于等于」的范围查询" class="headerlink" title="12.2.1针对「大于或者大于等于」的范围查询"></a>12.2.1针对「大于或者大于等于」的范围查询</h4><blockquote>
+<p>实验一：针对「大于」的范围查询的情况。</p>
+</blockquote>
+<p>假设事务 A 执行了这条范围查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&gt;</span> <span class="number">15</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name      <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">20</span> <span class="operator">|</span> 香克斯    <span class="operator">|</span>  <span class="number">39</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>事务 A 加锁变化过程如下：</p>
+<ol>
+<li>最开始要找的第一行是 id &#x3D; 20，由于查询该记录不是一个等值查询（不是大于等于条件查询），所以对该主键索引加的是范围为 (15, 20] 的 next-key 锁；</li>
+<li>由于是范围查找，就会继续往后找存在的记录，虽然我们看见表中最后一条记录是 id &#x3D; 20 的记录，但是实际在 Innodb 存储引擎中，会用一个特殊的记录来标识最后一条记录，该特殊的记录的名字叫 supremum pseudo-record ，所以扫描第二行的时候，也就扫描到了这个特殊记录的时候，会对该主键索引加的是范围为 (20, +∞] 的 next-key 锁。</li>
+<li>停止扫描。</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858856576-10.png" alt="img"></p>
+<ul>
+<li><p>在 id &#x3D; 20 这条记录的主键索引上，加了范围为 (15, 20] 的 next-key 锁，意味着其他事务即无法更新或者删除 id &#x3D; 20 的记录，同时无法插入 id 值为 16、17、18、19 的这一些新记录。</p>
+</li>
+<li><p>在特殊记录（ supremum pseudo-record）的主键索引上，加了范围为 (20, +∞] 的 next-key 锁，意味着其他事务无法插入 id 值大于 20 的这一些新记录。</p>
+</li>
+</ul>
+<p>我们也可以通过 <code>select * from performance_schema.data_locks\G;</code> 这条语句来看看事务 A 加了什么锁。输出结果如下，我这里只截取了行级锁的内容。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/4c71e0a0336e47372d4b3d861308b108.png" alt="4c71e0a0336e47372d4b3d861308b108"></p>
+<blockquote>
+<p>实验二：针对「大于等于」的范围查询的情况。</p>
+</blockquote>
+<p>假设事务 A 执行了这条范围查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&gt;=</span> <span class="number">15</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name      <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">15</span> <span class="operator">|</span> 乌索普    <span class="operator">|</span>  <span class="number">20</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">20</span> <span class="operator">|</span> 香克斯    <span class="operator">|</span>  <span class="number">39</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>事务 A 加锁变化过程如下：</p>
+<ol>
+<li>最开始要找的第一行是 id &#x3D; 15，由于查询该记录是一个等值查询（等于 15），所以该主键索引的 next-key 锁会<code>退化成记录锁</code>，也就是仅锁住 id &#x3D; 15 这一行记录。</li>
+<li>由于是范围查找，就会继续往后找存在的记录，扫描到的第二行是 id &#x3D; 20，于是对该主键索引加的是范围为 (15, 20] 的 next-key 锁；</li>
+<li>接着扫描到第三行的时候，扫描到了特殊记录（ supremum pseudo-record），于是对该主键索引加的是范围为 (20, +∞] 的 next-key 锁。</li>
+<li>停止扫描。</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724858989740-14.png" alt="img"></p>
+<ul>
+<li>在 id &#x3D; 15 这条记录的主键索引上，加了记录锁，范围是 id &#x3D; 15 这一行记录；意味着其他事务无法更新或者删除 id &#x3D; 15 的这一条记录；</li>
+<li>在 id &#x3D; 20 这条记录的主键索引上，加了 next-key 锁，范围是 (15, 20] 。意味着其他事务即无法更新或者删除 id &#x3D; 20 的记录，同时无法插入 id 值为 16、17、18、19 的这一些新记录。</li>
+<li>在特殊记录（ supremum pseudo-record）的主键索引上，加了 next-key 锁，范围是  (20, +∞] 。意味着其他事务无法插入 id 值大于 20 的这一些新记录。</li>
+</ul>
+<p>我们也可以通过 <code>select * from performance_schema.data_locks\G;</code> 这条语句来看看事务 A 加了什么锁。输出结果如下，我这里只截取了行级锁的内容。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859031957-17.png" alt="img"></p>
+<p>通过前面这个实验，我们证明了：</p>
+<ul>
+<li>针对「大于等于」条件的唯一索引范围查询的情况下，如果条件值的记录存在于表中，那么由于查询该条件值的记录是包含一个等值查询的操作，所以该记录的索引中的 next-key 锁会<strong>退化成记录锁</strong>。</li>
+</ul>
+<h4 id="12-2-2针对「小于或者小于等于」的范围查询"><a href="#12-2-2针对「小于或者小于等于」的范围查询" class="headerlink" title="12.2.2针对「小于或者小于等于」的范围查询"></a>12.2.2针对「小于或者小于等于」的范围查询</h4><blockquote>
+<p>实验一：针对「小于」的范围查询时，查询条件值的记录「不存在」表中的情况。</p>
+</blockquote>
+<p>假设事务 A 执行了这条范围查询语句，注意查询条件值的记录（id 为 6）并不存在于表中。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">6</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 路飞   <span class="operator">|</span>  <span class="number">19</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">5</span> <span class="operator">|</span> 索隆   <span class="operator">|</span>  <span class="number">21</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">3</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>事务 A 加锁变化过程如下：</p>
+<ol>
+<li>最开始要找的第一行是 id &#x3D; 1，于是对该主键索引加的是范围为 (-∞, 1] 的 next-key 锁；</li>
+<li>由于是范围查找，就会继续往后找存在的记录，扫描到的第二行是 id &#x3D; 5，所以对该主键索引加的是范围为 (1, 5] 的 next-key 锁；</li>
+<li>由于扫描到的第二行记录（id &#x3D; 5），满足 id &lt; 6 条件，而且也没有达到终止扫描的条件，接着会继续扫描。</li>
+<li>扫描到的第三行是 id &#x3D; 10，该记录不满足 id &lt; 6 条件的记录，所以 id &#x3D; 10 这一行记录的锁会<code>退化成间隙锁</code>，于是对该主键索引加的是范围为  (5, 10) 的间隙锁。</li>
+<li>由于扫描到的第三行记录（id &#x3D; 10），不满足 id &lt; 6 条件，达到了终止扫描的条件，于是停止扫描。</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859127157-20.png" alt="img"></p>
+<ul>
+<li>在 id &#x3D; 1 这条记录的主键索引上，加了范围为 (-∞, 1] 的 next-key 锁，意味着其他事务即无法更新或者删除 id &#x3D; 1 的这一条记录，同时也无法插入 id 小于 1 的这一些新记录。</li>
+<li>在 id &#x3D; 5 这条记录的主键索引上，加了范围为 (1, 5] 的 next-key 锁，意味着其他事务即无法更新或者删除 id &#x3D; 5 的这一条记录，同时也无法插入 id 值为 2、3、4 的这一些新记录。</li>
+<li>在 id &#x3D; 10 这条记录的主键索引上，加了范围为 (5, 10) 的间隙锁，意味着其他事务无法插入 id 值为 6、7、8、9 的这一些新记录。</li>
+</ul>
+<p>我们也可以通过 <code>select * from performance_schema.data_locks\G;</code> 这条语句来看看事务 A 加了什么锁。输出结果如下，我这里只截取了行级锁的内容。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/e8f2de01ba710e7a26cdeddd0c80ffb9.png" alt="e8f2de01ba710e7a26cdeddd0c80ffb9"></p>
+<p>从上图中的分析中，也可以得知事务 A 在主键索引加的三个锁，就是我们前面分析出那三个锁。</p>
+<p>虽然这次范围查询的条件是「小于」，但是查询条件值的记录不存在于表中（id 为 6 的记录不在表中），所以如果事务 A 的范围查询的条件改成 &lt;&#x3D; 6 的话，加的锁还是和范围查询条件为 &lt; 6 是一样的。大家自己也验证下这个结论。</p>
+<p>因此，<strong>针对「小于或者小于等于」的唯一索引范围查询，如果条件值的记录不在表中，那么不管是「小于」还是「小于等于」的范围查询，扫描到终止范围查询的记录时，该记录中索引的 next-key 锁会退化成间隙锁，其他扫描的记录，则是在这些记录的索引上加 next-key 锁</strong>。</p>
+<blockquote>
+<p>实验二：针对「小于等于」的范围查询时，查询条件值的记录「存在」表中的情况。</p>
+</blockquote>
+<p>假设事务 A 执行了这条范围查询语句，注意查询条件值的记录（id 为 5）存在于表中。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&lt;=</span> <span class="number">5</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 路飞   <span class="operator">|</span>  <span class="number">19</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">5</span> <span class="operator">|</span> 索隆   <span class="operator">|</span>  <span class="number">21</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>事务 A 加锁变化过程如下：</p>
+<ol>
+<li>最开始要找的第一行是 id &#x3D; 1，于是对该记录加的是范围为 (-∞, 1] 的 next-key 锁；</li>
+<li>由于是范围查找，就会继续往后找存在的记录，扫描到的第二行是 id &#x3D; 5，于是对该记录加的是范围为 (1, 5] 的 next-key 锁。</li>
+<li>由于主键索引具有唯一性，不会存在两个 id &#x3D; 5 的记录，所以不会再继续扫描，于是停止扫描。</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859357610-24.png" alt="img"></p>
+<p>我们也可以通过 <code>select * from performance_schema.data_locks\G;</code> 这条语句来看看事务 A 加了什么锁。输出结果如下，我这里只截取了行级锁的内容。</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/9aaaf12a160f3cac04c036b4c4cf0db8.png" alt="9aaaf12a160f3cac04c036b4c4cf0db8"></p>
+<blockquote>
+<p>实验三：再来看针对「小于」的范围查询时，查询条件值的记录「存在」表中的情况。</p>
+</blockquote>
+<p>如果事务 A 的查询语句是小于的范围查询，且查询条件值的记录（id 为 5）存在于表中。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">5</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+
+<p>事务 A 加锁变化过程如下：</p>
+<ol>
+<li>最开始要找的第一行是 id &#x3D; 1，于是对该记录加的是范围为  (-∞, 1] 的 next-key 锁；</li>
+<li>由于是范围查找，就会继续往后找存在的记录，扫描到的第二行是 id &#x3D; 5，该记录是第一条不满足 id &lt; 5 条件的记录，于是该记录的锁会<code>退化为间隙锁</code>，锁范围是 (1,5)。</li>
+<li>由于找到了第一条不满足 id &lt; 5 条件的记录，于是停止扫描。</li>
+</ol>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859477045-28.png" alt="img"></p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724859486648-31.png" alt="img"></p>
+<p>因此，通过前面这三个实验，可以得知。</p>
+<p>在针对「小于或者小于等于」的唯一索引（主键索引）范围查询时，存在这两种情况会将索引的 next-key 锁会退化成间隙锁的：</p>
+<ul>
+<li>当条件值的记录「不在」表中时，那么不管是「小于」还是「小于等于」条件的范围查询，扫描到终止范围查询的记录时，该记录的主键索引中的 next-key 锁会<strong>退化成间隙锁</strong>，其他扫描到的记录，都是在这些记录的主键索引上加 next-key 锁。</li>
+<li>当条件值的记录「在」表中时：<ul>
+<li>如果是「小于」条件的范围查询，扫描到终止范围查询的记录时，该记录的主键索引中的 next-key 锁会<strong>退化成间隙锁</strong>，其他扫描到的记录，都是在这些记录的主键索引上，加 next-key 锁。</li>
+<li>如果是「小于等于」条件的范围查询，扫描到终止范围查询的记录时，该记录的主键索引中的 next-key 锁「不会」退化成间隙锁，其他扫描到的记录，都是在这些记录的主键索引上加 next-key 锁。</li>
+</ul>
+</li>
+</ul>
+<h3 id="12-3没有加索引的查询"><a href="#12-3没有加索引的查询" class="headerlink" title="12.3没有加索引的查询"></a>12.3没有加索引的查询</h3><p>前面的案例，我们的查询语句都有使用索引查询，也就是查询记录的时候，是通过索引扫描的方式查询的，然后对扫描出来的记录进行加锁。</p>
+<p><strong>如果锁定读查询语句，没有使用索引列作为查询条件，或者查询语句没有走索引查询，导致扫描是全表扫描。那么，每一条记录的索引上都会加 next-key 锁，这样就相当于锁住的全表，这时如果其他事务对该表进行增、删、改操作的时候，都会被阻塞</strong>。</p>
+<p>不只是锁定读查询语句不加索引才会导致这种情况，update 和 delete 语句如果查询条件不加索引，那么由于扫描的方式是全表扫描，于是就会对每一条记录的索引上都会加 next-key 锁，这样就相当于锁住的全表。</p>
+<p>因此，<strong>在线上在执行 update、delete、select…for update 等具有加锁性质的语句，一定要检查语句是否走了索引，如果是全表扫描的话，会对每一个索引加 next-key 锁，相当于把整个表锁住了</strong>，这是挺严重的问题。</p>
+<h2 id="13-MySQL死锁"><a href="#13-MySQL死锁" class="headerlink" title="13.MySQL死锁"></a>13.MySQL死锁</h2><h3 id="13-1准备工作"><a href="#13-1准备工作" class="headerlink" title="13.1准备工作"></a>13.1准备工作</h3><p>先创建一张 t_student 表，假设除了 id 字段，其他字段都是普通字段。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `t_student` (</span><br><span class="line">	`id` <span class="type">int</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">	`<span class="keyword">no</span>` <span class="type">varchar</span>(<span class="number">255</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">	`name` <span class="type">varchar</span>(<span class="number">255</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">	`age` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">	`score` <span class="type">int</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">	<span class="keyword">PRIMARY</span> KEY (`id`)</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8mb4;</span><br></pre></td></tr></table></figure>
+
+<p>然后，插入相关的数据后，t_student 表中的记录如下：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/t_student.png" alt="img"></p>
+<h3 id="13-2开始实验"><a href="#13-2开始实验" class="headerlink" title="13.2开始实验"></a>13.2开始实验</h3><p>在实验开始前，先说明下实验环境：</p>
+<ul>
+<li>MySQL 版本：8.0.26</li>
+<li>隔离级别：可重复读（RR）</li>
+</ul>
+<p>启动两个事务，按照题目的 SQL 执行顺序，过程如下表格：</p>
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/ab%E4%BA%8B%E5%8A%A1%E6%AD%BB%E9%94%81.drawio.png" alt="img"></p>
+<p>可以看到，事务 A 和 事务 B 都在执行  insert 语句后，都陷入了等待状态（前提没有打开死锁检测），也就是发生了死锁，因为都在相互等待对方释放锁。</p>
+<h3 id="13-3死锁原因"><a href="#13-3死锁原因" class="headerlink" title="13.3死锁原因"></a>13.3死锁原因</h3><p>我们可以通过 <code>select * from performance_schema.data_locks\G;</code> 这条语句，查看事务执行 SQL 过程中加了什么锁。</p>
+<h4 id="Time1阶段加锁分析"><a href="#Time1阶段加锁分析" class="headerlink" title="Time1阶段加锁分析"></a>Time1阶段加锁分析</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># 事务 A</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">update</span> t_student <span class="keyword">set</span> score <span class="operator">=</span> <span class="number">100</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">25</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.01</span> sec)</span><br><span class="line"><span class="keyword">Rows</span> matched: <span class="number">0</span>  Changed: <span class="number">0</span>  Warnings: <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861773342-55.png" alt="img"></p>
+<p>从上图可以看到，共加了两个锁，分别是：</p>
+<ul>
+<li>表锁：X 类型的意向锁；</li>
+<li>行锁：X 类型的间隙锁；</li>
+</ul>
+<p>这里我们重点关注行锁，图中 LOCK_TYPE 中的 RECORD 表示行级锁，而不是记录锁的意思，通过 LOCK_MODE 可以确认是 next-key 锁，还是间隙锁，还是记录锁：</p>
+<ul>
+<li>如果 LOCK_MODE 为 <code>X</code>，说明是 next-key 锁；</li>
+<li>如果 LOCK_MODE 为 <code>X, REC_NOT_GAP</code>，说明是记录锁；</li>
+<li>如果 LOCK_MODE 为 <code>X, GAP</code>，说明是间隙锁；</li>
+</ul>
+<p>因此，此时事务 A 在主键索引（INDEX_NAME : PRIMARY）上加的是间隙锁，锁范围是<code>(20, 30)</code>。</p>
+<h4 id="Time2阶段加锁分析"><a href="#Time2阶段加锁分析" class="headerlink" title="Time2阶段加锁分析"></a>Time2阶段加锁分析</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># 事务 B</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">update</span> t_student <span class="keyword">set</span> score <span class="operator">=</span> <span class="number">100</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">26</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.01</span> sec)</span><br><span class="line"><span class="keyword">Rows</span> matched: <span class="number">0</span>  Changed: <span class="number">0</span>  Warnings: <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861817814-58.png" alt="img"></p>
+<p>从上图可以看到，共加了两个锁，分别是：</p>
+<ul>
+<li>表锁：X 类型的意向锁；</li>
+<li>行锁：X 类型的间隙锁；</li>
+</ul>
+<p>因此，此时事务 B 在主键索引（INDEX_NAME : PRIMARY）上加的是间隙锁，锁范围是<code>(20, 30)</code>。</p>
+<blockquote>
+<p>事务 A 和 事务 B 的间隙锁范围都是一样的，为什么不会冲突？</p>
+</blockquote>
+<p><strong>间隙锁的意义只在于阻止区间被插入</strong>，因此是可以共存的。<strong>一个事务获取的间隙锁不会阻止另一个事务获取同一个间隙范围的间隙锁</strong>，共享和排他的间隙锁是没有区别的，他们相互不冲突，且功能相同。</p>
+<h4 id="Time3阶段加锁分析"><a href="#Time3阶段加锁分析" class="headerlink" title="Time3阶段加锁分析"></a>Time3阶段加锁分析</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># <span class="type">Time</span> <span class="number">3</span> 阶段，事务 A 插入了一条记录</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t_student(id, <span class="keyword">no</span>, name, age,score) <span class="keyword">value</span> (<span class="number">25</span>, <span class="string">&#x27;S0025&#x27;</span>, <span class="string">&#x27;sony&#x27;</span>, <span class="number">28</span>, <span class="number">90</span>);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861886634-61.png" alt="img"></p>
+<p>可以看到，事务 A 的状态为等待状态（LOCK_STATUS: WAITING），因为向事务 B 生成的间隙锁（范围 <code>(20, 30)</code>）中插入了一条记录，所以事务 A 的插入操作生成了一个插入意向锁（<code>LOCK_MODE:INSERT_INTENTION</code>）。</p>
+<blockquote>
+<p>插入意向锁是什么？</p>
+</blockquote>
+<p>注意！插入意向锁名字里虽然有意向锁这三个字，但是它并不是意向锁，它属于行级锁，是一种特殊的间隙锁。<strong>插入意向锁是一种特殊的间隙锁，但不同于间隙锁的是，该锁只用于并发插入操作</strong>。</p>
+<p>如果说间隙锁锁住的是一个区间，那么「插入意向锁」锁住的就是一个点。因而从这个角度来说，插入意向锁确实是一种特殊的间隙锁。</p>
+<p>插入意向锁与间隙锁的另一个非常重要的差别是：<strong>尽管「插入意向锁」也属于间隙锁，但两个事务却不能在同一时间内，一个拥有间隙锁，另一个拥有该间隙区间内的插入意向锁（当然，插入意向锁如果不在间隙锁区间内则是可以的）。所以，插入意向锁和间隙锁之间是冲突的</strong>。</p>
+<p>另外，我补充一点，插入意向锁的生成时机：</p>
+<ul>
+<li>每插入一条新记录，都需要看一下待插入记录的下一条记录上是否已经被加了间隙锁，如果已加间隙锁，那 Insert 语句会被阻塞，并生成一个插入意向锁 。</li>
+</ul>
+<h4 id="Time4阶段加锁分析"><a href="#Time4阶段加锁分析" class="headerlink" title="Time4阶段加锁分析"></a>Time4阶段加锁分析</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># <span class="type">Time</span> <span class="number">4</span> 阶段，事务 B 插入了一条记录</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t_student(id, <span class="keyword">no</span>, name, age,score) <span class="keyword">value</span> (<span class="number">26</span>, <span class="string">&#x27;S0026&#x27;</span>, <span class="string">&#x27;ace&#x27;</span>, <span class="number">28</span>, <span class="number">90</span>);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/640-1724861982269-64.png" alt="img"></p>
+<p>可以看到，事务 B 在生成插入意向锁时而导致被阻塞，这是因为事务 B 向事务 A 生成的间隙锁（范围 <code>(20, 30)</code>）中插入了一条记录，而插入意向锁和间隙锁是冲突的，所以事务 B 在获取插入意向锁时就陷入了等待状态。</p>
+<blockquote>
+<p>最后回答，为什么会发生死锁？</p>
+</blockquote>
+<p>本次案例中，事务 A 和事务 B 在执行完后 update 语句后都持有范围为<code>(20, 30）</code>的间隙锁，而接下来的插入操作为了获取到插入意向锁，都在等待对方事务的间隙锁释放，于是就造成了循环等待，满足了死锁的四个条件：<strong>互斥、占有且等待、不可强占用、循环等待</strong>，因此发生了死锁。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a href="/tags/">Tag</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85-%E4%B8%80"><span class="toc-number">1.</span> <span class="toc-text">Java知识点补充(一)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">1.1.</span> <span class="toc-text">1.虚拟线程是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B9%B3%E5%8F%B0%E7%BA%BF%E7%A8%8B%E4%B8%8E%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2.平台线程与虚拟线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.3.</span> <span class="toc-text">3.虚拟线程实现原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%AD%97%E8%8A%82%E7%A0%81%E5%A2%9E%E5%BC%BA%E6%8A%80%E6%9C%AF"><span class="toc-number">1.4.</span> <span class="toc-text">4.字节码增强技术</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Agent%E5%90%AF%E5%8A%A8%E6%97%B6%E5%A2%9E%E5%BC%BA"><span class="toc-number">1.5.</span> <span class="toc-text">5.Agent启动时增强</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Attach%E8%BF%90%E8%A1%8C%E6%97%B6%E5%A2%9E%E5%BC%BA"><span class="toc-number">1.6.</span> <span class="toc-text">6.Attach运行时增强</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-GC%E5%8F%82%E6%95%B0%E5%9F%BA%E6%9C%AC%E7%AD%96%E7%95%A5"><span class="toc-number">1.7.</span> <span class="toc-text">7.GC参数基本策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-GC%E4%BC%98%E5%8C%96%E5%9F%BA%E6%9C%AC%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.8.</span> <span class="toc-text">8.GC优化基本步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1%E7%A1%AE%E8%AE%A4%E7%9B%AE%E6%A0%87"><span class="toc-number">1.8.1.</span> <span class="toc-text">8.1确认目标</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-2%E4%BC%98%E5%8C%96%E5%8F%82%E6%95%B0"><span class="toc-number">1.8.2.</span> <span class="toc-text">8.2优化参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-3%E9%AA%8C%E6%94%B6%E7%BB%93%E6%9E%9C"><span class="toc-number">1.8.3.</span> <span class="toc-text">8.3验收结果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-GC%E4%BC%98%E5%8C%96%E4%B8%89%E5%A4%A7%E6%A1%88%E4%BE%8B"><span class="toc-number">1.9.</span> <span class="toc-text">9.GC优化三大案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#9-1Major-GC%E5%92%8CMinor-GC%E9%A2%91%E7%B9%81"><span class="toc-number">1.9.1.</span> <span class="toc-text">9.1Major GC和Minor GC频繁</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-1%E7%A1%AE%E5%AE%9A%E7%9B%AE%E6%A0%87"><span class="toc-number">1.9.1.1.</span> <span class="toc-text">9.1.1确定目标</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-2%E4%BC%98%E5%8C%96%E5%86%85%E5%AE%B9"><span class="toc-number">1.9.1.2.</span> <span class="toc-text">9.1.2优化内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-3%E4%BC%98%E5%8C%96%E7%BB%93%E6%9E%9C"><span class="toc-number">1.9.1.3.</span> <span class="toc-text">9.1.3优化结果</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-1-4%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.9.1.4.</span> <span class="toc-text">9.1.4经验总结</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-2%E8%AF%B7%E6%B1%82%E9%AB%98%E5%B3%B0%E6%9C%9F%E5%8F%91%E7%94%9FGC%EF%BC%8C%E5%AF%BC%E8%87%B4%E6%9C%8D%E5%8A%A1%E5%8F%AF%E7%94%A8%E6%80%A7%E4%B8%8B%E9%99%8D"><span class="toc-number">1.9.2.</span> <span class="toc-text">9.2请求高峰期发生GC，导致服务可用性下降</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-1%E7%A1%AE%E5%AE%9A%E7%9B%AE%E6%A0%87"><span class="toc-number">1.9.2.1.</span> <span class="toc-text">9.2.1确定目标</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-2%E4%BC%98%E5%8C%96%E5%86%85%E5%AE%B9"><span class="toc-number">1.9.2.2.</span> <span class="toc-text">9.2.2优化内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-3%E4%BC%98%E5%8C%96%E7%BB%93%E6%9E%9C"><span class="toc-number">1.9.2.3.</span> <span class="toc-text">9.2.3优化结果</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-4%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.9.2.4.</span> <span class="toc-text">9.2.4经验总结</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-3%E5%8F%91%E7%94%9FStop-The-World%E7%9A%84GC"><span class="toc-number">1.9.3.</span> <span class="toc-text">9.3发生Stop-The-World的GC</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-1%E7%A1%AE%E5%AE%9A%E7%9B%AE%E6%A0%87"><span class="toc-number">1.9.3.1.</span> <span class="toc-text">9.3.1确定目标</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-2%E4%BC%98%E5%8C%96%E5%86%85%E5%AE%B9"><span class="toc-number">1.9.3.2.</span> <span class="toc-text">9.3.2优化内容</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-3%E4%BC%98%E5%8C%96%E7%BB%93%E6%9E%9C"><span class="toc-number">1.9.3.3.</span> <span class="toc-text">9.3.3优化结果</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#9-3-4%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.9.3.4.</span> <span class="toc-text">9.3.4经验总结</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-Java%E6%96%B0%E7%89%B9%E6%80%A7"><span class="toc-number">1.10.</span> <span class="toc-text">10.Java新特性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-Java%E5%BC%80%E5%8F%91%E6%89%8B%E5%86%8C"><span class="toc-number">1.11.</span> <span class="toc-text">11.Java开发手册</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#11-1OOP%E8%A7%84%E7%BA%A6"><span class="toc-number">1.11.1.</span> <span class="toc-text">11.1OOP规约</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#11-2%E9%9B%86%E5%90%88%E5%A4%84%E7%90%86"><span class="toc-number">1.11.2.</span> <span class="toc-text">11.2集合处理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#11-3%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6"><span class="toc-number">1.11.3.</span> <span class="toc-text">11.3并发控制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-MySQL%E8%A1%8C%E9%94%81"><span class="toc-number">1.12.</span> <span class="toc-text">12.MySQL行锁</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#12-1%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%AD%89%E5%80%BC%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.1.</span> <span class="toc-text">12.1唯一索引等值查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#12-1-1%E8%AE%B0%E5%BD%95%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.12.1.1.</span> <span class="toc-text">12.1.1记录存在的情况</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#12-1-2%E8%AE%B0%E5%BD%95%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.12.1.2.</span> <span class="toc-text">12.1.2记录不存在的情况</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#12-2%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.2.</span> <span class="toc-text">12.2唯一索引范围查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#12-2-1%E9%92%88%E5%AF%B9%E3%80%8C%E5%A4%A7%E4%BA%8E%E6%88%96%E8%80%85%E5%A4%A7%E4%BA%8E%E7%AD%89%E4%BA%8E%E3%80%8D%E7%9A%84%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.2.1.</span> <span class="toc-text">12.2.1针对「大于或者大于等于」的范围查询</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#12-2-2%E9%92%88%E5%AF%B9%E3%80%8C%E5%B0%8F%E4%BA%8E%E6%88%96%E8%80%85%E5%B0%8F%E4%BA%8E%E7%AD%89%E4%BA%8E%E3%80%8D%E7%9A%84%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.2.2.</span> <span class="toc-text">12.2.2针对「小于或者小于等于」的范围查询</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#12-3%E6%B2%A1%E6%9C%89%E5%8A%A0%E7%B4%A2%E5%BC%95%E7%9A%84%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.12.3.</span> <span class="toc-text">12.3没有加索引的查询</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#13-MySQL%E6%AD%BB%E9%94%81"><span class="toc-number">1.13.</span> <span class="toc-text">13.MySQL死锁</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#13-1%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.13.1.</span> <span class="toc-text">13.1准备工作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#13-2%E5%BC%80%E5%A7%8B%E5%AE%9E%E9%AA%8C"><span class="toc-number">1.13.2.</span> <span class="toc-text">13.2开始实验</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#13-3%E6%AD%BB%E9%94%81%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.13.3.</span> <span class="toc-text">13.3死锁原因</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Time1%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.1.</span> <span class="toc-text">Time1阶段加锁分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Time2%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.2.</span> <span class="toc-text">Time2阶段加锁分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Time3%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.3.</span> <span class="toc-text">Time3阶段加锁分析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Time4%E9%98%B6%E6%AE%B5%E5%8A%A0%E9%94%81%E5%88%86%E6%9E%90"><span class="toc-number">1.13.3.4.</span> <span class="toc-text">Time4阶段加锁分析</span></a></li></ol></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&text=Java知识点补充(一)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&is_video=false&description=Java知识点补充(一)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Java知识点补充(一)&body=Check out this article: https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&title=Java知识点补充(一)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&name=Java知识点补充(一)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/08/19/Java%E7%9F%A5%E8%AF%86%E7%82%B9%E8%A1%A5%E5%85%85/&t=Java知识点补充(一)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2024
+    hulingF
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a href="/tags/">Tag</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/hulingF">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'hulingF';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>

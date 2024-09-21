@@ -6,18 +6,105 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="Java常见问题持续更新1.Java基础1.谈谈对 Java 注解的理解，解决了什么问题？ Annotation 是 Java5 开始引入的新特性，可以看作是一种特殊的注释，主要用于修饰类、方法或者变量，提供某些信息供程序在编译或者运行时使用。注解本质是一个继承了Annotation 的特殊接口： 123456789@Target(ElementType.METHOD)@Retention(Ret">
+    <meta name="description" content="JavaGuide延伸文章总结汇总1.Java基础1.1AOT提前编译技术   问题描述 具体内容    利用AOT提前编译技术优化Java程序冷启动和内存占用问题 基于静态编译构建微服务应用 (qq.com)    见图说话:上图是Java程序的启动过程分析图，其中红色是JVM加载到内存，浅蓝色是类加载过程，浅绿色是字节码解释执行过程，黄色是GC垃圾对象回收过程，白色是运行时JIT即时编译器对执">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Java常见问题持续更新">
+<meta property="og:title" content="JavaGuide延伸文章总结汇总">
 <meta property="og:url" content="https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/index.html">
 <meta property="og:site_name" content="大军的秘密花园">
-<meta property="og:description" content="Java常见问题持续更新1.Java基础1.谈谈对 Java 注解的理解，解决了什么问题？ Annotation 是 Java5 开始引入的新特性，可以看作是一种特殊的注释，主要用于修饰类、方法或者变量，提供某些信息供程序在编译或者运行时使用。注解本质是一个继承了Annotation 的特殊接口： 123456789@Target(ElementType.METHOD)@Retention(Ret">
+<meta property="og:description" content="JavaGuide延伸文章总结汇总1.Java基础1.1AOT提前编译技术   问题描述 具体内容    利用AOT提前编译技术优化Java程序冷启动和内存占用问题 基于静态编译构建微服务应用 (qq.com)    见图说话:上图是Java程序的启动过程分析图，其中红色是JVM加载到内存，浅蓝色是类加载过程，浅绿色是字节码解释执行过程，黄色是GC垃圾对象回收过程，白色是运行时JIT即时编译器对执">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/640.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/640-1724406517581-3.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/640-1724406860187-6.webp">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/jit-vs-aot.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824094847537.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824095251850.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/5eb082d2e4baf2d993ce75747fc35de6486751.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9efac865a875c32cf570489332be5d0f131298.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/66e616c6db18202578c561649facac8d387390.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100045492.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/3bacb938ca6e63d6c79c2bb48d3f608f189412.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100317830.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100408203.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7707d035eb5f04314b3684ff91dddb1663516.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/1038d53959701093db6c655e4a342e30456249.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100739608.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b9fe6ab772d03f30cd48009920d56948514676.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824101024013.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/160366b0fb2079ad897f6d6b1cb349cd426237.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824220458602.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824220737913.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825130227678.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825130308847.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/75a9710d2053b2fa0654c67cd7f35a0c18774.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b14b861db9411b2373b80100fee0b92f15076.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/ff663f95c86e22928c0bb94fc6bd8b8715722.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/373a334e7e7e7d359e8f042c7c9075e215479.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/fa4c8669b4cf63b7a89cfab0bcb693b216006.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/92248abd0a5b11dd36f9ccb1f1233d4e16045.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/82aa288ea62d74c03afcd2308d302b6910425.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/5a889b90d0f2c2a0f6a4f294b9094194112106.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/f45b271b656f3ae243875fcb2af36a1141224.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/f449bbc62d4a1f8e9e4998929196513d165269.gif">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/6b4aeae7085f7d77d9f33799734f3b926723.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/316ff338f8dab2826a5d32dfb75ffede4158.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/606323a07fb7e31cb91f46c879d99b8d735272.gif">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b969e49a7eedbd52b014f86e86dcd3fc49634.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825133107910.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825133347607.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825133625829.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/77441586f6b312a54264e3fcf5eebe2663494.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/62853fa44bfa47d63143babe3b5a4c6e82532.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/582d1606d57ff99aa0e5f8fc59c7819329028.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/31bad766983e212431077ca8da92762050214.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/725a3db5114d95675f2098c12dc331c3316963.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/49d8041f8480aba5ef59079fcc7143b996706.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9ffb64cc4c64c0cb8d38dac01c89c905178456.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/03268b9dc49bd30bb63064421bb036bf90315.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9d8dc9cebe59122127460f81a98894bb34085.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/49527b1bb385f0f43529e57b614f59ae145454.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/90ea093549782945f2c968403fdc39d415386.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/879edb4f06043d76cea27a3ff358cb1d45243.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/e9a363c8577f211577e4962e9110cb0226733.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/1a1746f33bfdcb03da074d8539ebb2f367563.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/23a44974ff68a08261fb675242b83648181953.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/c6caa5be64f39758ada0593b995d65fd25982.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/4d5c410ad23782350cc9f980787151fd54144.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/6c0091e92e90f50f89fd83f3b9eb5472135718.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/efd32f1211e9cf0a3ca9d35b0dc5de8588353.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9379fe1666818237f842138812bf63bd85645.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/414ba7f3abd11e5f805c58635ae10988166121.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/04e73f7186a91d99181e1b5615ce9e4a318600.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/cd0b9445c3c93a866201b7cfb24d2ce7214776.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/aba8d9c09e6f054c7061ddd720a04a26147951.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/38d5fbeaebd4998f3a30d44bd20b996f113233.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/22456d9186a4f36f83209168b782dbbd.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b4e8ab0a76a8665879e0fc13964ebc0d.jpg">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/4d8a600072b0b1aea3943dee584c72e4.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/5be531e51f6e49d5511d419c90b29302.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7a1616295b4ec51c56437d2a92652185.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/0ddcd3348d1c8b0bba16736f9221a900.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/63ecdaf5ff7ac431f0d05661855b2e61.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/0b3ca076b31a2d571a47c64d622b0db9.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/f162fb9c6505dc9a8f1ea9900437ada3.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/dd4cb44ad54edee3a51f56a646c5f2ac.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/cc1d53eb9570582da415c1aec5cc228f.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7b3198574113fecdd2a7de8cde8994a0.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7adafa4178a4c72f8621b7eb49ee2757.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/3a2c3d159e1599d906cc428d812cccce-1724685143626-29.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/1973846815bd9d78f85bef05b499e843.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/07e1216a6cc93bd146535b5809649ea8.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/47b2abc1c3a8c0670a60c6ed74761873.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/ce59c22389ba95104531e46edd9afa4c.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/96cca0708e211ea7f7de413d40c72c00.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/4594c58363316d8ff69178d7a341d5e5.png">
+<meta property="og:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/04e7a4e54c09052ab937f184ab31e03a.png">
 <meta property="article:published_time" content="2024-03-04T02:15:39.686Z">
-<meta property="article:modified_time" content="2024-03-04T14:57:02.770Z">
+<meta property="article:modified_time" content="2024-08-28T02:29:52.889Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="面试">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hulingf.github.io/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/640.webp">
     
     
       
@@ -37,7 +124,7 @@
       
     
     <!-- title -->
-    <title>Java常见问题持续更新</title>
+    <title>JavaGuide延伸文章总结汇总</title>
     <!-- async scripts -->
     <!-- Google Analytics -->
 
@@ -101,23 +188,23 @@
     <div id="share" style="display: none">
       <ul>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&text=Java常见问题持续更新"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&is_video=false&description=Java常见问题持续更新"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=Java常见问题持续更新&body=Check out this article: https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&name=Java常见问题持续更新&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&t=Java常见问题持续更新"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&text=JavaGuide延伸文章总结汇总"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&is_video=false&description=JavaGuide延伸文章总结汇总"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JavaGuide延伸文章总结汇总&body=Check out this article: https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&name=JavaGuide延伸文章总结汇总&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&t=JavaGuide延伸文章总结汇总"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
     
     
       <div id="toc">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0"><span class="toc-number">1.</span> <span class="toc-text">Java常见问题持续更新</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Java%E5%9F%BA%E7%A1%80"><span class="toc-number">1.1.</span> <span class="toc-text">1.Java基础</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6"><span class="toc-number">1.2.</span> <span class="toc-text">2.Java集合框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Java%E5%B9%B6%E5%8F%91"><span class="toc-number">1.3.</span> <span class="toc-text">3.Java并发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-JVM"><span class="toc-number">1.4.</span> <span class="toc-text">4.JVM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-MySQL"><span class="toc-number">1.5.</span> <span class="toc-text">5.MySQL</span></a></li></ol></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JavaGuide%E5%BB%B6%E4%BC%B8%E6%96%87%E7%AB%A0%E6%80%BB%E7%BB%93%E6%B1%87%E6%80%BB"><span class="toc-number">1.</span> <span class="toc-text">JavaGuide延伸文章总结汇总</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Java%E5%9F%BA%E7%A1%80"><span class="toc-number">1.1.</span> <span class="toc-text">1.Java基础</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1AOT%E6%8F%90%E5%89%8D%E7%BC%96%E8%AF%91%E6%8A%80%E6%9C%AF"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1AOT提前编译技术</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E9%AD%94%E6%B3%95%E7%B1%BBUnsafe%E5%BA%94%E7%94%A8"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2魔法类Unsafe应用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Java%E5%B9%B6%E5%8F%91"><span class="toc-number">1.2.</span> <span class="toc-text">2.Java并发</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%94%AF%E4%B8%80%E6%96%B9%E5%BC%8F"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1创建线程的唯一方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2CompletableFuture%E5%8E%9F%E7%90%86%E4%B8%8E%E5%AE%9E%E8%B7%B5"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2CompletableFuture原理与实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3Java%E5%8A%A8%E6%80%81%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3Java动态线程池实现原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-JVM%E5%88%86%E6%9E%90%E8%B0%83%E4%BC%98"><span class="toc-number">1.3.</span> <span class="toc-text">3.JVM分析调优</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1%E4%BD%BF%E7%94%A8JDK%E8%87%AA%E5%B8%A6%E5%B7%A5%E5%85%B7%E6%9F%A5%E7%9C%8BJVM%E6%83%85%E5%86%B5"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1使用JDK自带工具查看JVM情况</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2%E4%BD%BF%E7%94%A8MAT%E5%88%86%E6%9E%90OOM%E9%97%AE%E9%A2%98"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2使用MAT分析OOM问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3%E4%BD%BF%E7%94%A8Arthas%E5%88%86%E6%9E%90%E9%AB%98CPU%E9%97%AE%E9%A2%98"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3使用Arthas分析高CPU问题</span></a></li></ol></li></ol></li></ol>
       </div>
     
   </span>
@@ -130,7 +217,7 @@
   <header>
     
     <h1 class="posttitle p-name" itemprop="name headline">
-        Java常见问题持续更新
+        JavaGuide延伸文章总结汇总
     </h1>
 
 
@@ -162,31 +249,507 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <h1 id="Java常见问题持续更新"><a href="#Java常见问题持续更新" class="headerlink" title="Java常见问题持续更新"></a>Java常见问题持续更新</h1><h2 id="1-Java基础"><a href="#1-Java基础" class="headerlink" title="1.Java基础"></a>1.Java基础</h2><p>1.谈谈对 Java 注解的理解，解决了什么问题？</p>
-<p><code>Annotation</code> 是 Java5 开始引入的新特性，可以看作是一种特殊的注释，主要用于修饰类、方法或者变量，提供某些信息供程序在编译或者运行时使用。注解本质是一个继承了<code>Annotation</code> 的特殊接口：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target(ElementType.METHOD)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.SOURCE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Override &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Override</span> <span class="keyword">extends</span> <span class="title class_">Annotation</span>&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    <h1 id="JavaGuide延伸文章总结汇总"><a href="#JavaGuide延伸文章总结汇总" class="headerlink" title="JavaGuide延伸文章总结汇总"></a>JavaGuide延伸文章总结汇总</h1><h2 id="1-Java基础"><a href="#1-Java基础" class="headerlink" title="1.Java基础"></a>1.Java基础</h2><h3 id="1-1AOT提前编译技术"><a href="#1-1AOT提前编译技术" class="headerlink" title="1.1AOT提前编译技术"></a>1.1AOT提前编译技术</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>利用AOT提前编译技术优化Java程序冷启动和内存占用问题</td>
+<td><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/4haTyXUmh8m-dBQaEzwDJw">基于静态编译构建微服务应用 (qq.com)</a></td>
+</tr>
+</tbody></table>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/640.webp" alt="图片"></p>
+<p>见图说话:上图是Java程序的启动过程分析图，其中红色是JVM加载到内存，浅蓝色是类加载过程，浅绿色是字节码解释执行过程，黄色是GC垃圾对象回收过程，白色是运行时JIT即时编译器对执行频率较高的代码进行编译优化，绿色是JIT编译后的代码。</p>
+<p>问题抛出:Java程序明显存在启动速度慢和占用内存高的问题，前者原因是Java程序启动时会经历JVM加载、解释执行、即时编译等多个阶段，冷启动问题严重；后者原因是JVM本身占用一定的内存，而且由于相比于一些编译型语言其编译优化动作后置到了运行时，非常容易出现实际加载的代码比实际运行需要的代码多很多的情况，造成了一些无效内存占用。</p>
+<p>解决方案:提前编译（Ahead-of-Time Compilation，AOT Compilation）或者叫静态编译，核心思想就是将Java程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/640-1724406517581-3.webp" alt="图片"></p>
+<p>实现技术:GraalVM高性能多语言运行时平台，GraalVM中通过提供Truffle解释器实现框架，让开发人员可以使用Truffle提供的API快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。相比于JVM运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的native image可执行文件，最后直接执行该文件即可启动程序进行执行。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/640-1724406860187-6.webp" alt="图片"></p>
+<p>技术难题:Substrate VM通过上下文不敏感的指向分析（Points-to Analysis）来对应用程序做静态分析，<code>其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序进行静态编译</code>。该过程由于静态分析的局限性，无法覆盖Java中的反射、动态代理、JNI调用等动态特性。这也造成了很多的Java框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于Substrate VM完成对自身所有代码的静态分析，需要通过额外的外部配置来解决静态分析本身的不足。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/jit-vs-aot.png" alt="JIT vs AOT"></p>
+<p>对比特点:可以看出，AOT的主要优势在于启动时间、内存占用和打包体积。JIT的主要优势在于具备更高的极限处理能力，可以降低请求的最大延迟。两者各有优点，只能说AOT更适合当下的云原生场景，对微服务架构的支持也比较友好。除此之外，AOT编译无法支持Java的一些动态特性，如反射、动态代理、动态加载、JNI（Java Native Interface）等。然而，很多框架和库（如 Spring、CGLIB）都用到了这些特性。如果只使用AOT编译，那就没办法使用这些框架和库了，或者说需要针对性地去做适配和优化。</p>
+<h3 id="1-2魔法类Unsafe应用"><a href="#1-2魔法类Unsafe应用" class="headerlink" title="1.2魔法类Unsafe应用"></a>1.2魔法类Unsafe应用</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Unsafe允许Java程序执行一些低级、不安全的底层操作，如直接访问和自主管理内存资源、提升Java程序运行效率等，是个牛掰的魔术类</td>
+<td><a target="_blank" rel="noopener" href="https://tech.meituan.com/2019/02/14/talk-about-java-magic-class-unsafe.html">Java魔法类：Unsafe应用解析 - 美团技术团队 (meituan.com)</a></td>
+</tr>
+</tbody></table>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824094847537.png" alt="image-20240824094847537"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">java -Xbootclasspath/a: $&#123;path&#125;   <span class="comment">// 其中path为调用Unsafe相关方法的类所在jar包路径</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Unsafe <span class="title function_">reflectGetUnsafe</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> Unsafe.class.getDeclaredField(<span class="string">&quot;theUnsafe&quot;</span>);</span><br><span class="line">      field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">      <span class="keyword">return</span> (Unsafe) field.get(<span class="literal">null</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      log.error(e.getMessage(), e);</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>JDK 提供了很多内置的注解（比如 <code>@Override</code>、<code>@Deprecated</code>），同时，我们还可以自定义注解。</p>
-<p>2.Java 反射？反射有什么缺点？你是怎么理解反射的（为什么框架需要反射）？</p>
-<p>反射之所以被称为框架的灵魂，主要是因为它赋予了我们在运行时分析类以及执行类中方法的能力。通过反射你可以获取任意一个类的所有属性和方法，你还可以调用这些方法和属性。</p>
-<p>反射可以让我们的代码更加灵活、为各种框架提供开箱即用的功能提供了便利。</p>
-<p>不过，反射让我们在运行时有了分析操作类的能力的同时，也增加了安全问题，比如可以无视泛型参数的安全检查（泛型参数的安全检查发生在编译时）。另外，反射的性能也要稍差点，不过，对于框架来说实际是影响不大的。</p>
-<p>为什么你使用 Spring 的时候 ，一个 <code>@Component</code> 注解就声明了一个类为 Spring Bean 呢？为什么你通过一个 <code>@Value</code> 注解就读取到配置文件中的值呢？究竟是怎么起作用的呢？</p>
-<p>这些都是因为你可以基于反射分析类，然后获取到类&#x2F;属性&#x2F;方法&#x2F;方法的参数上的注解。你获取到注解之后，就可以做进一步的处理。</p>
-<h2 id="2-Java集合框架"><a href="#2-Java集合框架" class="headerlink" title="2.Java集合框架"></a>2.Java集合框架</h2><p>1.HashMap的底层实现？</p>
-<p><a href="https://hulingf.github.io/2023/11/22/HashMap%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">Java集合之HashMap类源码剖析 (hulingf.github.io)</a></p>
-<p>2.ConcurrentHashMap的底层实现？</p>
-<p><a href="https://hulingf.github.io/2023/12/10/Java%E9%9B%86%E5%90%88%E4%B9%8BConcurrentHashMap%E7%B1%BB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">Java集合之ConcurrentHashMap类源码剖析 (hulingf.github.io)</a></p>
-<p>3.TreeMap的底层实现？</p>
-<p><a target="_blank" rel="noopener" href="https://javaguide.cn/java/collection/java-collection-questions-02.html#hashmap-%E5%92%8C-treemap-%E5%8C%BA%E5%88%AB">Java集合常见面试题总结(下) | JavaGuide</a></p>
-<p>4.HashTable的底层实现？</p>
-<p><a target="_blank" rel="noopener" href="https://javaguide.cn/java/collection/java-collection-questions-02.html#concurrenthashmap-%E5%92%8C-hashtable-%E7%9A%84%E5%8C%BA%E5%88%AB">Java集合常见面试题总结(下) | JavaGuide</a></p>
-<p>5.LinkedHashMap的底层实现？</p>
-<p><a href="https://hulingf.github.io/2024/02/27/LinkedHashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">LinkedHashMap源码剖析 (hulingf.github.io)</a></p>
-<h2 id="3-Java并发"><a href="#3-Java并发" class="headerlink" title="3.Java并发"></a>3.Java并发</h2><h2 id="4-JVM"><a href="#4-JVM" class="headerlink" title="4.JVM"></a>4.JVM</h2><h2 id="5-MySQL"><a href="#5-MySQL" class="headerlink" title="5.MySQL"></a>5.MySQL</h2><p>1.为什么不推荐使用txet和blob？</p>
-<p><a target="_blank" rel="noopener" href="https://javaguide.cn/database/mysql/mysql-questions-01.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8-text-%E5%92%8C-blob">MySQL常见面试题总结 | JavaGuide</a></p>
-<p>2.B+树索引比红黑树好在哪里？</p>
-<p><a target="_blank" rel="noopener" href="https://www.yuque.com/snailclimb/mf2z3k/wghadf#Y61rv">MySQL 索引：索引为什么使用 B+树？ (yuque.com)</a></p>
+<p>基本介绍:Unsafe类为一单例实现，提供静态方法getUnsafe获取Unsafe实例，当且仅当调用getUnsafe方法的类为引导类加载器所加载时才合法，否则抛出SecurityException异常。其一，从<code>getUnsafe</code>方法的使用限制条件出发，通过Java命令行命令<code>-Xbootclasspath/a</code>把调用Unsafe相关方法的类A所在jar包路径追加到默认的bootstrap路径中，使得A被引导类加载器加载，从而通过<code>Unsafe.getUnsafe</code>方法安全的获取Unsafe实例。其二，通过反射获取单例对象theUnsafe。   </p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824095251850.png" alt="image-20240824095251850"></p>
+<p>内存操作:通常，我们在Java中创建的对象都处于堆内内存中，堆内内存是由JVM所管控的Java进程内存，并且它们遵循JVM的内存管理机制，JVM会采用垃圾回收机制统一管理堆内存。与之相对的是堆外内存，存在于JVM管控之外的内存区域，Java中对堆外内存的操作，依赖于Unsafe提供的操作堆外内存的native方法。     </p>
+<blockquote>
+<p>使用堆外内存的原因:</p>
+<ul>
+<li>对垃圾回收停顿的改善。由于堆外内存是直接受操作系统管理而不是JVM，所以当我们使用堆外内存时，即可保持较小的堆内内存规模。从而在GC时减少回收停顿对于应用的影响。</li>
+<li>提升程序I&#x2F;O操作的性能。通常在I&#x2F;O通信过程中，会存在堆内内存到堆外内存的数据拷贝操作，对于需要频繁进行内存间数据拷贝且生命周期较短的暂存数据，都建议存储到堆外内存。</li>
+</ul>
+</blockquote>
+<p>典型应用:DirectByteBuffer是Java用于实现堆外内存的一个重要类，通常用在通信过程中做缓冲池，如在Netty、MINA等NIO框架中应用广泛。DirectByteBuffer对于堆外内存的创建、使用、销毁等逻辑均由Unsafe提供的堆外内存API来实现。下图为DirectByteBuffer构造函数，创建DirectByteBuffer的时候，通过Unsafe.allocateMemory分配内存、Unsafe.setMemory进行内存初始化，而后构建Cleaner对象用于跟踪DirectByteBuffer对象的垃圾回收，以实现当DirectByteBuffer被垃圾回收时，分配的堆外内存一起被释放。                               </p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/5eb082d2e4baf2d993ce75747fc35de6486751.png" alt="img"></p>
+<p>那么如何通过构建垃圾回收追踪对象Cleaner实现堆外内存释放呢？</p>
+<p>Cleaner继承自Java四大引用类型之一的<code>虚引用PhantomReference</code>（众所周知，无法通过虚引用获取与之关联的对象实例，且当对象仅被虚引用引用时，在任何发生GC的时候，其均可被回收），通常PhantomReference与引用队列ReferenceQueue结合使用，可以实现虚引用关联对象被垃圾回收时能够进行系统通知、资源清理等功能。如下图所示，当某个被Cleaner引用的对象将被回收时，JVM垃圾收集器会将此对象的引用放入到对象引用中的pending链表中，等待Reference-Handler进行相关处理。<code>其中，Reference-Handler为一个拥有最高优先级的守护线程，会循环不断的处理pending链表中的对象引用，执行Cleaner的clean方法进行相关清理工作</code>。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9efac865a875c32cf570489332be5d0f131298.png" alt="img"></p>
+<p>所以当DirectByteBuffer仅被Cleaner引用（即为虚引用）时，其可以在任意GC时段被回收。当DirectByteBuffer实例对象被回收时，在Reference-Handler线程操作中，会调用Cleaner的clean方法根据创建Cleaner时传入的Deallocator来进行堆外内存的释放。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/66e616c6db18202578c561649facac8d387390.png" alt="img"></p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100045492.png" alt="image-20240824100045492"></p>
+<p>CAS:什么是CAS? 即比较并替换，实现并发算法时常用到的一种技术。CAS操作包含三个操作数——内存位置、预期原值及新值。执行CAS操作的时候，将内存位置的值与预期原值比较，如果相匹配，那么处理器会自动将该位置值更新为新值，否则，处理器不做任何操作。我们都知道，CAS是一条CPU的原子指令（<code>cmpxchg指令</code>），不会造成所谓的数据不一致问题，Unsafe提供的CAS方法（如compareAndSwapXXX）底层实现即为CPU指令cmpxchg。</p>
+<p>典型应用:CAS在java.util.concurrent.atomic相关类、Java AQS、CurrentHashMap等实现上有非常广泛的应用。如下图所示，AtomicInteger的实现中，<code>静态字段valueOffset即为字段value的内存偏移地址</code>，valueOffset的值在AtomicInteger初始化时，在静态代码块中通过Unsafe的objectFieldOffset方法获取。在AtomicInteger中提供的线程安全方法中，通过字段valueOffset的值可以定位到AtomicInteger对象中value的内存地址，从而可以根据CAS实现对value字段的原子操作。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/3bacb938ca6e63d6c79c2bb48d3f608f189412.png" alt="img"></p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100317830.png" alt="image-20240824100317830"></p>
+<p>线程调度:这部分，包括线程挂起、恢复、锁机制等方法。如上源码说明中，方法park、unpark即可实现线程的挂起与恢复，将一个线程进行挂起是通过park方法实现的，调用park方法后，线程将一直阻塞直到超时或者中断等条件出现；unpark可以终止一个挂起的线程，使其恢复正常。</p>
+<p>典型应用:Java锁和同步器框架的核心类AbstractQueuedSynchronizer，就是通过调用<code>LockSupport.park()</code>和<code>LockSupport.unpark()</code>实现线程的阻塞和唤醒的，而LockSupport的park、unpark方法实际是调用Unsafe的park、unpark方式来实现。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100408203.png" alt="image-20240824100408203"></p>
+<p>Class相关:此部分主要提供Class和它的静态字段的操作相关方法，包含静态字段内存定位、定义类、定义匿名类、检验&amp;确保初始化等。</p>
+<p>典型应用:在Lambda表达式实现中，通过<code>invokedynamic</code>指令调用<code>引导方法</code>生成调用点，在此过程中，会通过<code>ASM动态生成字节码</code>，而后利用Unsafe的<code>defineAnonymousClass</code>方法定义实现相应的函数式接口的匿名类，然后再实例化此匿名类，并返回与此匿名类中函数式方法的方法句柄关联的调用点；而后可以通过此调用点实现调用相应Lambda表达式定义逻辑的功能。下面以如下图所示的Test类来举例说明。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7707d035eb5f04314b3684ff91dddb1663516.png" alt="img"></p>
+<p>Test类编译后的class文件反编译后的结果如下图一所示（删除了对本文说明无意义的部分），我们可以从中看到main方法的指令实现、invokedynamic指令调用的引导方法BootstrapMethods、及静态方法<code>lambda$main$0</code>（实现了Lambda表达式中字符串打印逻辑）等。在引导方法执行过程中，会通过Unsafe.defineAnonymousClass生成如下图二所示的实现Consumer接口的匿名类。其中，accept方法通过调用Test类中的静态方法<code>lambda$main$0</code>来实现Lambda表达式中定义的逻辑。而后执行语句<code>consumer.accept（&quot;lambda&quot;）</code>其实就是调用下图二所示的匿名类的accept方法。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/1038d53959701093db6c655e4a342e30456249.png" alt="img"></p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824100739608.png" alt="image-20240824100739608"></p>
+<p>对象操作:此部分主要包含对象成员属性相关操作及非常规的对象实例化方式等相关方法。</p>
+<p>典型应用:我们通常所用到的创建对象的方式，从本质上来讲，都是通过new机制来实现对象的创建。但是，new机制有个特点就是当类只提供有参的构造函数且无显示声明无参构造函数时，则必须使用有参构造函数进行对象构造。而Unsafe中提供<code>allocateInstance</code>方法，仅通过Class对象就可以创建此类的实例对象，而且<code>不需要调用其构造函数、初始化代码、JVM安全检查等</code>。它抑制修饰符检测，也就是即使构造器是private修饰的也能通过此方法实例化，只需提类对象即可创建相应的对象。由于这种特性，allocateInstance在java.lang.invoke、Objenesis（提供绕过类构造器的对象生成方式）、Gson（反序列化时用到）中都有相应的应用。如下图所示，在Gson反序列化时，如果类有默认构造函数，则通过反射调用默认构造函数创建实例，否则通过UnsafeAllocator来实现对象实例的构造，UnsafeAllocator通过调用Unsafe的allocateInstance实现对象的实例化，<code>保证在目标类无默认构造函数时，反序列化不受影响</code>。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b9fe6ab772d03f30cd48009920d56948514676.png" alt="img"></p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824101024013.png" alt="image-20240824101024013"></p>
+<p>数组相关:这部分主要介绍与数据操作相关的arrayBaseOffset与arrayIndexScale这两个方法，两者配合起来使用，即可定位数组中每个元素在内存中的位置。</p>
+<p>典型应用:这两个与数据操作相关的方法，在java.util.concurrent.atomic 包下的AtomicIntegerArray（可以实现对Integer数组中每个元素的原子性操作）中有典型的应用，如下图AtomicIntegerArray源码所示，通过Unsafe的arrayBaseOffset、arrayIndexScale分别获取数组首元素的偏移地址base及单个元素大小因子scale。后续相关原子性操作，均依赖于这两个值进行数组中元素的定位，如下图二所示的getAndAdd方法即通过checkedByteOffset方法获取某数组元素的偏移地址，而后通过CAS实现原子性操作。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/160366b0fb2079ad897f6d6b1cb349cd426237.png" alt="img"></p>
+<h2 id="2-Java并发"><a href="#2-Java并发" class="headerlink" title="2.Java并发"></a>2.Java并发</h2><h3 id="2-1创建线程的唯一方式"><a href="#2-1创建线程的唯一方式" class="headerlink" title="2.1创建线程的唯一方式"></a>2.1创建线程的唯一方式</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>浅谈Java线程的创建方式是经典八股演员了，说Runnable、Callable、ExecutorService、CompletableFuture、FutureTask、Timer等其实说的都是创建线程任务的方式，根本上底层都是调用Thread.start创建启动的线程</td>
+<td><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/NspUsyhEmKnJ-4OprRFp9g">大家都说Java有三种创建线程的方式！并发编程中的惊天骗局！ (qq.com)</a></td>
+</tr>
+</tbody></table>
+<p>要点说明:任务和线程，到底是怎么产生绑定关系的呢？大家可以去看<code>Thread</code>类提供的构造器，应该会发现这个构造函数：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824220458602.png" alt="image-20240824220458602"></p>
+<p>当new Thread对象并传入一个任务时，内部会调用<code>init()</code>方法，把传入的任务<code>target</code>传进去，同时还会给线程起个默认名字，即<code>Thread-x</code>，这个<code>x</code>会从<code>0</code>开始（线程名字也可以自定义）。而当大家去尝试继续跟进<code>init()</code>方法时，会发现它在做一系列准备工作，如安全检测、设定名称、绑定线程组、设置守护线程……，当<code>init()</code>方法执行完成后，就可以调用<code>Thread.start()</code>方法启动线程啦。启动线程时，最终会调用到<code>start0()</code>这个<code>JNI</code>方法，转而会去调用<code>JVM</code>的本地方法，即<code>C/C++</code>所编写的方法，我这里就大致总结一下大体过程。</p>
+<p>①<code>Thread</code>在类加载阶段，就会通过静态代码块去绑定<code>Thread</code>类方法与<code>JVM</code>本地方法的关系：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240824220737913.png" alt="image-20240824220737913"></p>
+<p>执行完这个<code>registerNatives()</code>本地方法后，<code>Java</code>的线程方法，就和<code>JVM</code>方法绑定了，如<code>start0()</code>这个方法，会对应着<code>JVM_StartThread()</code>这个<code>C++</code>函数等（具体代码位于<code>openjdk\jdk\src\share\native\java\lang\Thread.c</code>这个文件）。</p>
+<p>②当调用<code>Thread.start()</code>方法后，会先调用<code>Java</code>中定义的<code>start0()</code>，接着会找到与之绑定的<code>JVM_StartThread()</code>这个<code>JVM</code>函数执行（具体实现位于<code>openjdk\hotspot\src\share\vm\prims\jvm.cpp</code>这个文件）。</p>
+<p>③<code>JVM_StartThread()</code>函数最终会调用<code>os::create_thread(...)</code>这个函数，这个函数依旧是<code>JVM</code>函数，毕竟<code>Java</code>要实现跨平台特性，而不同操作系统创建线程的内核函数，也有所差异，如<code>Linux</code>操作系统中，创建线程最终会调用到<code>pthread_create(...)</code>这个内核函数。</p>
+<p>④创建出一条内核线程后，接着会去执行<code>Thread::start(...)</code>函数，接着会去执行<code>os::start_thread(thread)</code>这个函数，这一步的作用，主要是让<code>Java</code>线程，和内核线程产生映射关系，也会在这一步，把<code>Runnable</code>线程体，顺势传递给<code>OS</code>的内核线程（具体实现位于<code>openjdk\hotspot\src\share\vm\runtime\Thread.cpp</code>这个文件）。</p>
+<p>⑤当<code>Java</code>线程与内核线程产生映射后，接着就会执行载入的线程体（线程任务），也就是<code>Java</code>程序员所编写的那个<code>run()</code>方法。</p>
+<h3 id="2-2CompletableFuture原理与实践"><a href="#2-2CompletableFuture原理与实践" class="headerlink" title="2.2CompletableFuture原理与实践"></a>2.2CompletableFuture原理与实践</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>随着订单量的持续上升，美团外卖各系统服务面临的压力也越来越大。作为外卖链路的核心环节，商家端提供了商家接单、配送等一系列核心功能，业务对系统吞吐量的要求也越来越高。而商家端API服务是流量入口，所有商家端流量都会由其调度、聚合，对外面向商家提供功能接口，对内调度各个下游服务获取数据进行聚合，具有鲜明的I&#x2F;O密集型（I&#x2F;O Bound）特点。在当前日订单规模已达千万级的情况下，使用同步加载方式的弊端逐渐显现，因此我们开始考虑将同步加载改为并行加载的可行性。</td>
+<td><a target="_blank" rel="noopener" href="https://tech.meituan.com/2022/05/12/principles-and-practices-of-completablefuture.html">CompletableFuture原理与实践-外卖商家端API的异步化 - 美团技术团队 (meituan.com)</a></td>
+</tr>
+</tbody></table>
+<p>解决问题:CompletableFuture是由Java 8引入的，在Java8之前我们一般通过Future实现异步。</p>
+<ul>
+<li>Future用于表示异步计算的结果，只能通过阻塞或者轮询的方式获取结果，而且不支持设置回调方法，Java 8之前若要设置回调一般会使用guava的<code>ListenableFuture</code>，回调的引入又会导致臭名昭著的<code>回调地狱</code>（下面的例子会通过ListenableFuture的使用来具体进行展示）。</li>
+<li>CompletableFuture对Future进行了扩展，可以通过设置回调的方式处理计算结果，同时也支持组合操作，支持进一步的编排，同时一定程度解决了回调地狱的问题。</li>
+</ul>
+<p>下面将举例来说明，我们通过ListenableFuture、CompletableFuture来实现异步的差异。假设有三个操作step1、step2、step3存在依赖关系，其中step3的执行依赖step1和step2的结果。</p>
+<p>Future(ListenableFuture)的实现（回调地狱）如下：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825130227678.png" alt="image-20240825130227678"></p>
+<p>CompletableFuture的实现如下：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825130308847.png" alt="image-20240825130308847"></p>
+<p>显然，CompletableFuture的实现更为简洁，可读性更好。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/75a9710d2053b2fa0654c67cd7f35a0c18774.png" alt="图4 CompletableFuture的定义"></p>
+<p>CompletableFuture定义:CompletableFuture实现了两个接口（如上图所示）：<code>Future</code>、<code>CompletionStage</code>。Future表示异步计算的结果，CompletionStage用于表示异步执行过程中的一个步骤（Stage），这个步骤可能是由另外一个CompletionStage触发的，随着当前步骤的完成，也可能会触发其他一系列CompletionStage的执行。从而我们可以根据实际业务对这些步骤进行多样化的编排组合，CompletionStage接口正是定义了这样的能力，我们可以通过其提供的<code>thenAppy</code>、<code>thenCompose</code>等函数式编程方法来组合编排这些步骤。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b14b861db9411b2373b80100fee0b92f15076.png" alt="图5 请求执行流程"></p>
+<p>CompletableFuture定义:下面我们通过一个例子来讲解CompletableFuture如何使用，使用CompletableFuture也是构建依赖树的过程。一个CompletableFuture的完成会触发另外一系列依赖它的CompletableFuture的执行。如上图所示，这里描绘的是一个业务接口的流程，其中包括CF1\CF2\CF3\CF4\CF5共5个步骤，并描绘了这些步骤之间的依赖关系，每个步骤可以是一次RPC调用、一次数据库操作或者是一次本地方法调用等，在使用CompletableFuture进行异步化编程时，图中的每个步骤都会产生一个CompletableFuture对象，最终结果也会用一个CompletableFuture来进行表示。根据CompletableFuture依赖数量，可以分为以下几类：<code>零依赖</code>、<code>一元依赖</code>、<code>二元依赖</code>和<code>多元依赖</code>。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/ff663f95c86e22928c0bb94fc6bd8b8715722.png" alt="图6 零依赖"></p>
+<p>零依赖CompletableFuture的创建:如上图红色链路所示，接口接收到请求后，首先发起两个异步调用CF1、CF2，主要有三种方式：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">5</span>);</span><br><span class="line"><span class="comment">//1、使用runAsync或supplyAsync发起异步调用</span></span><br><span class="line">CompletableFuture&lt;String&gt; cf1 = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;result1&quot;</span>;</span><br><span class="line">&#125;, executor);</span><br><span class="line"><span class="comment">//2、CompletableFuture.completedFuture()直接创建一个已完成状态的CompletableFuture</span></span><br><span class="line">CompletableFuture&lt;String&gt; cf2 = CompletableFuture.completedFuture(<span class="string">&quot;result2&quot;</span>);</span><br><span class="line"><span class="comment">//3、先初始化一个未完成的CompletableFuture，然后通过complete()、completeExceptionally()，完成该CompletableFuture</span></span><br><span class="line">CompletableFuture&lt;String&gt; cf = <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;&gt;();</span><br><span class="line">cf.complete(<span class="string">&quot;success&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>第三种方式的一个典型使用场景，就是将回调方法转为CompletableFuture，然后再依赖CompletableFure的能力进行调用编排，示例如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ThriftAsyncCall</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">invoke</span><span class="params">()</span> <span class="keyword">throws</span> TException;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 该方法为美团内部rpc注册监听的封装，可以作为其他实现的参照</span></span><br><span class="line"><span class="comment"> * OctoThriftCallback 为thrift回调方法</span></span><br><span class="line"><span class="comment"> * ThriftAsyncCall 为自定义函数，用来表示一次thrift调用</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">toCompletableFuture</span><span class="params">(<span class="keyword">final</span> OctoThriftCallback&lt;?,T&gt; callback , ThriftAsyncCall thriftCall)</span> &#123;</span><br><span class="line">   <span class="comment">//新建一个未完成的CompletableFuture</span></span><br><span class="line">   CompletableFuture&lt;T&gt; resultFuture = <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;&gt;();</span><br><span class="line">   <span class="comment">//监听回调的完成，并且与CompletableFuture同步状态</span></span><br><span class="line">   callback.addObserver(<span class="keyword">new</span> <span class="title class_">OctoObserver</span>&lt;T&gt;() &#123;</span><br><span class="line">       <span class="meta">@Override</span></span><br><span class="line">       <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onSuccess</span><span class="params">(T t)</span> &#123;</span><br><span class="line">           resultFuture.complete(t);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="meta">@Override</span></span><br><span class="line">       <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onFailure</span><span class="params">(Throwable throwable)</span> &#123;</span><br><span class="line">           resultFuture.completeExceptionally(throwable);</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;);</span><br><span class="line">   <span class="keyword">if</span> (thriftCall != <span class="literal">null</span>) &#123;</span><br><span class="line">       <span class="keyword">try</span> &#123;</span><br><span class="line">           thriftCall.invoke();</span><br><span class="line">       &#125; <span class="keyword">catch</span> (TException e) &#123;</span><br><span class="line">           resultFuture.completeExceptionally(e);</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> resultFuture;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/373a334e7e7e7d359e8f042c7c9075e215479.png" alt="图7 一元依赖"></p>
+<p>一元依赖CompletableFuture的创建:如上图红色链路所示，CF3，CF5分别依赖于CF1和CF2，这种对于单个CompletableFuture的依赖可以通过thenApply、thenAccept、thenCompose等方法来实现，代码如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture&lt;String&gt; cf3 = cf1.thenApply(result1 -&gt; &#123;</span><br><span class="line">  <span class="comment">//result1为CF1的结果</span></span><br><span class="line">  <span class="comment">//......</span></span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;result3&quot;</span>;</span><br><span class="line">&#125;);</span><br><span class="line">CompletableFuture&lt;String&gt; cf5 = cf2.thenApply(result2 -&gt; &#123;</span><br><span class="line">  <span class="comment">//result2为CF2的结果</span></span><br><span class="line">  <span class="comment">//......</span></span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;result5&quot;</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/fa4c8669b4cf63b7a89cfab0bcb693b216006.png" alt="图8 二元依赖"></p>
+<p>二元依赖CompletableFuture的创建:如上图红色链路所示，CF4同时依赖于两个CF1和CF2，这种二元依赖可以通过thenCombine等回调来实现，如下代码所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture&lt;String&gt; cf4 = cf1.thenCombine(cf2, (result1, result2) -&gt; &#123;</span><br><span class="line">  <span class="comment">//result1和result2分别为cf1和cf2的结果</span></span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;result4&quot;</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/92248abd0a5b11dd36f9ccb1f1233d4e16045.png" alt="图9 多元依赖"></p>
+<p>多元依赖CompletableFuture的创建:如上图红色链路所示，整个流程的结束依赖于三个步骤CF3、CF4、CF5，这种多元依赖可以通过<code>allOf</code>或<code>anyOf</code>方法来实现，区别是当需要多个依赖全部完成时使用<code>allOf</code>，当多个依赖中的任意一个完成即可时使用<code>anyOf</code>，如下代码所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture&lt;Void&gt; cf6 = CompletableFuture.allOf(cf3, cf4, cf5);</span><br><span class="line">CompletableFuture&lt;String&gt; result = cf6.thenApply(v -&gt; &#123;</span><br><span class="line">  <span class="comment">//这里的join并不会阻塞，因为传给thenApply的函数是在CF3、CF4、CF5全部完成时，才会执行 。</span></span><br><span class="line">  result3 = cf3.join();</span><br><span class="line">  result4 = cf4.join();</span><br><span class="line">  result5 = cf5.join();</span><br><span class="line">  <span class="comment">//根据result3、result4、result5组装最终result;</span></span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;result&quot;</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>CompletableFuture原理:CompletableFuture中包含两个字段：<strong>result</strong>和<strong>stack</strong>。result用于存储当前CF的结果，stack（Completion）表示当前CF完成后需要触发的依赖动作（Dependency Actions），去触发依赖它的CF的计算，依赖动作可以有多个（表示有多个依赖它的CF），以栈（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Treiber_stack">Treiber stack</a>）的形式存储，stack表示栈顶元素。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/82aa288ea62d74c03afcd2308d302b6910425.png" alt="图10 CF基本结构"></p>
+<p>这种方式类似<code>“观察者模式”</code>，依赖动作（Dependency Action）都封装在一个单独Completion子类中。下面是Completion类关系结构图。CompletableFuture中的每个方法都对应了图中的一个Completion的子类，Completion本身是<code>观察者</code>的基类。</p>
+<ul>
+<li>UniCompletion继承了Completion，是一元依赖的基类，例如thenApply的实现类UniApply就继承自UniCompletion。</li>
+<li>BiCompletion继承了UniCompletion，是二元依赖的基类，同时也是多元依赖的基类。例如thenCombine的实现类BiRelay就继承自BiCompletion。</li>
+</ul>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/5a889b90d0f2c2a0f6a4f294b9094194112106.png" alt="图11 CF类图"></p>
+<p>CompletableFuture设计思想:按照类似“观察者模式”的设计思想，原理分析可以从“观察者”和“被观察者”两个方面着手。由于回调种类多，但结构差异不大，所以这里单以一元依赖中的thenApply为例，不再枚举全部回调类型。如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/f45b271b656f3ae243875fcb2af36a1141224.png" alt="图12 thenApply简图"></p>
+<ul>
+<li>被观察者<ul>
+<li>每个CompletableFuture都可以被看作一个被观察者，其内部有一个<code>Completion</code>类型的链表成员变量<code>stack</code>，用来存储<code>注册到其中的所有观察者</code>。当被观察者执行完成后会弹栈stack属性，依次<code>通知注册到其中的观察者</code>。上面例子中步骤fn2就是作为观察者被封装在UniApply中。</li>
+<li>被观察者CF中的result属性，用来存储返回结果数据。这里可能是一次RPC调用的返回值，也可能是任意对象，在上面的例子中对应步骤fn1的执行结果。</li>
+</ul>
+</li>
+<li>观察者<ul>
+<li>CompletableFuture支持很多回调方法，例如thenAccept、thenApply、exceptionally等，<code>这些方法接收一个函数类型的参数f，生成一个Completion类型的对象（即观察者）</code>，并将入参函数f赋值给Completion的成员变量fn，然后检查当前CF是否已处于完成状态（即result !&#x3D; null），如果已完成直接触发fn，否则将观察者Completion加入到CF的观察者链stack中，再次尝试触发，如果被观察者未执行完则其执行完毕之后通知触发。<ul>
+<li>观察者中的dep属性：指向其对应的CompletableFuture，在上面的例子中dep指向CF2。</li>
+<li>观察者中的src属性：指向其依赖的CompletableFuture，在上面的例子中src指向CF1。</li>
+<li>观察者Completion中的fn属性：用来存储具体的等待被回调的函数。这里需要注意的是不同的回调方法（thenAccept、thenApply、exceptionally等）接收的函数类型也不同，即fn的类型有很多种，在上面的例子中fn指向fn2。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>CompletableFuture整体流程:这里仍然以thenApply为例来说明一元依赖的流程：</p>
+<ol>
+<li>将观察者Completion注册到CF1，此时CF1将Completion压栈。</li>
+<li>当CF1的操作运行完成时，会将结果赋值给CF1中的result属性。</li>
+<li>依次弹栈，通知观察者尝试运行。</li>
+</ol>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/f449bbc62d4a1f8e9e4998929196513d165269.gif" alt="f449bbc62d4a1f8e9e4998929196513d165269"></p>
+<p>初步流程设计如上图所示，这里有几个关于注册与通知的并发问题，大家可以思考下：</p>
+<p><strong>Q1</strong>：在观察者注册之前，如果CF已经执行完成，并且已经发出通知，那么这时观察者由于错过了通知是不是将永远不会被触发呢 ？ </p>
+<p><strong>A1</strong>：不会。<code>在注册时检查依赖的CF是否已经完成</code>。如果未完成（即result &#x3D;&#x3D; null）则将观察者入栈，如果已完成（result !&#x3D; null）则直接触发观察者操作。</p>
+<p><strong>Q2</strong>：在”入栈“前会有”result &#x3D;&#x3D; null“的判断，这两个操作为非原子操作，CompletableFufure的实现也没有对两个操作进行加锁，完成时间在这两个操作之间，观察者仍然得不到通知，是不是仍然无法触发？</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/6b4aeae7085f7d77d9f33799734f3b926723.png" alt="图14 入栈校验"></p>
+<p><strong>A2</strong>：不会。<code>入栈之后再次检查CF是否完成</code>，如果完成则触发。</p>
+<p><strong>Q3</strong>：当依赖多个CF时，观察者会被压入所有依赖的CF的栈中，每个CF完成的时候都会进行，那么会不会导致一个操作被多次执行呢 ？如下图所示，即当CF1、CF2同时完成时，如何避免CF3被多次触发。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/316ff338f8dab2826a5d32dfb75ffede4158.png" alt="图15 多次触发"></p>
+<p><strong>A3</strong>：CompletableFuture的实现是这样解决该问题的：观察者在执行之前会先通过<code>CAS操作设置一个状态位，将status由0改为1</code>。如果观察者已经执行过了，那么CAS操作将会失败，取消执行。</p>
+<p>通过对以上3个问题的分析可以看出，<code>CompletableFuture在处理并行问题时，全程无加锁操作，极大地提高了程序的执行效率</code>。我们将并行问题考虑纳入之后，可以得到完善的整体流程图如下所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/606323a07fb7e31cb91f46c879d99b8d735272.gif" alt="606323a07fb7e31cb91f46c879d99b8d735272"></p>
+<p>CompletableFuture支持的回调方法十分丰富，但是正如上一章节的整体流程图所述，他们的整体流程是一致的。所有回调复用同一套流程架构，不同的回调监听通过<code>策略模式</code>实现差异化。</p>
+<p>我们以thenCombine为例来说明二元依赖：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b969e49a7eedbd52b014f86e86dcd3fc49634.png" alt="图17 二元依赖数据结构"></p>
+<p>thenCombine操作表示依赖两个CompletableFuture。其观察者实现类为BiApply，如上图所示，BiApply通过src和snd两个属性关联被依赖的两个CF，fn属性的类型为BiFunction。与单个依赖不同的是，在依赖的CF未完成的情况下，thenCombine会尝试将BiApply压入这两个被依赖的CF的栈中，每个被依赖的CF完成时都会尝试触发观察者BiApply，<code>BiApply会检查两个依赖是否都完成</code>，如果完成则开始执行。这里为了解决重复触发的问题，同样用的是上一章节提到的CAS操作，执行时会先通过CAS设置状态位，避免重复触发。</p>
+<p>CompletableFuture最佳实践:</p>
+<p>1.线程阻塞问题:要合理治理线程资源，最基本的前提条件就是要在写代码时，清楚地知道每一行代码都将执行在哪个线程上。下面我们看一下CompletableFuture的执行线程情况。CompletableFuture实现了CompletionStage接口，通过丰富的回调方法，支持各种组合操作，每种组合场景都有同步和异步两种方法。</p>
+<p>同步方法（即不带Async后缀的方法）有两种情况。</p>
+<ul>
+<li><code>如果注册时被依赖的操作已经执行完成，则直接由当前线程执行</code>。</li>
+<li><code>如果注册时被依赖的操作还未执行完，则由回调线程执行</code>。</li>
+</ul>
+<p>异步方法（即带Async后缀的方法）：可以选择是否传递线程池参数Executor运行在指定线程池中；当不传递Executor时，会使用ForkJoinPool中的共用线程池CommonPool（CommonPool的大小是CPU核数-1，如果是IO密集的应用，线程数可能成为瓶颈）。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825133107910.png" alt="image-20240825133107910"></p>
+<p>2.异步回调要传线程池:前面提到，异步回调方法可以选择是否传递线程池参数Executor，这里我们建议<strong>强制传线程池，且根据实际情况做线程池隔离</strong>。当不传递线程池时，会使用ForkJoinPool中的公共线程池CommonPool，这里所有调用将共用该线程池，核心线程数&#x3D;处理器数量-1（单核核心线程数为1），<code>所有异步回调都会共用该CommonPool，核心与非核心业务都竞争同一个池中的线程，很容易成为系统瓶颈</code>。</p>
+<blockquote>
+<p>手动传递线程池参数可以更方便的调节参数，并且可以给不同的业务分配不同的线程池，以求资源隔离，减少不同业务之间的相互干扰。</p>
+</blockquote>
+<p>3.线程池循环引用会导致死锁:代码块所示，doGet方法第三行通过supplyAsync向threadPool1请求线程，并且内部子任务又向threadPool1请求线程。threadPool1大小为10，当同一时刻有10个请求到达，则threadPool1被打满，子任务请求线程时进入阻塞队列排队，但是父任务的完成又依赖于子任务，这时由于子任务得不到线程，父任务无法完成。主线程执行cf1.join()进入阻塞状态，并且永远无法恢复。<code>为了修复该问题，需要将父任务与子任务做线程池隔离，两个任务请求不同的线程池，避免循环依赖导致的阻塞</code>。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825133347607.png" alt="image-20240825133347607"></p>
+<p>4.异步RPC调用注意不要阻塞IO线程池:服务异步化后很多步骤都会依赖于异步RPC调用的结果，这时需要特别注意一点，如果是使用基于NIO（比如Netty）的异步RPC，则返回结果是由IO线程负责设置的，即回调方法由IO线程触发，CompletableFuture同步回调（如thenApply、thenAccept等无Async后缀的方法）如果依赖的异步RPC调用的返回结果，那么这些同步回调将运行在IO线程上，而整个服务只有一个IO线程池，这时需要保证同步回调中不能有阻塞等耗时过长的逻辑，否则在这些逻辑执行完成前，IO线程将一直被占用，影响整个服务的响应。</p>
+<p>5.异常处理:由于异步执行的任务在其他线程上执行，而异常信息存储在线程栈中，因此当前线程除非阻塞等待返回结果，否则无法通过try\catch捕获异常。CompletableFuture提供了异常捕获回调exceptionally，相当于同步调用中的try\catch。使用方法如下所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/image-20240825133625829.png" alt="image-20240825133625829"></p>
+<h3 id="2-3Java动态线程池实现原理"><a href="#2-3Java动态线程池实现原理" class="headerlink" title="2.3Java动态线程池实现原理"></a>2.3Java动态线程池实现原理</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Java线程池技术在业务实践开发中应用非常广泛，线程池维护多个线程，等待监督管理者分配可并发执行的任务。这种做法，一方面避免了处理任务时创建销毁线程开销的代价，另一方面避免了线程数量膨胀导致的过分调度问题，保证了对内核的充分利用。</td>
+<td><a target="_blank" rel="noopener" href="https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html">Java线程池实现原理及其在美团业务中的实践 - 美团技术团队 (meituan.com)</a></td>
+</tr>
+</tbody></table>
+<p>总体设计:Java中的线程池核心实现类是<code>ThreadPoolExecutor</code>，本章基于JDK 1.8的源码来分析Java线程池的核心设计与实现。ThreadPoolExecutor实现的顶层接口是Executor，顶层接口Executor提供了一种思想：<code>将任务提交和任务执行进行解耦</code>。用户无需关注如何创建线程，如何调度线程来执行任务，用户只需提供Runnable对象，将任务的运行逻辑提交到执行器(Executor)中，由Executor框架完成线程的调配和任务的执行部分。ExecutorService接口增加了一些能力：（1）扩充执行任务的能力，补充可以为一个或一批异步任务生成Future的方法；（2）提供了管控线程池的方法，比如停止线程池的运行。AbstractExecutorService则是上层的抽象类，<code>将执行任务的流程串联了起来，保证下层的实现只需关注一个执行任务的方法即可</code>。最下层的实现类ThreadPoolExecutor实现最复杂的运行部分，ThreadPoolExecutor将会一方面维护自身的生命周期，另一方面同时管理线程和任务，使两者良好的结合从而执行并行任务。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/77441586f6b312a54264e3fcf5eebe2663494.png" alt="图2 ThreadPoolExecutor运行流程"></p>
+<p>线程池在内部实际上构建了一个<code>生产者消费者模型</code>，将线程和任务两者解耦，并不直接关联，从而良好的缓冲任务，复用线程。线程池的运行主要分成两部分：任务管理、线程管理。任务管理部分充当生产者的角色，当任务提交后，线程池会判断该任务后续的流转：（1）直接申请线程执行该任务；（2）缓冲到队列中等待线程执行；（3）拒绝该任务。线程管理部分是消费者，它们被统一维护在线程池内，根据任务请求进行线程的分配，<code>当线程执行完任务后则会继续获取新的任务去执行，最终当线程获取不到任务的时候，线程就会被回收</code>。</p>
+<p>生命周期管理:线程池运行的状态，并不是用户显式设置的，而是伴随着线程池的运行，由内部来维护。线程池内部使用一个变量维护两个值：<code>运行状态(runState)</code>和<code>线程数量 (workerCount)</code>。在具体实现中，线程池将运行状态(runState)、线程数量 (workerCount)两个关键参数的维护放在了一起，如下代码所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">ctl</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(ctlOf(RUNNING, <span class="number">0</span>));</span><br></pre></td></tr></table></figure>
+
+<p><code>ctl</code>这个AtomicInteger类型，是对线程池的运行状态和线程池中有效线程的数量进行控制的一个字段，它同时包含两部分的信息：线程池的运行状态 (runState) 和线程池内有效线程的数量 (workerCount)，<code>高3位保存runState，低29位保存workerCount</code>，两个变量之间互不干扰。<code>用一个变量去存储两个值，可避免在做相关决策时，出现不一致的情况，不必为了维护两者的一致，而占用锁资源</code>。通过阅读线程池源代码也可以发现，经常出现要同时判断线程池运行状态和线程数量的情况。线程池也提供了若干方法去供用户获得线程池当前的运行状态、线程个数。这里都使用的是位运算的方式，相比于基本运算，速度也会快很多。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">runStateOf</span><span class="params">(<span class="type">int</span> c)</span>     &#123; <span class="keyword">return</span> c &amp; ~CAPACITY; &#125; <span class="comment">//计算当前运行状态</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">workerCountOf</span><span class="params">(<span class="type">int</span> c)</span>  &#123; <span class="keyword">return</span> c &amp; CAPACITY; &#125;  <span class="comment">//计算当前线程数量</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">ctlOf</span><span class="params">(<span class="type">int</span> rs, <span class="type">int</span> wc)</span> &#123; <span class="keyword">return</span> rs | wc; &#125;   <span class="comment">//通过状态和线程数生成ctl</span></span><br></pre></td></tr></table></figure>
+
+<p>ThreadPoolExecutor的运行状态有5种，分别为：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/62853fa44bfa47d63143babe3b5a4c6e82532.png" alt="img"></p>
+<p>其生命周期转换如下入所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/582d1606d57ff99aa0e5f8fc59c7819329028.png" alt="图3 线程池生命周期"></p>
+<p>任务执行机制:</p>
+<p>(1)任务调度:任务调度是线程池的主要入口，当用户提交了一个任务，接下来这个任务将如何执行都是由这个阶段决定的。了解这部分就相当于了解了线程池的核心运行机制。首先，所有任务的调度都是由execute方法完成的，这部分完成的工作是：检查现在线程池的<code>运行状态</code>、<code>运行线程数</code>、<code>运行策略</code>，决定接下来执行的流程，是直接申请线程执行，或是缓冲到队列中执行，亦或是直接拒绝该任务。其执行过程如下：</p>
+<ol>
+<li>首先检测线程池运行状态，如果不是<code>RUNNING</code>，则直接拒绝，线程池要保证在RUNNING的状态下执行任务。</li>
+<li>如果workerCount &lt; corePoolSize，则创建并启动一个线程来执行新提交的任务。</li>
+<li>如果workerCount &gt;&#x3D; corePoolSize，且线程池内的阻塞队列未满，则将任务添加到该阻塞队列中。</li>
+<li>如果workerCount &gt;&#x3D; corePoolSize &amp;&amp; workerCount &lt; maximumPoolSize，且线程池内的阻塞队列已满，则创建并启动一个线程来执行新提交的任务。</li>
+<li>如果workerCount &gt;&#x3D; maximumPoolSize，并且线程池内的阻塞队列已满, 则根据拒绝策略来处理该任务, 默认的处理方式是直接抛异常。</li>
+</ol>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/31bad766983e212431077ca8da92762050214.png" alt="图4 任务调度流程"></p>
+<p>(2)任务缓冲:任务缓冲模块是线程池能够管理任务的核心部分。线程池的本质是对任务和线程的管理，而做到这一点最关键的思想就是将任务和线程两者解耦，不让两者直接关联，才可以做后续的分配工作。线程池中是以生产者消费者模式，通过一个<code>阻塞队列</code>来实现的。阻塞队列缓存任务，工作线程从阻塞队列中获取任务。</p>
+<p>阻塞队列(BlockingQueue)是一个支持两个附加操作的队列。这两个附加的操作是：<code>在队列为空时，获取元素的线程会等待队列变为非空。当队列满时，存储元素的线程会等待队列可用</code>。阻塞队列常用于生产者和消费者的场景，生产者是往队列里添加元素的线程，消费者是从队列里拿元素的线程。阻塞队列就是生产者存放元素的容器，而消费者也只从容器里拿元素。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/725a3db5114d95675f2098c12dc331c3316963.png" alt="img"></p>
+<p>(3)任务申请:由上文的任务分配部分可知，任务的执行有两种可能：一种是任务直接由新创建的线程执行。另一种是线程从任务队列中获取任务然后执行，执行完任务的空闲线程会再次去从队列中申请任务再去执行。<code>第一种情况仅出现在线程初始创建的时候，第二种是线程获取任务绝大多数的情况</code>。线程需要从任务缓存模块中不断地取任务执行，帮助线程从阻塞队列中获取任务，实现线程管理模块和任务管理模块之间的通信。这部分策略由getTask方法实现，其执行流程如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/49d8041f8480aba5ef59079fcc7143b996706.png" alt="图6 获取任务流程图"></p>
+<p>getTask这部分进行了多次判断，为的是<code>控制线程的数量，使其符合线程池的状态</code>。如果线程池现在不应该持有那么多线程，则会返回null值。工作线程Worker会不断接收新任务去执行，而当工作线程Worker接收不到任务的时候，就会开始被回收。</p>
+<p>(4)任务拒绝:任务拒绝模块是线程池的保护部分，线程池有一个最大的容量，当线程池的任务缓存队列已满，并且线程池中的线程数目达到maximumPoolSize时，就需要拒绝掉该任务，采取任务拒绝策略，保护线程池。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">RejectedExecutionHandler</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">rejectedExecution</span><span class="params">(Runnable r, ThreadPoolExecutor executor)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9ffb64cc4c64c0cb8d38dac01c89c905178456.png" alt="img"></p>
+<p>线程管理机制:</p>
+<p>(1)Worker线程:线程池为了掌握线程的状态并维护线程的生命周期，设计了线程池内的工作线程Worker。我们来看一下它的部分代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Worker</span> <span class="keyword">extends</span> <span class="title class_">AbstractQueuedSynchronizer</span> <span class="keyword">implements</span> <span class="title class_">Runnable</span>&#123;</span><br><span class="line">    <span class="keyword">final</span> Thread thread;<span class="comment">//Worker持有的线程</span></span><br><span class="line">    Runnable firstTask;<span class="comment">//初始化的任务，可以为null</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Worker这个工作线程，实现了Runnable接口，并持有一个线程thread，一个初始化的任务firstTask。thread是在调用构造方法时通过ThreadFactory来创建的线程，可以用来执行任务；firstTask用它来保存传入的第一个任务，这个任务可以有也可以为null。<code>如果这个值是非空的，那么线程就会在启动初期立即执行这个任务，也就对应核心线程创建时的情况；如果这个值是null，那么就需要创建一个线程去执行任务列表（workQueue）中的任务，也就是非核心线程的创建。</code></p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/03268b9dc49bd30bb63064421bb036bf90315.png" alt="图7 Worker执行任务"></p>
+<p>线程池需要管理线程的生命周期，需要在线程长时间不运行的时候进行回收。<code>线程池使用一张Hash表去持有线程的引用</code>，这样可以通过添加引用、移除引用这样的操作来控制线程的生命周期。这个时候重要的就是如何判断线程是否在运行。</p>
+<p>Worker是通过继承AQS，使用AQS来实现独占锁这个功能。没有使用可重入锁ReentrantLock，而是使用AQS，为的就是实现不可重入的特性去反应线程现在的执行状态。</p>
+<p>1.lock方法一旦获取了独占锁，表示当前线程正在执行任务中。2.如果正在执行任务，则不应该中断线程。3.如果该线程现在不是独占锁的状态，也就是空闲的状态，说明它没有在处理任务，这时可以对该线程进行中断。4.线程池在执行shutdown方法或tryTerminate方法时会调用interruptIdleWorkers方法来中断空闲的线程，interruptIdleWorkers方法会使用tryLock方法来判断线程池中的线程是否是空闲状态；如果线程是空闲状态则可以安全回收。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9d8dc9cebe59122127460f81a98894bb34085.png" alt="图8 线程池回收过程"></p>
+<p>(2)Worker线程增加:增加线程是通过线程池中的addWorker方法，该方法的功能就是增加一个线程，该方法不考虑线程池是在哪个阶段增加的该线程，这个分配线程的策略是在上个步骤完成的，该步骤仅仅完成增加线程，并使它运行，最后返回是否成功这个结果。addWorker方法有两个参数：<code>firstTask</code>、<code>core</code>。firstTask参数用于指定新增的线程执行的第一个任务，该参数可以为空；core参数为true表示在新增线程时会判断当前活动线程数是否少于corePoolSize，false表示新增线程前需要判断当前活动线程数是否少于maximumPoolSize，其执行流程如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/49527b1bb385f0f43529e57b614f59ae145454.png" alt="图9 申请线程执行流程图"></p>
+<p>(3)Worker线程回收:<code>线程池中线程的销毁依赖JVM自动的回收，线程池做的工作是根据当前线程池的状态维护一定数量的线程引用，防止这部分线程被JVM回收，当线程池决定哪些线程需要回收时，只需要将其引用消除即可</code>。Worker被创建出来后，就会不断地进行轮询，然后获取任务去执行，核心线程可以无限等待获取任务，非核心线程要限时获取任务。当Worker无法获取到任务，也就是获取的任务为空时，循环会结束，Worker会主动消除自身在线程池内的引用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  <span class="keyword">while</span> (task != <span class="literal">null</span> || (task = getTask()) != <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="comment">//执行任务</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">  processWorkerExit(w, completedAbruptly);<span class="comment">//获取不到任务时，主动回收自己</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>线程回收的工作是在processWorkerExit方法完成的。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/90ea093549782945f2c968403fdc39d415386.png" alt="图10 线程销毁流程"></p>
+<p>事实上，在这个方法中，将线程引用移出线程池就已经结束了线程销毁的部分。但由于引起线程销毁的可能性有很多，线程池还要判断是什么引发了这次销毁，是否要改变线程池的现阶段状态，是否要根据新状态，重新分配线程。</p>
+<p>(4)Worker线程执行任务:在Worker类中的run方法调用了runWorker方法来执行任务，runWorker方法的执行过程如下：</p>
+<p>1.while循环不断地通过getTask()方法获取任务。2.getTask()方法从阻塞队列中取任务。3.如果线程池正在停止，那么要保证当前线程是中断状态，否则要保证当前线程不是中断状态。4.执行任务。5.如果getTask结果为null则跳出循环，执行processWorkerExit()方法，销毁线程。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/879edb4f06043d76cea27a3ff358cb1d45243.png" alt="图11 执行任务流程"></p>
+<p>业务实践1:快速响应用户请求。</p>
+<img src="/imgs/Java常见问题持续更新/e9a363c8577f211577e4962e9110cb0226733.png" alt="图12 并行执行任务提升任务响应速度" style="zoom: 200%;" />
+
+<ul>
+<li><p>描述:用户发起的实时请求，服务追求响应时间。比如说用户要查看一个商品的信息，那么我们需要将商品维度的一系列信息如商品的价格、优惠、库存、图片等等聚合起来，展示给用户。</p>
+</li>
+<li><p>分析：从用户体验角度看，这个结果响应的越快越好，如果一个页面半天都刷不出，用户可能就放弃查看这个商品了。而面向用户的功能聚合通常非常复杂，伴随着调用与调用之间的级联、多级级联等情况，业务开发同学往往会选择使用线程池这种简单的方式，<code>将调用封装成任务并行的执行，缩短总体响应时间</code>。另外，使用线程池也是有考量的，这种场景最重要的就是获取最大的响应速度去满足用户，所以应该不设置队列去缓冲并发任务(对于C端实时场景，不建议使用有界队列，推荐使用SynchronousQueue，达到failfast效果)，调高corePoolSize和maxPoolSize去尽可能创造多的线程快速执行任务。</p>
+</li>
+</ul>
+<p>业务实践2:快速处理批量任务</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/1a1746f33bfdcb03da074d8539ebb2f367563.png" alt="图13 并行执行任务提升批量任务执行速度"></p>
+<ul>
+<li>描述:离线的大量计算任务，需要快速执行。比如说，统计某个报表，需要计算出全国各个门店中有哪些商品有某种属性，用于后续营销策略的分析，那么我们需要查询全国所有门店中的所有商品，并且记录具有某属性的商品，然后快速生成报表。</li>
+<li>分析:这种场景需要执行大量的任务，我们也会希望任务执行的越快越好。这种情况下，也应该使用多线程策略，并行计算。但与响应速度优先的场景区别在于，<code>这类场景任务量巨大，并不需要瞬时的完成，而是关注如何使用有限的资源，尽可能在单位时间内处理更多的任务，也就是吞吐量优先的问题。所以应该设置队列去缓冲并发任务，调整合适的corePoolSize去设置处理任务的线程数</code>。在这里，设置的线程数过多可能还会引发线程上下文切换频繁的问题，也会降低处理任务的速度，降低吞吐量。</li>
+</ul>
+<p>实际问题:线程池使用面临的核心的问题在于：<strong>线程池的参数并不好配置</strong>。一方面线程池的运行机制不是很好理解，配置合理需要强依赖开发人员的个人经验和知识；另一方面，线程池执行的情况和任务类型相关性较大，IO密集型和CPU密集型的任务运行起来的情况差异非常大，这导致业界并没有一些成熟的经验策略帮助开发人员参考。</p>
+<p>追求参数设置合理性:调研了以上业界方案后，我们并没有得出通用的线程池计算方式。并发任务的执行情况和任务类型相关，IO密集型和CPU密集型的任务运行起来的情况差异非常大，但这种占比是较难合理预估的，这导致很难有一个简单有效的通用公式帮我们直接计算出结果。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/23a44974ff68a08261fb675242b83648181953.png" alt="img"></p>
+<p>线程池参数动态化:尽管经过谨慎的评估，仍然不能够保证一次计算出来合适的参数，那么我们是否可以将修改线程池参数的成本降下来，这样至少可以发生故障的时候可以快速调整从而缩短故障恢复的时间呢？基于这个思考，我们是否可以将线程池的参数从代码中迁移到分布式配置中心上，实现线程池参数可动态配置和即时生效，线程池参数动态化前后的参数修改流程对比如下：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/c6caa5be64f39758ada0593b995d65fd25982.png" alt="图16 动态修改线程池参数新旧流程对比"></p>
+<p>动态化线程池整体设计:动态化线程池的核心设计包括以下三个方面：</p>
+<ol>
+<li>简化线程池配置：线程池构造参数有8个，但是最核心的是3个：<code>corePoolSize</code>、<code>maximumPoolSize</code>，<code>workQueue</code>，它们最大程度地决定了线程池的任务分配和线程分配策略。考虑到在实际应用中我们获取并发性的场景主要是两种：（1）并行执行子任务，提高响应速度。这种情况下，应该使用同步队列，没有什么任务应该被缓存下来，而是应该立即执行。（2）并行执行大批次任务，提升吞吐量。这种情况下，应该使用有界队列，使用队列去缓冲大批量的任务，队列容量必须声明，防止任务无限制堆积。所以线程池只需要提供这三个关键参数的配置，并且提供两种队列的选择，就可以满足绝大多数的业务需求，Less is More。</li>
+<li>参数可动态修改：为了解决参数不好配，修改参数成本高等问题。<code>在Java线程池留有高扩展性的基础上，封装线程池，允许线程池监听同步外部的消息，根据消息进行修改配置</code>。将线程池的配置放置在平台侧，允许开发同学简单的查看、修改线程池配置。</li>
+<li>增加线程池监控：对某事物缺乏状态的观测，就对其改进无从下手。在线程池执行任务的生命周期添加监控能力，帮助开发同学了解线程池状态。</li>
+</ol>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/4d5c410ad23782350cc9f980787151fd54144.png" alt="图17 动态化线程池整体设计"></p>
+<p>动态线程池功能架构:</p>
+<p><strong>动态调参</strong>：支持线程池参数动态调整、界面化操作；包括修改线程池核心大小、最大核心大小、队列长度等；参数修改后及时生效。 </p>
+<p><strong>任务监控</strong>：支持应用粒度、线程池粒度、任务粒度的Transaction监控；可以看到线程池的任务执行情况、最大任务执行时间、平均任务执行时间、95&#x2F;99线等。 </p>
+<p><strong>负载告警</strong>：线程池队列任务积压到一定值的时候会通过大象（美团内部通讯工具）告知应用开发负责人；当线程池负载数达到一定阈值的时候会通过大象告知应用开发负责人。 </p>
+<p><strong>操作监控</strong>：创建&#x2F;修改和删除线程池都会通知到应用的开发负责人。 </p>
+<p><strong>操作日志</strong>：可以查看线程池参数的修改记录，谁在什么时候修改了线程池参数、修改前的参数值是什么。 </p>
+<p><strong>权限校验</strong>：只有应用开发负责人才能够修改应用的线程池参数。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/6c0091e92e90f50f89fd83f3b9eb5472135718.png" alt="图18 动态化线程池功能架构"></p>
+<p>动态线程池参数动态化:JDK原生线程池ThreadPoolExecutor提供了如下几个public的setter方法，如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/efd32f1211e9cf0a3ca9d35b0dc5de8588353.png" alt="图19 JDK 线程池参数设置接口"></p>
+<p>JDK允许线程池使用方通过ThreadPoolExecutor的实例来动态设置线程池的核心策略，以setCorePoolSize为方法例，在运行期线程池使用方调用此方法设置corePoolSize之后，<code>线程池会直接覆盖原来的corePoolSize值，并且基于当前值和原始值的比较结果采取不同的处理策略</code>。对于当前值小于当前工作线程数的情况，说明有多余的worker线程，此时会向当前idle的worker线程发起中断请求以实现回收，多余的worker在下次idel的时候也会被回收；对于当前值大于原始值且当前队列中有待执行任务，则线程池会创建新的worker线程来执行队列任务，setCorePoolSize具体流程如下：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/9379fe1666818237f842138812bf63bd85645.png" alt="图20 setCorePoolSize方法执行流程"></p>
+<p>线程池内部会处理好当前状态做到平滑修改，其他几个方法限于篇幅，这里不一一介绍。<code>重点是基于这几个public方法，我们只需要维护ThreadPoolExecutor的实例，并且在需要修改的时候拿到实例修改其参数即可。</code>基于以上的思路，我们实现了线程池参数的动态化、线程池参数在管理平台可配置可修改，其效果图如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/414ba7f3abd11e5f805c58635ae10988166121.png" alt="图21 可动态修改线程池参数"></p>
+<p>用户可以在管理平台上通过线程池的名字找到指定的线程池，然后对其参数进行修改，保存后会实时生效。目前支持的动态参数包括核心数、最大值、队列长度等。除此之外，在界面中，我们还能看到用户可以配置是否开启告警、队列等待任务告警阈值、活跃度告警等等。</p>
+<p>线程池监控告警:除了参数动态化之外，为了更好地使用线程池，我们需要对线程池的运行状况有感知，比如当前线程池的负载是怎么样的？分配的资源够不够用？任务的执行情况是怎么样的？是长任务还是短任务？基于对这些问题的思考，动态化线程池提供了多个维度的监控和告警能力，包括：<code>线程池活跃度</code>、<code>任务的执行Transaction（频率、耗时）</code>、<code>Reject异常</code>、<code>线程池内部统计信息</code>等等，既能帮助用户从多个维度分析线程池的使用情况，又能在出现问题第一时间通知到用户，从而避免故障或加速故障恢复。</p>
+<p>(1)负载监控和告警:线程池负载关注的核心问题是：<code>基于当前线程池参数分配的资源够不够</code>。对于这个问题，我们可以从事前和事中两个角度来看。事前，线程池定义了“活跃度”这个概念，来让用户在发生Reject异常之前能够感知线程池负载问题，线程池活跃度计算公式为：<code>线程池活跃度 = activeCount/maximumPoolSize</code>。这个公式代表当活跃线程数趋向于maximumPoolSize的时候，代表线程负载趋高。事中，也可以从两方面来看线程池的过载判定条件，一个是发生了Reject异常，一个是队列中有等待任务（支持定制阈值）。以上两种情况发生了都会触发告警，告警信息会通过大象推送给服务所关联的负责人。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/04e73f7186a91d99181e1b5615ce9e4a318600.png" alt="图22 大象告警通知"></p>
+<p>(2)任务级精细化监控:在传统的线程池应用场景中，线程池中的任务执行情况对于用户来说是透明的。比如在一个具体的业务场景中，业务开发申请了一个线程池同时用于执行两种任务，一个是发消息任务、一个是发短信任务，这两类任务实际执行的频率和时长对于用户来说没有一个直观的感受，很可能这两类任务不适合共享一个线程池，但是由于用户无法感知，因此也无从优化。动态化线程池内部实现了<code>任务级别的埋点，且允许为不同的业务任务指定具有业务含义的名称，线程池内部基于这个名称做Transaction打点</code>，基于这个功能，用户可以看到线程池内部任务级别的执行情况，且区分业务，任务监控示意图如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/cd0b9445c3c93a866201b7cfb24d2ce7214776.png" alt="图23 线程池任务执行监控"></p>
+<p>(3)运行时状态实时查看:用户基于JDK原生线程池ThreadPoolExecutor提供的几个public的getter方法，可以读取到当前线程池的运行状态以及参数，如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/aba8d9c09e6f054c7061ddd720a04a26147951.png" alt="图24 线程池实时运行情况"></p>
+<p>动态化线程池基于这几个接口封装了运行时状态实时查看的功能，用户基于这个功能可以了解线程池的实时状态，比如当前有多少个工作线程，执行了多少个任务，队列中等待的任务数等等。效果如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/38d5fbeaebd4998f3a30d44bd20b996f113233.png" alt="图25 线程池实时运行情况"></p>
+<h2 id="3-JVM分析调优"><a href="#3-JVM分析调优" class="headerlink" title="3.JVM分析调优"></a>3.JVM分析调优</h2><h3 id="3-1使用JDK自带工具查看JVM情况"><a href="#3-1使用JDK自带工具查看JVM情况" class="headerlink" title="3.1使用JDK自带工具查看JVM情况"></a>3.1使用JDK自带工具查看JVM情况</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JDK自带了很多命令行甚至是图形界面工具，帮助我们查看JVM的一些信息。</td>
+<td><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/224816">分析定位Java问题，一定要用好这些工具（一）-Java业务开发常见错误100例-极客时间 (geekbang.org)</a></td>
+</tr>
+</tbody></table>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/22456d9186a4f36f83209168b782dbbd.png" alt="img"></p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/b4e8ab0a76a8665879e0fc13964ebc0d.jpg" alt="img"></p>
+<p>为了测试这些工具，我们先来写一段代码：启动10个死循环的线程，每个线程分配一个10MB左右的字符串，然后休眠10秒。可以想象到，这个程序会对GC造成压力。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//启动10个线程</span></span><br><span class="line">IntStream.rangeClosed(<span class="number">1</span>, <span class="number">10</span>).mapToObj(i -&gt; <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="comment">//每一个线程都是一个死循环，休眠10秒，打印10M数据</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">payload</span> <span class="operator">=</span> IntStream.rangeClosed(<span class="number">1</span>, <span class="number">10000000</span>)</span><br><span class="line">                .mapToObj(__ -&gt; <span class="string">&quot;a&quot;</span>)</span><br><span class="line">                .collect(Collectors.joining(<span class="string">&quot;&quot;</span>)) + UUID.randomUUID().toString();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TimeUnit.SECONDS.sleep(<span class="number">10</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(payload.length());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)).forEach(Thread::start);</span><br><span class="line">TimeUnit.HOURS.sleep(<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<p>修改pom.xml，配置spring-boot-maven-plugin插件打包的Java程序的main方法类：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">mainClass</span>&gt;</span>org.geekbang.time.commonmistakes.troubleshootingtools.jdktool.CommonMistakesApplication</span><br><span class="line">        <span class="tag">&lt;/<span class="name">mainClass</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>然后使用<code>java -jar</code>启动进程，设置JVM参数，让堆最小最大都是1GB：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -jar common-mistakes-0.0.1-SNAPSHOT.jar -Xms1g -Xmx1g</span><br></pre></td></tr></table></figure>
+
+<p>完成这些准备工作后，我们就可以使用 JDK 提供的工具，来观察分析这个测试程序了。</p>
+<p>首先，使用<code>jps</code>得到Java进程列表，这会比使用ps来的方便：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ jps</span><br><span class="line">12707</span><br><span class="line">22261 Launcher</span><br><span class="line">23864 common-mistakes-0.0.1-SNAPSHOT.jar</span><br><span class="line">15608 RemoteMavenServer36</span><br><span class="line">23243 Main</span><br><span class="line">23868 Jps</span><br><span class="line">22893 KotlinCompileDaemon</span><br></pre></td></tr></table></figure>
+
+<p>然后，可以使用<code>jinfo</code>打印<code>JVM</code>的各种参数：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ jinfo 23864</span><br><span class="line">Java System Properties:</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">Wed Jan 29 12:49:47 CST 2020</span></span><br><span class="line">...</span><br><span class="line">user.name=zhuye</span><br><span class="line">path.separator=\:</span><br><span class="line">os.version=10.15.2</span><br><span class="line">java.runtime.name=Java(TM) SE Runtime Environment</span><br><span class="line">file.encoding=UTF-8</span><br><span class="line">java.vm.name=Java HotSpot(TM) 64-Bit Server VM</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">VM Flags:</span><br><span class="line">-XX:CICompilerCount=4 -XX:ConcGCThreads=2 -XX:G1ConcRefinementThreads=8 -XX:G1HeapRegionSize=1048576 -XX:GCDrainStackTargetSize=64 -XX:InitialHeapSize=268435456 -XX:MarkStackSize=4194304 -XX:MaxHeapSize=4294967296 -XX:MaxNewSize=2576351232 -XX:MinHeapDeltaBytes=1048576 -XX:NonNMethodCodeHeapSize=5835340 -XX:NonProfiledCodeHeapSize=122911450 -XX:ProfiledCodeHeapSize=122911450 -XX:ReservedCodeCacheSize=251658240 -XX:+SegmentedCodeCache -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:+UseG1GC</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">VM Arguments:</span><br><span class="line">java_command: common-mistakes-0.0.1-SNAPSHOT.jar -Xms1g -Xmx1g</span><br><span class="line">java_class_path (initial): common-mistakes-0.0.1-SNAPSHOT.jar</span><br><span class="line">Launcher Type: SUN_STANDARD</span><br></pre></td></tr></table></figure>
+
+<p>可以发现，我们设置JVM参数的方式不对，-Xms1g和-Xmx1g这两个参数被当成了Java程序的启动参数，整个JVM目前最大内存是4GB左右，而不是1GB。因此，当我们怀疑JVM的配置很不正常的时候，要第一时间使用工具来确认参数。除了使用工具确认JVM参数外，你也可以打印VM参数和程序参数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">System.out.println(<span class="string">&quot;VM options&quot;</span>);</span><br><span class="line">System.out.println(ManagementFactory.getRuntimeMXBean().getInputArguments().stream().collect(Collectors.joining(System.lineSeparator())));</span><br><span class="line">System.out.println(<span class="string">&quot;Program arguments&quot;</span>);</span><br><span class="line">System.out.println(Arrays.stream(args).collect(Collectors.joining(System.lineSeparator())));</span><br></pre></td></tr></table></figure>
+
+<p>把JVM参数放到-jar之前，重新启动程序，可以看到如下输出，从输出也可以确认这次JVM参数的配置正确了：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">➜  target git:(master) ✗ java -Xms1g -Xmx1g -jar common-mistakes-0.0.1-SNAPSHOT.jar test</span><br><span class="line">VM options</span><br><span class="line">-Xms1g</span><br><span class="line">-Xmx1g</span><br><span class="line">Program arguments</span><br><span class="line">test</span><br></pre></td></tr></table></figure>
+
+<p>然后，启动另一个重量级工具<code>jvisualvm</code>观察一下程序，可以在概述面板再次确认JVM参数设置成功了：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/4d8a600072b0b1aea3943dee584c72e4.png" alt="img"></p>
+<p>继续观察监视面板可以看到，JVM的GC活动基本是10秒发生一次，堆内存在250MB到900MB之间波动，活动线程数是22。我们可以在监视面板看到JVM的基本情况，也可以直接在这里进行<code>手动GC</code>和<code>堆Dump</code>操作：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/5be531e51f6e49d5511d419c90b29302.png" alt="img"></p>
+<p>同样，如果没有条件使用图形界面（毕竟在Linux服务器上，我们主要使用命令行工具），又希望看到GC趋势的话，我们可以使用<code>jstat</code>工具。jstat工具允许<code>以固定的监控频次输出JVM的各种监控指标</code>，比如使用<code>-gcutil</code>输出GC和内存占用汇总信息，每隔5秒输出一次，输出100次，可以看到Young GC比较频繁，而Full GC基本10秒一次：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ jstat -gcutil 23940 5000 100</span><br><span class="line">  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT</span><br><span class="line">  0.00 100.00   0.36  87.63  94.30  81.06    539   14.021    33    3.972   837    0.976   18.968</span><br><span class="line">  0.00 100.00   0.60  69.51  94.30  81.06    540   14.029    33    3.972   839    0.978   18.979</span><br><span class="line">  0.00   0.00   0.50  99.81  94.27  81.03    548   14.143    34    4.002   840    0.981   19.126</span><br><span class="line">  0.00 100.00   0.59  70.47  94.27  81.03    549   14.177    34    4.002   844    0.985   19.164</span><br><span class="line">  0.00 100.00   0.57  99.85  94.32  81.09    550   14.204    34    4.002   845    0.990   19.196</span><br><span class="line">  0.00 100.00   0.65  77.69  94.32  81.09    559   14.469    36    4.198   847    0.993   19.659</span><br><span class="line">  0.00 100.00   0.65  77.69  94.32  81.09    559   14.469    36    4.198   847    0.993   19.659</span><br><span class="line">  0.00 100.00   0.70  35.54  94.32  81.09    567   14.763    37    4.378   853    1.001   20.142</span><br><span class="line">  0.00 100.00   0.70  41.22  94.32  81.09    567   14.763    37    4.378   853    1.001   20.142</span><br><span class="line">  0.00 100.00   1.89  96.76  94.32  81.09    574   14.943    38    4.487   859    1.007   20.438</span><br><span class="line">  0.00 100.00   1.39  39.20  94.32  81.09    575   14.946    38    4.487   861    1.010   20.442</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>其中，S0表示Survivor0区占用百分比，S1表示Survivor1区占用百分比，E表示Eden区占用百分比，O表示老年代占用百分比，M表示元数据区占用百分比，YGC表示年轻代回收次数，YGCT表示年轻代回收耗时，FGC表示老年代回收次数，FGCT表示老年代回收耗时。</p>
+</blockquote>
+<p>jstat命令的参数众多，包含<code>-class</code>、<code>-compiler</code>、<code>-gc</code>等。继续来到线程面板可以看到，大量以Thread开头的线程基本都是有节奏的10秒运行一下，其他时间都在休眠，和我们的代码逻辑匹配：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7a1616295b4ec51c56437d2a92652185.png" alt="img"></p>
+<p>点击面板的线程Dump按钮，可以查看线程瞬时的线程栈：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/0ddcd3348d1c8b0bba16736f9221a900.png" alt="img"></p>
+<p>通过命令行工具<code>jstack</code>，也可以实现抓取线程栈的操作：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ jstack 23940</span><br><span class="line">2020-01-29 13:08:15</span><br><span class="line">Full thread dump Java HotSpot(TM) 64-Bit Server VM (11.0.3+12-LTS mixed mode):</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">&quot;main&quot; #1 prio=5 os_prio=31 cpu=440.66ms elapsed=574.86s tid=0x00007ffdd9800000 nid=0x2803 waiting on condition  [0x0000700003849000]</span><br><span class="line">   java.lang.Thread.State: TIMED_WAITING (sleeping)</span><br><span class="line">  at java.lang.Thread.sleep(java.base@11.0.3/Native Method)</span><br><span class="line">  at java.lang.Thread.sleep(java.base@11.0.3/Thread.java:339)</span><br><span class="line">  at java.util.concurrent.TimeUnit.sleep(java.base@11.0.3/TimeUnit.java:446)</span><br><span class="line">  at org.geekbang.time.commonmistakes.troubleshootingtools.jdktool.CommonMistakesApplication.main(CommonMistakesApplication.java:41)</span><br><span class="line">  at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(java.base@11.0.3/Native Method)</span><br><span class="line">  at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(java.base@11.0.3/NativeMethodAccessorImpl.java:62)</span><br><span class="line">  at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(java.base@11.0.3/DelegatingMethodAccessorImpl.java:43)</span><br><span class="line">  at java.lang.reflect.Method.invoke(java.base@11.0.3/Method.java:566)</span><br><span class="line">  at org.springframework.boot.loader.MainMethodRunner.run(MainMethodRunner.java:48)</span><br><span class="line">  at org.springframework.boot.loader.Launcher.launch(Launcher.java:87)</span><br><span class="line">  at org.springframework.boot.loader.Launcher.launch(Launcher.java:51)</span><br><span class="line">  at org.springframework.boot.loader.JarLauncher.main(JarLauncher.java:52)</span><br><span class="line"></span><br><span class="line">&quot;Thread-1&quot; #13 prio=5 os_prio=31 cpu=17851.77ms elapsed=574.41s tid=0x00007ffdda029000 nid=0x9803 waiting on condition  [0x000070000539d000]</span><br><span class="line">   java.lang.Thread.State: TIMED_WAITING (sleeping)</span><br><span class="line">  at java.lang.Thread.sleep(java.base@11.0.3/Native Method)</span><br><span class="line">  at java.lang.Thread.sleep(java.base@11.0.3/Thread.java:339)</span><br><span class="line">  at java.util.concurrent.TimeUnit.sleep(java.base@11.0.3/TimeUnit.java:446)</span><br><span class="line">  at org.geekbang.time.commonmistakes.troubleshootingtools.jdktool.CommonMistakesApplication.lambda$null$1(CommonMistakesApplication.java:33)</span><br><span class="line">  at org.geekbang.time.commonmistakes.troubleshootingtools.jdktool.CommonMistakesApplication$$Lambda$41/0x00000008000a8c40.run(Unknown Source)</span><br><span class="line">  at java.lang.Thread.run(java.base@11.0.3/Thread.java:834)</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2使用MAT分析OOM问题"><a href="#3-2使用MAT分析OOM问题" class="headerlink" title="3.2使用MAT分析OOM问题"></a>3.2使用MAT分析OOM问题</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>对于排查OOM问题、分析程序堆内存使用情况，最好的方式就是分析堆转储。</td>
+<td><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/230534">加餐5：分析定位Java问题，一定要用好这些工具（二）-Java 业务开发常见错误 100 例-极客时间 (geekbang.org)</a></td>
+</tr>
+</tbody></table>
+<p>堆转储，包含了堆现场全貌和线程栈信息（Java 6 Update 14 开始包含）。使用jstat等工具虽然可以观察堆内存使用情况的变化，但是对程序内到底有多少对象、哪些是大对象还一无所知，也就是说只能看到问题但无法定位问题。而堆转储，就好似得到了病人在某个瞬间的全景核磁影像，可以拿着慢慢分析。</p>
+<p>Java的OutOfMemoryError是比较严重的问题，需要分析出根因，所以对生产应用一般都会这样设置JVM参数，方便发生OOM时进行堆转储：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=.</span><br></pre></td></tr></table></figure>
+
+<p>我们提到的jvisualvm工具，同样可以进行一键堆转储后，直接打开这个dump查看。但是，jvisualvm的堆转储分析功能并不是很强大，<code>只能查看类使用内存的直方图，无法有效跟踪内存使用的引用关系</code>，所以我更推荐使用Eclipse的Memory Analyzer（也叫做 MAT）做堆转储的分析。</p>
+<p>使用MAT分析OOM问题，一般可以按照以下思路进行：</p>
+<ol>
+<li>通过<code>支配树</code>功能或<code>直方图</code>功能查看消耗内存最大的类型，来分析内存泄露的大概原因；</li>
+<li>查看那些消耗内存最大的类型、详细的对象明细列表，以及它们的<code>引用链</code>，来定位内存泄露的具体点；</li>
+<li>配合查看对象属性的功能，可以脱离源码看到对象的各种属性的值和依赖关系，帮助我们理清程序逻辑和参数；</li>
+<li>辅助使用查看<code>线程栈</code>来看OOM问题是否和过多线程有关，甚至可以在线程栈看到OOM最后一刻出现异常的线程。</li>
+</ol>
+<p>比如，我手头有一个OOM后得到的转储文件java_pid29569.hprof，现在要使用MAT的直方图、支配树、线程栈、OQL等功能来分析此次OOM的原因。</p>
+<p>首先，用MAT打开后先进入的是概览信息界面，可以看到整个堆是437.6MB：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/63ecdaf5ff7ac431f0d05661855b2e61.png" alt="img"></p>
+<p>如图所示，工具栏的第二个按钮可以打开直方图，<code>直方图按照类型进行分组，列出了每个类有多少个实例，以及占用的内存</code>。可以看到，char[]数组占用内存最多，对象数量也很多，结合第二位的String类型对象数量也很多，大概可以猜出（String使用char[]作为实际数据存储）程序可能是被字符串占满了内存，导致OOM。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/0b3ca076b31a2d571a47c64d622b0db9.png" alt="img"></p>
+<p>我们继续分析下，到底是不是这样呢。在char[]上点击右键，选择<code>List objects-&gt;with incoming references</code>，就可以列出所有的 char[]实例，以及每个char[]的整个引用关系链：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/f162fb9c6505dc9a8f1ea9900437ada3.png" alt="img"></p>
+<p>随机展开一个char[]，如下图所示：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/dd4cb44ad54edee3a51f56a646c5f2ac.png" alt="img"></p>
+<p>接下来，我们按照红色框中的引用链来查看，尝试找到这些大char[]的来源：</p>
+<ul>
+<li>在①处看到，这些char[]几乎都是10000个字符、占用20000字节左右（char是UTF-16，每一个字符占用2字节）；</li>
+<li>在②处看到，char[]被String的value字段引用，说明char[]来自字符串；</li>
+<li>在③处看到，String被ArrayList的elementData字段引用，说明这些字符串加入了一个ArrayList中；</li>
+<li>在④处看到，ArrayList又被FooService的data字段引用，这个ArrayList整个RetainedHeap列的值是431MB。</li>
+</ul>
+<p><code>Retained Heap（深堆）代表对象本身和对象关联的对象占用的内存，Shallow Heap（浅堆）代表对象本身占用的内存</code>。比如，我们的FooService中的data这个ArrayList对象本身只有16字节，但是其所有关联的对象占用了431MB内存。这些就可以说明，肯定有哪里在不断向这个List中添加String数据，导致了OOM。</p>
+<p>左侧的蓝色框可以查看每一个实例的内部属性，图中显示FooService有一个data属性，类型是ArrayList。</p>
+<p>如果我们希望看到字符串完整内容的话，可以右键选择<code>Copy-&gt;Value</code>，把值复制到剪贴板或保存到文件中：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/cc1d53eb9570582da415c1aec5cc228f.png" alt="img"></p>
+<p>这里，我们复制出的是10000个字符a（下图红色部分可以看到）。对于真实案例，查看大字符串、大数据的实际内容对于识别数据来源，有很大意义：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7b3198574113fecdd2a7de8cde8994a0.png" alt="img"></p>
+<p>看到这些，我们已经基本可以还原出真实的代码是怎样的了。其实，我们之前使用直方图定位FooService，已经走了些弯路。你可以点击工具栏中第三个按钮（下图左上角的红框所示）进入<code>支配树界面</code>。这个界面会按照对象保留的Retained Heap倒序直接列出占用内存最大的对象。可以看到，第一位就是FooService，整个路径是<code>FooSerice-&gt;ArrayList-&gt;Object[]-&gt;String-&gt;char[]</code>（蓝色框部分），一共有21523个字符串（绿色方框部分）：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/7adafa4178a4c72f8621b7eb49ee2757.png" alt="img"></p>
+<p>这样，我们就从内存角度定位到FooService是根源了。那么，OOM的时候，FooService是在执行什么逻辑呢？</p>
+<p>为解决这个问题，我们可以点击工具栏的第五个按钮（下图红色框所示）。打开线程视图，首先看到的就是一个名为main的线程（Name 列），展开后果然发现了FooService：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/3a2c3d159e1599d906cc428d812cccce-1724685143626-29.png" alt="img"></p>
+<p>先执行的方法先入栈，所以线程栈最上面是线程当前执行的方法，逐一往下看能看到整个调用路径。因为我们希望了解FooService.oom()方法，看看是谁在调用它，它的内部又调用了谁，所以选择以FooService.oom()方法（蓝色框）为起点来分析这个调用栈。</p>
+<p>往下看整个绿色框部分，oom()方法被OOMApplication的run方法调用，而这个run方法又被SpringAppliction.callRunner方法调用。看到参数中的CommandLineRunner你应该能想到，OOMApplication其实是实现了CommandLineRunner接口，所以是SpringBoot应用程序启动后执行的。</p>
+<p>以FooService为起点往上看，从紫色框中的Collectors和IntPipeline，你大概也可以猜出，这些字符串是由Stream操作产生的。再往上看，可以发现在StringBuilder的append操作的时候，出现了OutOfMemoryError异常（黑色框部分），说明这这个线程抛出了OOM异常。</p>
+<p>我们看到，整个程序是Spring Boot应用程序，那么FooService是不是Spring的Bean呢，又是不是单例呢？如果能分析出这点的话，就更能确认是因为反复调用同一个FooService的oom方法，然后导致其内部的ArrayList不断增加数据的。</p>
+<p>点击工具栏的第四个按钮（如下图红框所示），来到<code>OQL界面</code>。在这个界面，我们可以使用类似SQL的语法，在dump中搜索数据（你可以直接在MAT帮助菜单搜索OQL Syntax，来查看OQL的详细语法）。</p>
+<p>比如，输入如下语句搜索FooService的实例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> org.geekbang.time.commonmistakes.troubleshootingtools.oom.FooService</span><br></pre></td></tr></table></figure>
+
+<p>可以看到只有一个实例，然后我们通过List objects功能搜索引用FooService的对象：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/1973846815bd9d78f85bef05b499e843.png" alt="img"></p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/07e1216a6cc93bd146535b5809649ea8.png" alt="img"></p>
+<p>可以看到，一共两处引用：</p>
+<ul>
+<li>第一处是，OOMApplication使用了FooService，这个我们已经知道了。</li>
+<li>第二处是一个ConcurrentHashMap。可以看到，这个HashMap是DefaultListableBeanFactory的<code>singletonObjects</code>字段，可以证实FooService是Spring容器管理的单例Bean。</li>
+</ul>
+<p>到现在为止，我们虽然没看程序代码，但是已经大概知道程序出现OOM的原因和大概的调用栈了。我们再贴出程序来对比一下，果然和我们看到得一模一样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OOMApplication</span> <span class="keyword">implements</span> <span class="title class_">CommandLineRunner</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    FooService fooService;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(OOMApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">(String... args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">//程序启动后，不断调用Fooservice.oom()方法</span></span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            fooService.oom();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FooService</span> &#123;</span><br><span class="line">    List&lt;String&gt; data = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">oom</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">//往同一个ArrayList中不断加入大小为10KB的字符串</span></span><br><span class="line">        data.add(IntStream.rangeClosed(<span class="number">1</span>, <span class="number">10_000</span>)</span><br><span class="line">                .mapToObj(__ -&gt; <span class="string">&quot;a&quot;</span>)</span><br><span class="line">                .collect(Collectors.joining(<span class="string">&quot;&quot;</span>)));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里，我们使用MAT工具从<code>对象清单</code>、<code>大对象</code>、<code>线程栈</code>等视角，分析了一个OOM程序的堆转储。可以发现，有了堆转储，几乎相当于拿到了应用程序的源码+当时那一刻的快照，OOM的问题无从遁形。</p>
+<h3 id="3-3使用Arthas分析高CPU问题"><a href="#3-3使用Arthas分析高CPU问题" class="headerlink" title="3.3使用Arthas分析高CPU问题"></a>3.3使用Arthas分析高CPU问题</h3><table>
+<thead>
+<tr>
+<th>问题描述</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arthas是阿里开源的Java诊断工具，相比JDK内置的诊断工具，要更人性化，并且功能强大，可以实现许多问题的一键定位，而且可以一键反编译类查看源码，甚至是直接进行生产代码热修复，实现在一个工具内快速定位和修复问题的一站式服务。</td>
+<td><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/230534">加餐5：分析定位Java问题，一定要用好这些工具（二）-Java 业务开发常见错误 100 例-极客时间 (geekbang.org)</a></td>
+</tr>
+</tbody></table>
+<p>首先，下载并启动Arthas：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -O https://alibaba.github.io/arthas/arthas-boot.jar</span><br><span class="line">java -jar arthas-boot.jar</span><br></pre></td></tr></table></figure>
+
+<p>启动后，直接找到我们要排查的JVM进程，然后可以看到Arthas附加进程成功：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">[INFO] arthas-boot version: 3.1.7</span><br><span class="line">[INFO] Found existing java process, please choose one and hit RETURN.</span><br><span class="line">* [1]: 12707</span><br><span class="line">  [2]: 30724 org.jetbrains.jps.cmdline.Launcher</span><br><span class="line">  [3]: 30725 org.geekbang.time.commonmistakes.troubleshootingtools.highcpu.HighCPUApplication</span><br><span class="line">  [4]: 24312 sun.tools.jconsole.JConsole</span><br><span class="line">  [5]: 26328 org.jetbrains.jps.cmdline.Launcher</span><br><span class="line">  [6]: 24106 org.netbeans.lib.profiler.server.ProfilerServer</span><br><span class="line">3</span><br><span class="line">[INFO] arthas home: /Users/zhuye/.arthas/lib/3.1.7/arthas</span><br><span class="line">[INFO] Try to attach process 30725</span><br><span class="line">[INFO] Attach process 30725 success.</span><br><span class="line">[INFO] arthas-client connect 127.0.0.1 3658</span><br><span class="line">  ,---.  ,------. ,--------.,--.  ,--.  ,---.   ,---.</span><br><span class="line"> /  O  \ |  .--. &#x27;&#x27;--.  .--&#x27;|  &#x27;--&#x27;  | /  O  \ &#x27;   .-&#x27;</span><br><span class="line">|  .-.  ||  &#x27;--&#x27;.&#x27;   |  |   |  .--.  ||  .-.  |`.  `-.</span><br><span class="line">|  | |  ||  |\  \    |  |   |  |  |  ||  | |  |.-&#x27;    |</span><br><span class="line">`--&#x27; `--&#x27;`--&#x27; &#x27;--&#x27;   `--&#x27;   `--&#x27;  `--&#x27;`--&#x27; `--&#x27;`-----&#x27;</span><br><span class="line"></span><br><span class="line">wiki      https://alibaba.github.io/arthas</span><br><span class="line">tutorials https://alibaba.github.io/arthas/arthas-tutorials</span><br><span class="line">version   3.1.7</span><br><span class="line">pid       30725</span><br><span class="line">time      2020-01-30 15:48:33</span><br></pre></td></tr></table></figure>
+
+<p>输出help命令，可以看到所有支持的命令列表。今天，我们会用到dashboard、thread、jad、watch、ognl命令，来定位这个HighCPUApplication进程。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/47b2abc1c3a8c0670a60c6ed74761873.png" alt="img"></p>
+<p><code>dashboard命令用于整体展示进程所有线程、内存、GC等情况</code>，其输出如下：</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/ce59c22389ba95104531e46edd9afa4c.png" alt="img"></p>
+<p>可以看到，CPU高并不是GC引起的，占用CPU较多的线程有8个，其中7个是ForkJoinPool.commonPool。ForkJoinPool.commonPool是并行流默认使用的线程池。所以，此次CPU高的问题，应该出现在某段并行流的代码上。</p>
+<p>接下来，要查看最繁忙的线程在执行的线程栈，可以使用<code>thread -n</code>命令。这里，我们查看下最忙的8个线程：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">thread -n 8</span><br></pre></td></tr></table></figure>
+
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/96cca0708e211ea7f7de413d40c72c00.png" alt="img"></p>
+<p>可以看到，由于这些线程都在处理MD5的操作，所以占用了大量CPU资源。我们希望分析出代码中哪些逻辑可能会执行这个操作，所以需要从方法栈上找出我们自己写的类，并重点关注。</p>
+<p>由于主线程也参与了ForkJoinPool的任务处理，因此我们可以通过主线程的栈看到需要重点关注 org.geekbang.time.commonmistakes.troubleshootingtools.highcpu.HighCPUApplication类的doTask方法。</p>
+<p>接下来，使用<code>jad</code>命令直接对HighCPUApplication类反编译：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jad org.geekbang.time.commonmistakes.troubleshootingtools.highcpu.HighCPUApplication</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，调用路径是<code>main-&gt;task()-&gt;doTask()</code>，当doTask方法接收到的int参数等于某个常量的时候，会进行1万次的MD5操作，这就是耗费CPU的来源。那么，这个魔法值到底是多少呢？</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/4594c58363316d8ff69178d7a341d5e5.png" alt="img"></p>
+<p>你可能想到了，通过jad命令继续查看User类即可。这里因为是Demo，所以我没有给出很复杂的逻辑。在业务逻辑很复杂的代码中，判断逻辑不可能这么直白，我们可能还需要分析出doTask的“慢”会慢在什么入参上。</p>
+<p>这时，我们可以使用<code>watch</code>命令来观察方法入参。如下命令，表示需要监控耗时超过100毫秒的doTask方法的入参，并且输出入参，展开2层入参参数：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">watch org.geekbang.time.commonmistakes.troubleshootingtools.highcpu.HighCPUApplication doTask &#x27;&#123;params&#125;&#x27; &#x27;#cost&gt;100&#x27; -x 2</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，所有耗时较久的doTask方法的入参都是0，意味着User.ADMN_ID常量应该是0。</p>
+<p><img src="/imgs/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/04e7a4e54c09052ab937f184ab31e03a.png" alt="img"></p>
+<p>最后，我们使用<code>ognl</code>命令来运行一个表达式，直接查询User类的ADMIN_ID静态字段来验证是不是这样，得到的结果果然是0：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">[arthas@31126]$ </span><span class="language-bash">ognl <span class="string">&#x27;@org.geekbang.time.commonmistakes.troubleshootingtools.highcpu.User@ADMIN_ID&#x27;</span></span></span><br><span class="line">@Integer[0]</span><br></pre></td></tr></table></figure>
+
+<p>需要额外说明的是，由于monitor、trace、watch等命令是通过<code>字节码增强技术</code>来实现的，会在指定类的方法中插入一些切面来实现数据统计和观测，因此诊断结束要执行<code>shutdown</code>来还原类或方法字节码，然后退出Arthas。</p>
+<p>在这个案例中，我们通过Arthas工具排查了高CPU的问题：</p>
+<ul>
+<li>首先，通过<code>dashboard + thread</code>命令，基本可以在几秒钟内一键定位问题，找出消耗CPU最多的线程和方法栈；</li>
+<li>然后，直接<code>jad</code>反编译相关代码，来确认根因；</li>
+<li>此外，如果调用入参不明确的话，可以使用<code>watch</code>观察方法入参，并根据方法执行时间来过滤慢请求的入参。</li>
+</ul>
+<p>可见，使用Arthas来定位生产问题根本用不着原始代码，也用不着通过增加日志来帮助我们分析入参，一个工具即可完成定位问题、分析问题的全套流程。</p>
 
   </div>
 </article>
@@ -222,23 +785,23 @@
     
     
       <div id="toc-footer" style="display: none">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0"><span class="toc-number">1.</span> <span class="toc-text">Java常见问题持续更新</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Java%E5%9F%BA%E7%A1%80"><span class="toc-number">1.1.</span> <span class="toc-text">1.Java基础</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6"><span class="toc-number">1.2.</span> <span class="toc-text">2.Java集合框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Java%E5%B9%B6%E5%8F%91"><span class="toc-number">1.3.</span> <span class="toc-text">3.Java并发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-JVM"><span class="toc-number">1.4.</span> <span class="toc-text">4.JVM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-MySQL"><span class="toc-number">1.5.</span> <span class="toc-text">5.MySQL</span></a></li></ol></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#JavaGuide%E5%BB%B6%E4%BC%B8%E6%96%87%E7%AB%A0%E6%80%BB%E7%BB%93%E6%B1%87%E6%80%BB"><span class="toc-number">1.</span> <span class="toc-text">JavaGuide延伸文章总结汇总</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Java%E5%9F%BA%E7%A1%80"><span class="toc-number">1.1.</span> <span class="toc-text">1.Java基础</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1AOT%E6%8F%90%E5%89%8D%E7%BC%96%E8%AF%91%E6%8A%80%E6%9C%AF"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1AOT提前编译技术</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E9%AD%94%E6%B3%95%E7%B1%BBUnsafe%E5%BA%94%E7%94%A8"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2魔法类Unsafe应用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Java%E5%B9%B6%E5%8F%91"><span class="toc-number">1.2.</span> <span class="toc-text">2.Java并发</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%94%AF%E4%B8%80%E6%96%B9%E5%BC%8F"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1创建线程的唯一方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2CompletableFuture%E5%8E%9F%E7%90%86%E4%B8%8E%E5%AE%9E%E8%B7%B5"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2CompletableFuture原理与实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3Java%E5%8A%A8%E6%80%81%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3Java动态线程池实现原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-JVM%E5%88%86%E6%9E%90%E8%B0%83%E4%BC%98"><span class="toc-number">1.3.</span> <span class="toc-text">3.JVM分析调优</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1%E4%BD%BF%E7%94%A8JDK%E8%87%AA%E5%B8%A6%E5%B7%A5%E5%85%B7%E6%9F%A5%E7%9C%8BJVM%E6%83%85%E5%86%B5"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1使用JDK自带工具查看JVM情况</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2%E4%BD%BF%E7%94%A8MAT%E5%88%86%E6%9E%90OOM%E9%97%AE%E9%A2%98"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2使用MAT分析OOM问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3%E4%BD%BF%E7%94%A8Arthas%E5%88%86%E6%9E%90%E9%AB%98CPU%E9%97%AE%E9%A2%98"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3使用Arthas分析高CPU问题</span></a></li></ol></li></ol></li></ol>
       </div>
     
 
     <div id="share-footer" style="display: none">
       <ul>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&text=Java常见问题持续更新"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&is_video=false&description=Java常见问题持续更新"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=Java常见问题持续更新&body=Check out this article: https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=Java常见问题持续更新"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&name=Java常见问题持续更新&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&t=Java常见问题持续更新"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&text=JavaGuide延伸文章总结汇总"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&is_video=false&description=JavaGuide延伸文章总结汇总"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JavaGuide延伸文章总结汇总&body=Check out this article: https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&title=JavaGuide延伸文章总结汇总"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&name=JavaGuide延伸文章总结汇总&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://hulingf.github.io/2024/03/04/Java%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0/&t=JavaGuide延伸文章总结汇总"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>

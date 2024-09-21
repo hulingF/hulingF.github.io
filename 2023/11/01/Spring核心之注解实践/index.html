@@ -17,7 +17,7 @@
 <meta property="og:image" content="https://hulingf.github.io/imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101155009176.png">
 <meta property="og:image" content="https://hulingf.github.io/imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101155041393.png">
 <meta property="article:published_time" content="2023-11-01T07:06:49.955Z">
-<meta property="article:modified_time" content="2024-02-13T03:46:30.070Z">
+<meta property="article:modified_time" content="2024-08-18T09:30:19.097Z">
 <meta property="article:author" content="hulingF">
 <meta property="article:tag" content="Spring">
 <meta name="twitter:card" content="summary">
@@ -167,7 +167,7 @@
 
   <div class="content e-content" itemprop="articleBody">
     <h1 id="Spring核心之注解实践"><a href="#Spring核心之注解实践" class="headerlink" title="Spring核心之注解实践"></a>Spring核心之注解实践</h1><p>我们会以一个案例贯穿Spring的整个常用的注解开发流程，全程不会使用到以前的配置文件<code>applicationContext.xml</code>，首先我们先看一下我们的项目结构：</p>
-<p><img src="/../../../../../../imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101152800331.png" alt="image-20231101152800331"></p>
+<p><img src="/imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101152800331.png" alt="image-20231101152800331"></p>
 <p>其中，<code>entity</code>包是实体类所在的包，<code>dao</code>包是数据持久化层，<code>service</code>包是业务逻辑层，<code>aop</code>包是AOP开发的切面类所在的包，其它三个<code>AppConfig</code>、<code>MyBatisConfig</code>、<code>TransactionConfig</code>分别是主配置类、MyBatis配置类、事务配置类。</p>
 <blockquote>
 <p>我们需要先明确一下，对于大部分程序员自定义的类型我们都是采用@Component及其衍生注解如@Repository、@Service、@Controller等完成Bean的装配；对于框架和第三方提供的一些类型如DruidDataSource、SqlSessionFactoryBean等我们采用@Bean注解完成Bean的装配；对于我们不满意的Bean对象我们可以声明XML配置文件，通过@ImportResource注解的方式覆盖Bean对象(id属性必须保持一致)。</p>
@@ -209,8 +209,8 @@
 <p>测试程序如下：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">ApplicationContext</span> <span class="variable">ctx</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AnnotationConfigApplicationContext</span>(AppConfig.class);</span><br><span class="line">    <span class="type">UserService</span> <span class="variable">userService</span> <span class="operator">=</span> ctx.getBean(<span class="string">&quot;userService&quot;</span>, UserService.class);</span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line">    user.setId(<span class="literal">null</span>);</span><br><span class="line">    user.setName(<span class="string">&quot;bubu&quot;</span>);</span><br><span class="line">    user.setPassword(<span class="string">&quot;123456&quot;</span>);</span><br><span class="line">    userService.register(user);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/../../../../../../imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101155009176.png" alt="image-20231101155009176"></p>
-<p><img src="/../../../../../../imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101155041393.png" alt="image-20231101155041393"></p>
+<p><img src="/imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101155009176.png" alt="image-20231101155009176"></p>
+<p><img src="/imgs/Spring%E6%A0%B8%E5%BF%83%E4%B9%8B%E6%B3%A8%E8%A7%A3%E5%AE%9E%E8%B7%B5/image-20231101155041393.png" alt="image-20231101155041393"></p>
 
   </div>
 </article>
